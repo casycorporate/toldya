@@ -1,0 +1,27 @@
+TOKENOMICS TASARIM BELGESINI PDF OLARAK ALMA
+============================================
+
+Projede PDF icin ekstra npm paketi YOK; sadece HTML + tarayici (veya script) kullanilir.
+
+Yontem 1 - Script (Chrome/Edge gerekli)
+---------------------------------------
+PowerShell'de docs klasorune gidin ve calistirin:
+  cd "c:\Users\sinan.yilmaz\Desktop\bendemistim\docs"
+  .\TOKENOMICS_PDF_OLUSTUR.ps1
+
+Cikti: docs\TOKENOMICS_TASARIM.pdf
+
+
+Yontem 2 - Manuel (her zaman calisir)
+-------------------------------------
+1. docs\TOKENOMICS_TASARIM.html dosyasini cift tiklayarak tarayicida acin.
+2. Ctrl+P (veya Dosya > Yazdir) tuslayin.
+3. "Hedef" / "Printer" olarak "PDF olarak kaydet" veya "Microsoft Print to PDF" secin.
+4. "Kaydet"e tiklayin; dosya adi: TOKENOMICS_TASARIM.pdf, konum: docs klasoru.
+
+
+Belgeler
+--------
+- TOKENOMICS_TASARIM.md   : Tam tasarim (Markdown)
+- TOKENOMICS_TASARIM.html : Yazdirma icin HTML (PDF icin kullanilir)
+- TOKENOMICS_TASARIM.pdf  : Script veya manuel ile uretilir

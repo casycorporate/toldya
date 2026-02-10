@@ -1,0 +1,106 @@
+name: bendemistim
+description: Ben demiştim - Flutter uygulaması.
+
+version: 1.0.1+9
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  dartz: ^0.10.1
+  get_it: ^8.0.2
+  freezed_annotation: ^2.4.1
+  cached_network_image: ^3.4.1
+  provider: ^6.1.2
+  firebase_core: ^3.8.1
+  firebase_auth: ^5.3.3
+  firebase_database: ^11.0.2
+  cloud_functions: ^5.2.1
+  firebase_analytics: ^11.0.2
+  cloud_firestore: ^5.5.2
+  firebase_storage: ^12.3.6
+  equatable: ^2.0.5
+  uuid: ^4.5.1
+  http: ^1.2.2
+  image_picker: ^1.1.2
+  package_info_plus: ^8.1.2
+  shared_preferences: ^2.3.3
+  firebase_messaging: ^15.1.6
+  google_sign_in: ^6.2.2
+  intl: ^0.20.2
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.2
+  google_fonts: ^6.2.1
+  firebase_remote_config: ^5.1.6
+  firebase_dynamic_links: ^6.0.16
+  qr_code_scanner: ^1.0.1
+  qr_flutter: ^4.1.0
+  cupertino_radio_choice: ^1.0.1+1
+  animated_bottom_navigation_bar: ^0.3.2
+  circular_reveal_animation: ^2.0.0
+  flutter_rating_bar: ^4.0.1
+  flutter_picker: ^2.0.2
+  crypto: ^3.0.3
+  percent_indicator: ^4.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+  build_runner: ^2.4.13
+  json_annotation: ^4.9.0
+  json_serializable: ^6.8.0
+
+flutter_icons:
+  ios: true
+  android: true
+  image_path_ios: "assets/images/casy.png"
+  image_path_android: "assets/images/casy.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+   - assets/images/icon-48.png
+   - assets/images/icon-480.png
+   - assets/images/casy.png
+   - assets/images/icon-400.png
+   - assets/images/qr.png
+   - assets/images/bulb.png
+   - assets/images/google_logo.png
+   - assets/icons/home.png
+   - assets/icons/search.png
+   - assets/icons/user.png
+   - assets/icons/menu.png
+   - assets/icons/prometheusempty.png
+   - assets/icons/prometheusfull.png
+   - assets/icons/prometheushalf.png
+
+  fonts:
+    - family: TwitterIcon
+      fonts:
+        - asset: assets/fonts/icons.ttf
+    - family: HelveticaNeue
+      fonts:
+        - asset: assets/fonts/HelveticaNeue.ttf
+        - asset: assets/fonts/HelveticaNeue400.ttf
+          weight: 400
+        - asset: assets/fonts/HelveticaNeue500.ttf
+          weight: 500
+        - asset: assets/fonts/HelveticaNeue600.ttf
+          weight: 600
+        - asset: assets/fonts/HelveticaNeue700.ttf
+          weight: 700
+        - asset: assets/fonts/HelveticaNeue800.ttf
+          weight: 800
+        - asset: assets/fonts/HelveticaNeue900.ttf
+          weight: 900
+        - asset: assets/fonts/HelveticaNeueIt.ttf
+          style: italic

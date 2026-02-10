@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi - Ben demiştim</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.5;
+      color: #1a1a1a;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #fff;
+    }
+    @media print {
+      body { padding: 1rem; }
+      .no-print { display: none !important; }
+      a { color: #000; text-decoration: none; }
+    }
+    h1 {
+      font-size: 1.5rem;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+    h2 { font-size: 1.15rem; margin-top: 1.5rem; }
+    h3 { font-size: 1rem; margin-top: 1rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+    li { margin: 0.25rem 0; }
+    .ok { color: #0a0; }
+    .warn { color: #c60; }
+    .fail { color: #c00; }
+    .note { font-size: 0.85rem; color: #555; margin-top: 0.5rem; }
+    p { margin: 0.5rem 0; }
+    strong { font-weight: 600; }
+    .no-print {
+      background: #f0f0f0;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <strong>PDF almak için:</strong> Bu sayfayı açın → Ctrl+P (Yazdır) → Hedef olarak &quot;PDF olarak kaydet&quot; seçin → Kaydet.
+  </div>
+
+  <h1>Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi</h1>
+  <p><strong>Proje:</strong> Ben demiştim (Sosyal Tahmin Pazarı)</p>
+  <p><strong>Değerlendirme:</strong> Mevcut teknolojilerin spec’e uygunluğu ve eksik ihtiyaçlar (geliştirme yapılmadan).</p>
+
+  <h2>1. Mevcut Teknoloji Özeti</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Katman</th>
+        <th>Kullanılan</th>
+        <th>Projede gerçek kullanım</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Flutter (Dart 3+)</td><td>✓ Tüm UI burada</td></tr>
+      <tr><td>State</td><td>Provider</td><td>✓ feedState, authState vb.</td></tr>
+      <tr><td>DI</td><td>GetIt</td><td>✓ locator</td></tr>
+      <tr><td>Backend / DB</td><td>Firebase Realtime Database</td><td>✓ tweet, profile, notification, chats</td></tr>
+      <tr><td>Auth</td><td>Firebase Auth + Google Sign-In</td><td>✓</td></tr>
+      <tr><td>Storage</td><td>Firebase Storage</td><td>✓ Resim yükleme</td></tr>
+      <tr><td>Bildirim</td><td>Firebase Messaging (FCM)</td><td>✓ + http ile FCM API</td></tr>
+      <tr><td>Config</td><td>Remote Config</td><td>✓ (örn. server token)</td></tr>
+      <tr><td>Link</td><td>Dynamic Links</td><td>✓ Paylaşım</td></tr>
+      <tr><td>HTTP</td><td>http paketi</td><td>✓ Sadece FCM + composeTweetState’te POST</td></tr>
+      <tr><td>Firestore</td><td>cloud_firestore paketi</td><td>⚠ Neredeyse kullanılmıyor (sadece yorum)</td></tr>
+      <tr><td>Sunucu tarafı</td><td>Cloud Functions</td><td>✗ Projede yok</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Spec Gereksinimlerine Göre Uygunluk</h2>
+
+  <h3>2.1 Tahmin Kriterleri (Oracle, çift zaman, teminat)</h3>
+  <table>
+    <thead>
+      <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Oracle (kanıt kaynağı / dış veri)</td>
+        <td>Kısmen</td>
+        <td><strong>http</strong> var; harici API’ye (maç skoru, borsa fiyatı vb.) istek atmak mümkün. Ancak <strong>hangi tahminin hangi API’ye bağlı olduğu</strong> ve <strong>sonucun otomatik çekilmesi</strong> için tasarım + sunucu tarafı mantığı yok.</td>
+      </tr>
+      <tr>
+        <td>Kapanış / sonuçlanma zamanı</td>
+        <td>Hayır</td>
+        <td>Zamanlama için <strong>sunucu tarafı zamanlayıcı</strong> gerekir. Realtime DB ve Flutter tek başına “saat X’te otomatik kilit / sonuç” yapamaz.</td>
+      </tr>
+      <tr>
+        <td>Tahminci teminatı</td>
+        <td>Evet</td>
+        <td>Kullanıcı bakiyesi zaten Realtime DB’de (pegCount). Teminat kilidi için ek alan + kurallar yeterli; ek teknoloji şart değil.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Sonuç:</strong> Veri modeli ve istemci tarafı için mevcut stack uygun. Oracle’ı otomatik kullanmak ve zamana göre kilit/sonuç için sunucu tarafı (örn. Cloud Functions) eksik.</p>
+
+  <h3>2.2 Bahis Mantığı (havuz, dağıtım)</h3>
+  <table>
+    <thead>
+      <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Havuz verisi (Evet/Hayır toplamları)</td>
+        <td>Evet</td>
+        <td>Realtime DB’de likeList / unlikeList + pegCount ile mevcut.</td>
+      </tr>
+      <tr>
+        <td>Pari-Mutuel formülü (hesap)</td>
+        <td>Evet</td>
+        <td>Matematik basit; Flutter veya sunucuda hesaplanabilir.</td>
+      </tr>
+      <tr>
+        <td><strong>Kazananlara token dağıtımı</strong></td>
+        <td>Hayır</td>
+        <td>Dağıtım çok kullanıcıya aynı anda pegCount güncellemesi + tek tahmin için tutarlı (atomik) işlem gerektirir. Realtime DB’de client-side’da yapılırsa yarış durumu ve hata riski yüksek. <strong>Sunucu tarafı</strong> (tek yerde atomik dağıtım) eksik.</td>
+      </tr>
+      <tr>
+        <td>Komisyon kesintisi</td>
+        <td>Evet</td>
+        <td>Dağıtım formülüne yüzde eklenebilir; teknoloji engeli yok.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Sonuç:</strong> Hesap ve veri yapısı için mevcut teknolojiler uygun. Güvenli ve tutarlı ödeme için backend (Cloud Functions veya başka sunucu) ihtiyaç.</p>
+
+  <h3>2.3 Zaman Bazlı Kilitlenme (lock-in)</h3>
+  <table>
+    <thead>
+      <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>“endDate’te bahisleri kapat”</td>
+        <td>Hayır</td>
+        <td>Realtime DB ve Flutter’da zamanlanmış görev (cron) yok. Cihaz kapalıyken veya uygulama açık değilken çalışacak bir “saat X’te tüm tahminleri kilitle” mekanizması sadece sunucu tarafında (Cloud Functions + scheduler) mümkün.</td>
+      </tr>
+      <tr>
+        <td>“Sonuçlanma zamanında sonuç gir / API’den çek”</td>
+        <td>Hayır</td>
+        <td>Aynı sebep: zamanlanmış iş sunucu gerektirir.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Sonuç:</strong> Mevcut istemci + Realtime DB ile tam ve güvenilir zaman bazlı kilit mümkün değil. Cloud Functions (veya benzeri) + zamanlayıcı eksik.</p>
+
+  <h3>2.4 Sonuçlandırma ve Doğrulama</h3>
+  <table>
+    <thead>
+      <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Manuel sonuç girişi (admin)</td>
+        <td>Evet</td>
+        <td>Mevcut “onayla” akışı ile uyumlu.</td>
+      </tr>
+      <tr>
+        <td>API’den otomatik sonuç</td>
+        <td>Kısmen</td>
+        <td>http ile API çağrısı yapılabilir; ancak ne zaman ve hangi tahmin için yapılacağı zamanlayıcı + backend ile netleşir.</td>
+      </tr>
+      <tr>
+        <td>İtiraz (dispute)</td>
+        <td>Veri tarafı evet, akış eksik</td>
+        <td>Yeni koleksiyon/alan (örn. disputes, reportList genişletmesi) Realtime DB’de tutulabilir. İtiraz inceleme / sonuç güncelleme akışı ve yetki mantığı tasarlanmamış.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Sonuç:</strong> Teknoloji (DB, HTTP) yeterli; dispute ve otomatik sonuç için mantık ve muhtemelen backend eksik.</p>
+
+  <h3>2.5 İtibar / Skorlama</h3>
+  <table>
+    <thead>
+      <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bahisçi skoru (rank)</td>
+        <td>Evet</td>
+        <td>user.rank + calculateRank zaten var.</td>
+      </tr>
+      <tr>
+        <td>Tahminci skoru</td>
+        <td>Veri evet, mantık eksik</td>
+        <td>Yeni alan (örn. predictorScore) ve “tahmin başarıyla sonuçlandı” sayacı Realtime DB’de tutulabilir. Ek paket gerekmez; hesaplama kuralları eksik.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Sonuç:</strong> Mevcut teknolojiler uygun; eksik olan tahminci metriği tasarımı.</p>
+
+  <h2>3. Eksik veya Zayıf Olanlar (Özet)</h2>
+  <table>
+    <thead>
+      <tr><th>Eksik / ihtiyaç</th><th>Neden gerekli</th><th>Ne ile giderilir (teknoloji tarafı)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Sunucu tarafı (backend)</strong></td>
+        <td>Zamanlanmış kilit, güvenli dağıtım, otomatik oracle sonuç</td>
+        <td>Firebase Cloud Functions (veya başka bir backend). Zamanlayıcı (scheduled function) + Realtime DB tetikleyicisi veya Firestore + trigger.</td>
+      </tr>
+      <tr>
+        <td><strong>Zamanlayıcı (cron)</strong></td>
+        <td>endDate’te bahis kapatma, sonuçlanma zamanında sonuç atama / API çağrısı</td>
+               <td>Cloud Scheduler veya Cloud Functions scheduled function.</td>
+      </tr>
+      <tr>
+        <td><strong>Atomik / güvenli dağıtım</strong></td>
+        <td>Kazananlara pegCount dağıtırken tutarlılık ve güvenlik</td>
+        <td>Dağıtım mantığının tek yerde (Cloud Functions içinde) çalışması; Realtime DB güncellemelerinin transaction veya tek fonksiyon içinde yapılması.</td>
+      </tr>
+      <tr>
+        <td><strong>Oracle entegrasyonu</strong></td>
+        <td>Maç skoru, borsa fiyatı vb. otomatik sonuç</td>
+        <td>Mevcut http yeterli; hangi tahmin, hangi endpoint, ne zaman bilgisi ve çağrının sunucu tarafında yapılması (güvenlik ve zamanlama için).</td>
+      </tr>
+      <tr>
+        <td>Firestore kullanımı</td>
+        <td>Şu an neredeyse yok</td>
+        <td>Spec için zorunlu değil; istenirse karmaşık sorgular / dispute geçmişi için Firestore eklenebilir. Zorunlu eksik sayılmaz.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Teknoloji Kararı Özeti</h2>
+  <ul>
+    <li><strong>Flutter, Provider, Firebase Auth, Realtime Database, Storage, FCM, http:</strong> Spec’e “benzetmek” için uygun; burada ciddi bir teknoloji eksikliği yok.</li>
+    <li><strong>Eksik olan:</strong> Backend (Cloud Functions veya eşdeğeri), Zamanlanmış iş (kilit + otomatik sonuç), Token dağıtımının sunucu tarafında atomik yapılması, Oracle + zamanlama tasarımı (hangi tahmin, hangi API, ne zaman).</li>
+    <li><strong>Firestore:</strong> Projede neredeyse kullanılmıyor; spec için zorunlu değil. İsterseniz ileride dispute / geçmiş için eklenebilir.</li>
+    <li><strong>http paketi:</strong> Oracle ve harici API çağrıları için yeterli; ekstra bir HTTP kütüphanesi zorunlu değil.</li>
+  </ul>
+  <p><strong>Kısa cevap:</strong> Mevcut teknolojiler spec’e benzetmek için büyük ölçüde uygun. Eksik olan şey yeni paketlerden çok sunucu tarafı (Cloud Functions + zamanlayıcı) ve iş kurallarının (kilit, dağıtım, oracle) buraya taşınması.</p>
+
+  <p class="note" style="margin-top:2rem;">Belge: Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi — Ben demiştim (Sosyal Tahmin Pazarı). Geliştirme yapılmadan hazırlanmış değerlendirme raporu.</p>
+</body>
+</html>

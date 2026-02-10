@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ben Demiştim – Tokenomics Tasarım Belgesi</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.5;
+      color: #1a1a1a;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #fff;
+    }
+    @media print {
+      body { padding: 1rem; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+    }
+    h1 { font-size: 1.5rem; border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.2rem; margin-top: 1.5rem; }
+    h3 { font-size: 1.05rem; margin-top: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f0f0f0; }
+    pre, code { background: #f5f5f5; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.9em; }
+    pre { padding: 0.75rem; overflow-x: auto; }
+    hr { border: none; border-top: 1px solid #ccc; margin: 1.5rem 0; }
+    ul { margin: 0.5rem 0; }
+    .meta { color: #555; font-size: 0.9rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<h1>Ben Demiştim – Token Ekonomisi (Tokenomics) Tasarım Belgesi</h1>
+<p class="meta"><strong>Sürüm:</strong> 1.0 &nbsp;|&nbsp; <strong>Tarih:</strong> Şubat 2025 &nbsp;|&nbsp; <strong>Amaç:</strong> Bahis limitleri, rütbe sistemi, token yenileme ve kademeli cüzdan için yazılım mimarisi ve entegrasyon spesifikasyonu.</p>
+<hr>
+
+<h2>1. Genel Bakış</h2>
+<p>Bu belge, sosyal tahmin oyununda:</p>
+<ul>
+  <li>Kullanıcıyı içeride tutan ve tokenı değerli hissettiren <strong>token yenileme</strong> (günlük bonus, başarı görevleri),</li>
+  <li>Sistemi suistimalden koruyan <strong>bahis limitlendirme</strong> ve <strong>rütbe sistemi</strong>,</li>
+  <li>Önerilen <strong>akış mantığı</strong> (işlem kontrolü, kullanıcı/havuz limitleri),</li>
+  <li><strong>Kademeli cüzdan</strong> (harcanabilir + kilitli bakiye, 24 saatte bir sızdırma)</li>
+</ul>
+<p>için <strong>backend (Firebase Cloud Functions)</strong> ve <strong>Flutter</strong> tarafında nereye, nasıl entegre edileceğini tanımlar.</p>
+<hr>
+
+<h2>2. Mevcut Durum Özeti</h2>
+<table>
+  <tr><th>Bileşen</th><th>Mevcut yapı</th></tr>
+  <tr><td>Bakiye</td><td>Tek alan: <code>profile.pegCount</code>. Yeni kullanıcı: <code>AppIcon.pegCount</code> (50.000).</td></tr>
+  <tr><td>Bahis</td><td>Flutter: bottom sheet ile miktar; üst sınır = tüm bakiye. Sunucu tarafı limit yok.</td></tr>
+  <tr><td>Dağıtım</td><td><code>runDistributeWinnings</code>: kazananlara <code>profile.pegCount</code> artırılıyor; komisyon %5.</td></tr>
+  <tr><td>Veri</td><td>Realtime Database: <code>tweet</code> (likeList/unlikeList, pegCount), <code>profile</code> (pegCount, predictorScore, rank).</td></tr>
+</table>
+<p><strong>Kritik eksik:</strong> Bahis işlemi tamamen client'ta; sunucuda miktar/limit kontrolü olmadığı için güvenilir limitlendirme için bahis <strong>Callable Cloud Function</strong> üzerinden geçmelidir.</p>
+<hr>
+
+<h2>3. Callable: placeBet – Bahis İşlemi ve Limitler</h2>
+
+<h3>3.1 Amaç</h3>
+<p>Tüm bahisler tek bir noktadan (Cloud Function) geçer; böylece kullanıcı bazlı max bahis (rütbe/XP), bakiye oran limiti ve havuz bazlı limit (küçük tahminlerde tavan) client'tan bağımsız ve güvenli uygulanır.</p>
+
+<h3>3.2 İmza ve Parametreler</h3>
+<p><strong>Fonksiyon adı:</strong> <code>placeBet</code> (Callable HTTPS).</p>
+<p><strong>Girdi (data):</strong></p>
+<table>
+  <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+  <tr><td>tweetId</td><td>string</td><td>Evet</td><td>Tahmin (tweet) anahtarı.</td></tr>
+  <tr><td>side</td><td>number</td><td>Evet</td><td>1 = Evet (like), 2 = Hayır (unlike).</td></tr>
+  <tr><td>amount</td><td>number</td><td>Evet</td><td>Bahis miktarı (token, tam sayı).</td></tr>
+</table>
+<p><strong>Çıktı (başarı):</strong> <code>{ "ok": true, "newBalance": 12345, "newStashBalance": 5000, "message": "Bahis kabul edildi." }</code></p>
+<p><strong>Çıktı (hata):</strong> <code>{ "ok": false, "code": "INSUFFICIENT_BALANCE", "message": "Yetersiz bakiye." }</code></p>
+<p>Olası <code>code</code> değerleri: INSUFFICIENT_BALANCE, BET_LIMIT_USER, BET_LIMIT_POOL, PREDICTION_CLOSED, PREDICTION_NOT_FOUND, INVALID_AMOUNT, UNAUTHORIZED.</p>
+
+<h3>3.3 Kontrol Sırası (Algoritma)</h3>
+<ol>
+  <li><strong>Yetki:</strong> context.auth ile kullanıcı ID; yoksa UNAUTHORIZED.</li>
+  <li><strong>Girdi:</strong> amount &gt; 0, side in [1, 2], tweetId dolu.</li>
+  <li><strong>Tahmin:</strong> tweet/{tweetId} okunur; parentkey varsa red.</li>
+  <li><strong>Kapanmış mı:</strong> statu !== STATU_LIVE (0) ise PREDICTION_CLOSED.</li>
+  <li><strong>Profil:</strong> spendableBalance = pegCount; xp/level ile rütbe.</li>
+  <li><strong>Rütbe limiti:</strong> maxBetByRank = spendableBalance × rankMultiplier; aşımda BET_LIMIT_USER.</li>
+  <li><strong>Bakiye:</strong> amount &gt; spendableBalance → INSUFFICIENT_BALANCE.</li>
+  <li><strong>Havuz limiti:</strong> totalPool &lt; 1000 ise max 100 token; aşımda BET_LIMIT_POOL.</li>
+  <li><strong>Atomik işlem:</strong> profile pegCount düşür; tweet likeList/unlikeList güncelle; notification.</li>
+</ol>
+
+<h3>3.4 Sabitler (Backend)</h3>
+<pre>STATU_LIVE = 0
+FEED_RESULT_LIKE = 1, FEED_RESULT_UNLIKE = 2
+RANK_MULTIPLIER: Çaylak 0.10 (0–500 XP), Tahminci 0.25 (500–2000 XP), Üstad 0.50 (2000+ XP)
+POOL_THRESHOLD = 1000, MAX_BET_SMALL_POOL = 100</pre>
+
+<h3>3.5 Veritabanı Şeması</h3>
+<p><strong>Eklenecek:</strong> profile/{userId}/xp (ve isteğe level). placeBet sonrası: pegCount azalır, tweet likeList/unlikeList güncellenir.</p>
+<hr>
+
+<h2>4. Rütbe (Seviye) Sistemi</h2>
+<table>
+  <tr><th>Rütbe</th><th>XP aralığı</th><th>Bahis başı max</th></tr>
+  <tr><td>Çaylak</td><td>0 – 500</td><td>%10</td></tr>
+  <tr><td>Tahminci</td><td>500 – 2000</td><td>%25</td></tr>
+  <tr><td>Üstad</td><td>2000+</td><td>%50</td></tr>
+</table>
+<p><strong>XP kaynakları:</strong> Tahmin açma, doğru bahis kazanma, günlük giriş, başarı görevleri. Level = f(xp) backend ve Flutter’da aynı.</p>
+<hr>
+
+<h2>5. Token Yenileme Stratejileri</h2>
+<h3>5.1 Günlük Giriş Bonusu</h3>
+<p><strong>DB:</strong> profile/lastDailyClaimAt. <strong>Backend:</strong> claimDailyBonus (Callable); aynı gün tekrar yok. <strong>Flutter:</strong> "Bugünkü bonusu al" butonu.</p>
+<h3>5.2 Başarı Görevleri</h3>
+<p>Örnek: "3 tahmin paylaş", "5 tahmine oy ver" → token/XP. DB: profile/achievements. Backend: tamamlama + ödül. Flutter: görev listesi ekranı.</p>
+<hr>
+
+<h2>6. Kademeli Cüzdan (Harcanabilir + Kilitli)</h2>
+<p><strong>Model:</strong> pegCount = harcanabilir; stashCount = kilitli. Kazanç payı: örn. %70 pegCount, %30 stashCount. Her 24 saatte pegCount=0 ve stashCount&gt;0 ise drip (örn. 200 token stash → pegCount).</p>
+<p><strong>DB:</strong> profile/stashCount, lastStashDripAt. Zamanlanmış fonksiyon: günde bir stash drip.</p>
+<hr>
+
+<h2>7. Flutter Tarafı Uyum</h2>
+<p>Bahis: Sadece placeBet Callable çağrılır; doğrudan DB yazımı kaldırılır. maxVal = f(bakiye, xp, havuz). constant.dart ve user.dart’a xp, stashCount, rütbe sabitleri eklenir.</p>
+<hr>
+
+<h2>8. Özet Checklist (Uygulama Sırası)</h2>
+<table>
+  <tr><th>Sıra</th><th>Öğe</th><th>Backend</th><th>Flutter</th></tr>
+  <tr><td>1</td><td>placeBet + limitler</td><td>Callable; validasyon + atomik güncelleme</td><td>Callable çağrısı; DB yazımı kaldır</td></tr>
+  <tr><td>2</td><td>Rütbe/XP</td><td>profile xp/level; dağıtımda XP</td><td>maxVal, rütbe gösterimi</td></tr>
+  <tr><td>3</td><td>Günlük bonus</td><td>claimDailyBonus</td><td>"Bugünkü bonusu al" UI</td></tr>
+  <tr><td>4</td><td>Kademeli cüzdan</td><td>stashCount, drip schedule</td><td>stash gösterimi</td></tr>
+  <tr><td>5</td><td>Başarı görevleri</td><td>achievements + ödül</td><td>Görev listesi</td></tr>
+</table>
+<hr>
+
+<h2>9. Hata Kodları ve Mesajlar (placeBet)</h2>
+<table>
+  <tr><th>code</th><th>Mesaj</th></tr>
+  <tr><td>UNAUTHORIZED</td><td>Oturum açmanız gerekir.</td></tr>
+  <tr><td>INVALID_AMOUNT</td><td>Geçersiz bahis miktarı.</td></tr>
+  <tr><td>PREDICTION_NOT_FOUND</td><td>Tahmin bulunamadı.</td></tr>
+  <tr><td>PREDICTION_CLOSED</td><td>Bu tahmine artık bahis kapatıldı.</td></tr>
+  <tr><td>INSUFFICIENT_BALANCE</td><td>Yetersiz bakiye.</td></tr>
+  <tr><td>BET_LIMIT_USER</td><td>En fazla bakiyenizin %X'ini yatırabilirsiniz.</td></tr>
+  <tr><td>BET_LIMIT_POOL</td><td>Havuz henüz küçük, maksimum X token yatırılabilir.</td></tr>
+</table>
+<hr>
+<p><em>Bu belge yazılım mimarisi ve entegrasyon tasarımı içerir; geliştirme sırasında referans alınabilir.</em></p>
+
+</body>
+</html>
