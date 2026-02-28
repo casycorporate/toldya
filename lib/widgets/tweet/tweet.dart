@@ -21,6 +21,14 @@ import '../customWidgets.dart';
 import 'widgets/retweetWidget.dart';
 import 'widgets/tweetImage.dart';
 
+/// Statü etiketinin (Beklemede/İncelemede/AI reddi) kartta gösterilmesi gerekiyor mu?
+bool _showStatuBadge(int? statu) {
+  if (statu == null) return false;
+  return statu == Statu.statusPending ||
+      statu == Statu.statusPendingAiReview ||
+      statu == Statu.statusRejectedByAi;
+}
+
 class Toldya extends StatelessWidget {
   final FeedModel model;
   final Widget? trailing;
@@ -116,27 +124,29 @@ class Toldya extends StatelessWidget {
                   type: type,
                 ),
               ),
-              model.childRetwetkey == null
+              model.childRetoldyaKey == null
                   ? SizedBox.shrink()
                   : RetoldyaWidget(
-                      childRetwetkey: model.childRetwetkey!,
+                      childRetoldyaKey: model.childRetoldyaKey!,
                       type: type,
                       isImageAvailable:
                           model.imagePath != null && (model.imagePath?.isNotEmpty ?? false),
                     ),
-              Padding(
-                padding: EdgeInsets.only(
-                    left: type == ToldyaType.Detail ? 10 : 12, right: 12, bottom: 12),
-                child: ToldyaIconsRow(
-                  type: type,
-                  model: model,
-                  isTweetDetail: type == ToldyaType.Detail,
-                  iconColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
-                  iconEnableColor: ToldyaColor.ceriseRed,
-                  size: 20,
-                  scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
-                ),
-              ),
+              model.parentkey != null && model.childRetoldyaKey == null
+                  ? SizedBox.shrink()
+                  : Padding(
+                      padding: EdgeInsets.only(
+                          left: type == ToldyaType.Detail ? 10 : 12, right: 12, bottom: 12),
+                      child: ToldyaIconsRow(
+                        type: type,
+                        model: model,
+                        isTweetDetail: type == ToldyaType.Detail,
+                        iconColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
+                        iconEnableColor: ToldyaColor.ceriseRed,
+                        size: 20,
+                        scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
+                      ),
+                    ),
             ],
           ),
         ),
@@ -195,7 +205,30 @@ class _ToldyaBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
-                  customImage(context, data.profilePic ?? ''),
+                  Container(
+                    padding: EdgeInsets.all(2.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppNeon.orange.withOpacity(0.8),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppNeon.orange.withOpacity(0.2),
+                          blurRadius: 8,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Container(
+                        color: Theme.of(context).cardColor,
+                        padding: EdgeInsets.all(2),
+                        child: customProfileImage(context, data.profilePic, userId: data.userId, height: 44),
+                      ),
+                    ),
+                  ),
                   FutureBuilder(
                     future: authstate.getuserDetail(model.user?.userId ?? ''),
                     //  initialData: InitialData,
@@ -234,7 +267,7 @@ class _ToldyaBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SizedBox(width: 14),
-        Container(width: 44, height: 70, child: _userAvater(model.user?.userId ?? '')),
+        Container(width: 52, height: 78, child: _userAvater(model.user?.userId ?? '')),
         SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -248,14 +281,16 @@ class _ToldyaBody extends StatelessWidget {
                     child: Row(
                       children: <Widget>[
                         Flexible(
-                          child: TitleText(model.user?.displayName ?? '',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              overflow: TextOverflow.ellipsis),
+                          child: TitleText(
+                            model.user?.displayName ?? '',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            overflow: TextOverflow.ellipsis,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         SizedBox(width: 6),
-                        customText('· ${getEndTime(model.endDate ?? '')}',
-                            style: userNameStyle.copyWith(fontSize: 11)),
+                        _CountdownChip(endDate: model.endDate),
                       ],
                     ),
                   ),
@@ -316,7 +351,7 @@ class _ToldyaBody extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (model.statu == Statu.statusPendingAiReview || model.statu == Statu.statusRejectedByAi)
+              if (_showStatuBadge(model.statu))
                 Padding(
                   padding: EdgeInsets.only(top: 6),
                   child: Row(
@@ -375,10 +410,10 @@ class _ToldyaBody extends StatelessWidget {
                         style: GoogleFonts.sawarabiMincho(
                           fontSize: descriptionFontSize,
                           fontWeight: descriptionFontWeight,
-                          color: Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         urlStyle: TextStyle(
-                            color: Colors.blue,
+                            color: AppNeon.cyan,
                             fontSize: descriptionFontSize,
                             fontWeight: descriptionFontWeight),
                       ),
@@ -452,7 +487,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
-                  customImage(context, data.profilePic ?? ''),
+                  customProfileImage(context, data.profilePic, userId: data.userId),
                   // FutureBuilder(
                   //   future: authstate.getuserDetail(model.user.userId),
                   //   //  initialData: InitialData,
@@ -482,10 +517,10 @@ class _ToldyaDetailBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         model.parentkey != null &&
-                model.childRetwetkey == null &&
+                model.childRetoldyaKey == null &&
                 type != ToldyaType.ParentToldya
             ? ParentToldyaWidget(
-                childRetwetkey: model.parentkey!,
+                childRetoldyaKey: model.parentkey!,
                 type: ToldyaType.ParentToldya,
                 isImageAvailable: false,
                 trailing: trailing)
@@ -573,7 +608,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                   ),
                 ),
               ),
-              if (model.statu == Statu.statusPendingAiReview || model.statu == Statu.statusRejectedByAi)
+              if (_showStatuBadge(model.statu))
                 Padding(
                   padding: EdgeInsets.only(left: 16, right: 16, top: 8),
                   child: Row(
@@ -630,7 +665,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                           cprint(tag);
                         },
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: descriptionFontSize,
                           fontWeight: descriptionFontWeight,
                         ),
@@ -645,6 +680,44 @@ class _ToldyaDetailBody extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Belirgin geri sayım chip'i (acil hissi, okunaklı)
+class _CountdownChip extends StatelessWidget {
+  final String? endDate;
+
+  const _CountdownChip({Key? key, this.endDate}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final text = getEndTime(endDate ?? '');
+    if (text.isEmpty) return SizedBox.shrink();
+    final isUrgent = text == 'bitti' || text.contains('sn') || text.contains('dk');
+    final color = isUrgent ? AppNeon.red : Theme.of(context).primaryColor;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule, size: 12, color: color),
+          SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

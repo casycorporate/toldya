@@ -14,12 +14,13 @@ class AccountSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
         title: 'Account',
         subtitle: user.userName ?? '',
       ),
       body: ListView(
+        padding: EdgeInsets.symmetric(vertical: spacing8),
         children: <Widget>[
           HeaderWidget('Login'),
           SettingRowWidget(

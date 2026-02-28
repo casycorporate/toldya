@@ -17,11 +17,11 @@ class DisplayAndSoundPage extends StatelessWidget {
     await showModalBottomSheet(
       backgroundColor: Colors.transparent,
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
+            color: Theme.of(ctx).scaffoldBackgroundColor,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(15),
               topRight: Radius.circular(15),
@@ -44,7 +44,7 @@ class DisplayAndSoundPage extends StatelessWidget {
             width: 40,
             height: 5,
             decoration: BoxDecoration(
-              color: ToldyaColor.paleSky50,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -74,7 +74,7 @@ class DisplayAndSoundPage extends StatelessWidget {
             width: 40,
             height: 5,
             decoration: BoxDecoration(
-              color: ToldyaColor.paleSky50,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -107,7 +107,7 @@ class DisplayAndSoundPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(

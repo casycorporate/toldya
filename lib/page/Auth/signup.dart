@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:bendemistim/helper/constant.dart';
 import 'package:bendemistim/helper/enum.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/model/user.dart';
 import 'package:bendemistim/page/Auth/signin.dart';
 import 'package:bendemistim/page/Auth/widget/bezierContainer.dart';
@@ -37,6 +38,7 @@ class _SignupState extends State<Signup> {
     _confirmController = TextEditingController();
   }
 
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -46,49 +48,45 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _body(BuildContext context) {
-
-    return  Container(
-        height: fullHeight(context),
-        child: Stack(
-          children: <Widget>[
-            Positioned(
-              top: -MediaQuery.of(context).size.height * .15,
-              right: -MediaQuery.of(context).size.width * .4,
-              child: BezierContainer(),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(height: fullHeight(context) * .2),
-                    _title(),
-                    SizedBox(
-                      height: 50,
-                    ),
-                            _entryFeild('İsim', controller: _nameController),
-                            _entryFeild('E-mail giriniz',
-                                controller: _emailController, isEmail: true),
-                            // _entryFeild('Mobile no',controller: _mobileController),
-                            _entryFeild('Şifre giriniz',
-                                controller: _passwordController, isPassword: true),
-                            _entryFeild('Tekrar şifre giriniz',
-                                controller: _confirmController, isPassword: true),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    _submitButton(context),
-                    SizedBox(height: fullHeight(context) * .14),
-                    _loginAccountLabel(),
-                  ],
-                ),
+    final theme = Theme.of(context);
+    return Container(
+      height: fullHeight(context),
+      color: theme.scaffoldBackgroundColor,
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            top: -MediaQuery.of(context).size.height * .15,
+            right: -MediaQuery.of(context).size.width * .4,
+            child: BezierContainer(),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(height: fullHeight(context) * .2),
+                  _title(),
+                  SizedBox(height: 50),
+                  _entryFeild('İsim', controller: _nameController),
+                  _entryFeild('E-mail giriniz',
+                      controller: _emailController, isEmail: true),
+                  _entryFeild('Şifre giriniz',
+                      controller: _passwordController, isPassword: true),
+                  _entryFeild('Tekrar şifre giriniz',
+                      controller: _confirmController, isPassword: true),
+                  SizedBox(height: 20),
+                  _submitButton(context),
+                  SizedBox(height: fullHeight(context) * .14),
+                  _loginAccountLabel(),
+                ],
               ),
             ),
-            Positioned(top: 40, left: 0, child: _backButton()),
-          ],
-        ),
+          ),
+          Positioned(top: 40, left: 0, child: _backButton()),
+        ],
+      ),
     );
     // return Container(
     //   height: fullHeight(context) - 88,
@@ -121,9 +119,10 @@ class _SignupState extends State<Signup> {
     // );
   }
   Widget _loginAccountLabel() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () {
-        var state = Provider.of<AuthState>(context,listen: false);
+        var state = Provider.of<AuthState>(context, listen: false);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -141,17 +140,20 @@ class _SignupState extends State<Signup> {
           children: <Widget>[
             Text(
               'Zaten bir hesabın var mı?',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: GoogleFonts.sawarabiMincho(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withOpacity(0.85),
+              ),
             ),
-            SizedBox(
-              width: 10,
-            ),
+            SizedBox(width: 10),
             Text(
               'Giriş Yap',
-              style: TextStyle(
-                  color: Color(0xfff79c4f),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600),
+              style: GoogleFonts.sawarabiMincho(
+                color: theme.colorScheme.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -160,44 +162,49 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _title() {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final primary = theme.colorScheme.primary;
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-          text: 'c',
-          style: GoogleFonts.portLligatSans(
-            textStyle: Theme.of(context).textTheme.headlineLarge,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: Color(0xffe46b10),
-          ),
-          children: [
-            TextSpan(
-              text: 'as',
-              style: TextStyle(color: Colors.black, fontSize: 30),
-            ),
-            TextSpan(
-              text: 'y',
-              style: TextStyle(color: Color(0xffe46b10), fontSize: 30),
-            ),
-          ]),
+        text: 't',
+        style: GoogleFonts.portLligatSans(
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          color: onSurface,
+        ),
+        children: [
+          TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30)),
+          TextSpan(text: 'ya', style: TextStyle(color: onSurface, fontSize: 30)),
+        ],
+      ),
     );
   }
 
   Widget _backButton() {
+    final theme = Theme.of(context);
     return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-      },
+      onTap: () => Navigator.pop(context),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: <Widget>[
             Container(
               padding: EdgeInsets.only(left: 0, top: 10, bottom: 10),
-              child: Icon(Icons.keyboard_arrow_left, color: Colors.black),
+              child: Icon(
+                Icons.keyboard_arrow_left,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-            Text('Geri',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))
+            Text(
+              'Geri',
+              style: GoogleFonts.sawarabiMincho(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
       ),
@@ -208,66 +215,76 @@ class _SignupState extends State<Signup> {
       {required TextEditingController controller,
       bool isPassword = false,
       bool isEmail = false}) {
+    final theme = Theme.of(context);
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 15),
+      margin: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(30),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: controller,
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-        style: TextStyle(
-          fontStyle: FontStyle.normal,
-          fontWeight: FontWeight.normal,
+        style: GoogleFonts.sawarabiMincho(
+          fontSize: 16,
+          color: theme.colorScheme.onSurface,
         ),
         obscureText: isPassword,
         decoration: InputDecoration(
           hintText: hint,
+          hintStyle: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            fontSize: 16,
+          ),
           border: InputBorder.none,
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(30.0),
-            ),
-            borderSide: BorderSide(color: Color(0xfff7892b)),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
-          contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         ),
       ),
     );
   }
 
   Widget _submitButton(BuildContext context) {
-    return GestureDetector(
-      onTap:_submitForm,
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(30)),
-            gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xfffbb448), Color(0xfff7892b)])),
-        child: Text(
-          'Hemen Kaydol',
-          style: TextStyle(fontSize: 20, color: Colors.white),
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _submitForm,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            color: theme.colorScheme.primary,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.35),
+                offset: Offset(0, 6),
+                blurRadius: 16,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Text(
+            'Hemen Kaydol',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
         ),
       ),
     );
-
-    // return Container(
-    //   margin: EdgeInsets.symmetric(vertical: 15),
-    //   width: MediaQuery.of(context).size.width,
-    //   child: FlatButton(
-    //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-    //     color: ToldyaColor.dodgetBlue,
-    //     onPressed: _submitForm,
-    //     padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-    //     child: Text('Kayıt', style: TextStyle(color: Colors.white)),
-    //   ),
-    // );
   }
 
   // void _googleLogin() {
@@ -290,19 +307,17 @@ class _SignupState extends State<Signup> {
   // }
 
   void _submitForm() {
-    if (_emailController.text.isEmpty) {
+    if (_nameController.text.isEmpty) {
       customSnackBar(_scaffoldKey, 'Lütfen isim giriniz');
       return;
     }
-    if (_emailController.text.length > 27) {
+    if (_nameController.text.length > 27) {
       customSnackBar(_scaffoldKey, 'İsim uzunluğu 27 karakteri geçemez');
       return;
     }
-    if (_emailController.text == null ||
-        _emailController.text.isEmpty ||
-        _passwordController.text == null ||
+    if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
-        _confirmController.text == null) {
+        _confirmController.text.isEmpty) {
       customSnackBar(_scaffoldKey, 'Lütfen formu dikkatlice doldurunuz');
       return;
     } else if (_passwordController.text != _confirmController.text) {
@@ -355,17 +370,11 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      // appBar: AppBar(
-      //   title: customText(
-      //     'Kaydol',
-      //     context: context,
-      //     style: TextStyle(fontSize: 20),
-      //   ),
-      //   centerTitle: true,
-      // ),
-      body: SingleChildScrollView(child: _body(context)),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: _body(context),
     );
   }
 }

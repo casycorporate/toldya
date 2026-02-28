@@ -11,13 +11,13 @@ class HeaderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: secondHeader ? EdgeInsets.only(left: 18, right: 18, bottom: 10, top: 35) : EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      color: ToldyaColor.mystic,
+      color: Theme.of(context).colorScheme.surface,
       alignment: Alignment.centerLeft,
       child: UrlText(
         text: title ?? '',
         style: TextStyle(
             fontSize: 20,
-            color: AppColor.darkGrey,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w700),
       ),
     );

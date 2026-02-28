@@ -32,6 +32,7 @@ import '../page/Auth/signup.dart';
 import '../page/feed/feedPostDetail.dart';
 import '../page/profile/EditProfilePage.dart';
 import '../page/profile/leaderboard/leaderboardPage.dart';
+import '../page/profile/token_earn_page.dart';
 import '../page/message/chatScreenPage.dart';
 import '../page/profile/profilePage.dart';
 import '../widgets/customWidgets.dart';
@@ -56,18 +57,21 @@ class Routes{
        return null;
      }
      switch (pathElements[1]) {
-      case "ComposeTweetPage": 
-        bool isRetweet = false;
-        bool isTweet = false;
-        if(pathElements.length == 3 && pathElements[2].contains('retweet')){
-          isRetweet = true;
+      case "ComposeToldyaPage": 
+        bool isRetoldya = false;
+        bool isToldya = false;
+        if(pathElements.length >= 3 && pathElements[2].contains('retoldya')){
+          isRetoldya = true;
         }
-        else if(pathElements.length == 3 && pathElements[2].contains('tweet')){
-          isTweet = true;
+        else if(pathElements.length == 3 && pathElements[2].contains('toldya')){
+          isToldya = true;
         }
-        return CustomRoute<bool>(builder:(BuildContext context)=> ChangeNotifierProvider<ComposeTweetState>(
-          create: (_) => ComposeTweetState(),
-          child: ComposeTweetPage(isRetweet:isRetweet, isTweet: isTweet),
+        else if(pathElements.length == 4 && pathElements[2] == 'toldya'){
+          isToldya = false;
+        }
+        return CustomRoute<bool>(builder:(BuildContext context)=> ChangeNotifierProvider<ComposeToldyaState>(
+          create: (_) => ComposeToldyaState(),
+          child: ComposeToldyaPage(isRetoldya: isRetoldya, isToldya: isToldya),
         ));
       case "FeedPostDetail":
         var postId = pathElements.length > 2 ? pathElements[2] : '';
@@ -77,9 +81,9 @@ class Routes{
         return CustomRoute<bool>(builder:(BuildContext context)=> ProfilePage(
           profileId: profileId,
         )); 
-      case "CreateFeedPage": return CustomRoute<bool>(builder:(BuildContext context)=> ChangeNotifierProvider<ComposeTweetState>(
-          create: (_) => ComposeTweetState(),
-          child: ComposeTweetPage(isRetweet:false, isTweet: true),
+      case "CreateFeedPage": return CustomRoute<bool>(builder:(BuildContext context)=> ChangeNotifierProvider<ComposeToldyaState>(
+          create: (_) => ComposeToldyaState(),
+          child: ComposeToldyaPage(isRetoldya:false, isToldya: true),
         ));
       case "WelcomePage":return CustomRoute<bool>(builder:(BuildContext context)=> WelcomePage());
       case "FeedPage":return CustomRoute<bool>(builder:(BuildContext context)=> FeedPage());
@@ -108,7 +112,8 @@ class Routes{
       case "ConversationInformation":return CustomRoute<bool>(builder:(BuildContext context)=> ConversationInformation(),); 
       case "FollowingListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowingListPage(),); 
       case "FollowerListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowerListPage(),); 
-      case "LeaderboardPage":return CustomRoute<bool>(builder:(BuildContext context)=> LeaderboardPage(),); 
+      case "LeaderboardPage":return CustomRoute<bool>(builder:(BuildContext context)=> LeaderboardPage(),);
+      case "TokenEarnPage":return CustomRoute<bool>(builder:(BuildContext context)=> TokenEarnPage(),); 
       case "VerifyEmailPage":return CustomRoute<bool>(builder:(BuildContext context)=> VerifyEmailPage(),); 
       default:return onUnknownRoute(RouteSettings(name: '/Feature'));
      }

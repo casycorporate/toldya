@@ -13,8 +13,8 @@ class EmptyList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: fullHeight(context) - 135,
-      color: ToldyaColor.mystic,
-      child: NotifyText(title: title,subTitle: subTitle,)
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: NotifyText(title: title, subTitle: subTitle)
     );
   }
 }
@@ -38,7 +38,7 @@ class NotifyText extends StatelessWidget {
             subTitle,
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: AppColor.darkGrey,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             textAlign: TextAlign.center,
           ),
         ],

@@ -33,7 +33,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
         chatState.setChatUser = user;
         Navigator.pushNamed(context, '/ChatScreenPage');
       },
-      leading: customImage(context, user.profilePic ?? '', height: 40),
+      leading: customProfileImage(context, user.profilePic, userId: user.userId, height: 40),
       title: Row(
         children: <Widget>[
           ConstrainedBox(
@@ -86,19 +86,26 @@ class _NewMessagePageState extends State<NewMessagePage> {
                   onChanged: (text) {
                     state.filterByUsername(text);
                   },
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                  ),
                   decoration: InputDecoration(
-                    hintText: "Search for people and groups",
-                    hintStyle: TextStyle(fontSize: 20),
+                    hintText: "Kişi veya grup ara",
+                    hintStyle: TextStyle(
+                      fontSize: 18,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
                     prefixIcon: customIcon(
                       context,
                       icon: AppIcon.search,
                       istwitterIcon: true,
-                      iconColor: ToldyaColor.woodsmoke_50,
+                      iconColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       size: 25,
                       paddingIcon: 5,
                     ),
                     border: InputBorder.none,
-                    fillColor: ToldyaColor.mystic,
+                    fillColor: Theme.of(context).colorScheme.surface,
                     filled: true,
                   ),
                 ),

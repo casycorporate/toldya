@@ -9,7 +9,7 @@ class SettingRowWidget extends StatelessWidget {
     Key? key,
     this.navigateTo,
     this.subtitle,
-    this.textColor = Colors.black,
+    this.textColor,
     this.onPressed,
     this.vPadding = 0,
     this.showDivider = true,
@@ -22,7 +22,7 @@ class SettingRowWidget extends StatelessWidget {
   final String? navigateTo;
   final String? subtitle;
   final String title;
-  final Color textColor;
+  final Color? textColor;
   final Function? onPressed;
   final double vPadding;
 
@@ -47,14 +47,17 @@ class SettingRowWidget extends StatelessWidget {
               ? null
               : UrlText(
                   text: title ?? '',
-                  style: TextStyle(fontSize: 16, color: textColor),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: textColor ?? Theme.of(context).colorScheme.onSurface),
                 ),
           subtitle: subtitle == null
               ? null
               : UrlText(
                   text: subtitle!,
                   style: TextStyle(
-                      color: ToldyaColor.paleSky, fontWeight: FontWeight.w400),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w400),
                 ),
           trailing: CustomCheckBox(isChecked:showCheckBox,visibleSwitch: visibleSwitch, )
               

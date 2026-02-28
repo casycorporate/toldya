@@ -49,6 +49,13 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        debug {
+            // Debug SHA-1 hash'ini görmek için: ./gradlew signingReport
+            // veya Android Studio'da: Gradle > app > Tasks > android > signingReport
+        }
+    }
+
     buildTypes {
         release {
             shrinkResources false

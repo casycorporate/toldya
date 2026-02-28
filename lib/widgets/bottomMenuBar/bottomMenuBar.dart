@@ -1,13 +1,50 @@
+import 'dart:math' as math;
 
-import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
-import 'package:bendemistim/helper/utility.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:bendemistim/helper/constant.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/state/appState.dart';
-import 'package:bendemistim/widgets/bottomMenuBar/tabItem.dart';
 import 'package:provider/provider.dart';
 import '../customWidgets.dart';
+
+/// Kavisli bar: üst köşeler yuvarlak, ortada FAB için yarım daire çentik.
+/// Guest (FAB rect) varsa ona göre, yoksa bar ortasına çentik çizer.
+class _CurvedNotchedRectangle extends NotchedShape {
+  const _CurvedNotchedRectangle({
+    this.cornerRadius = 16,
+    this.notchRadius = 28,
+  });
+
+  final double cornerRadius;
+  final double notchRadius;
+
+  @override
+  Path getOuterPath(Rect host, Rect? guest) {
+    final w = host.width;
+    final h = host.height;
+    final r = math.min(cornerRadius, math.min(h / 2, w / 4));
+    final nr = math.min(notchRadius, (h - 2) / 2);
+    final centerX = guest != null ? guest!.center.dx : host.center.dx;
+    final path = Path();
+
+    // Sol alt -> sol üst (yuvarlak köşe)
+    path.moveTo(0, h);
+    path.lineTo(0, r);
+    path.arcToPoint(Offset(r, 0), radius: Radius.circular(r), clockwise: false);
+    // Üst kenar -> çentiğin sol ucu
+    path.lineTo(centerX - nr, 0);
+    // Çentik: aşağı inen yarım daire (arcTo ile açık açı)
+    final notchRect = Rect.fromLTWH(centerX - nr, 0, nr * 2, nr * 2);
+    path.arcTo(notchRect, math.pi, math.pi, false);
+    // Üst kenar -> sağ üst
+    path.lineTo(w - r, 0);
+    path.arcToPoint(Offset(w, r), radius: Radius.circular(r), clockwise: false);
+    path.lineTo(w, h);
+    path.close();
+    return path;
+  }
+}
 
 class BottomMenubar extends StatefulWidget{
   final IconData? iconData;
@@ -54,106 +91,88 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     // _controller.dispose();
     super.dispose();
   }
-  Widget _iconRow(){
-    var state = Provider.of<AppState>(context,);
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, boxShadow: [
-            BoxShadow(
-                color: Colors.black12, offset: Offset(0,-.1), blurRadius: 0)
-          ]),
-      child:  Row(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  _icon(widget.iconData ?? Icons.home,0,icon:0 == state.pageIndex ? AppIcon.homeFill : AppIcon.home,isCustomIcon:true),
-                  _icon(widget.iconData ?? Icons.search,1,icon:1 == state.pageIndex ? AppIcon.searchFill : AppIcon.search,isCustomIcon:true),
-                  _icon(widget.iconData ?? Icons.notifications,2,icon: 2 == state.pageIndex ? AppIcon.notificationFill : AppIcon.notification,isCustomIcon:true),
-                  // _icon(null,3,icon:3 == state.pageIndex ? AppIcon.messageFill :AppIcon.messageEmpty,isCustomIcon:true),
-                ],
-              ),
-    );
-  }
-  Widget _icon(IconData iconData,int index,{bool isCustomIcon = false, IconData? icon}){
-    var state = Provider.of<AppState>(context,);
-    return Expanded(
-      child:  Container(
-            height: double.infinity,
-            width: double.infinity,
-            child: AnimatedAlign(
-              duration: Duration(milliseconds: ANIM_DURATION),
-              curve: Curves.easeIn,
-              alignment: Alignment(0,  ICON_ON),
-              child: AnimatedOpacity(
-                duration: Duration(milliseconds: ANIM_DURATION),
-                opacity:  ALPHA_ON,
-                child: IconButton(
-                  highlightColor: Colors.transparent,
-                  splashColor: Colors.transparent,
-                  padding: EdgeInsets.all(0),
-                  alignment: Alignment(0, 0),
-                  icon: isCustomIcon ? customIcon(context,icon: icon ?? iconData, size: 22, istwitterIcon: true, isEnable: index == state.pageIndex) :
-                  Icon(iconData,
-                   color:index == state.pageIndex ? Theme.of(context).primaryColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
-                  ),
-                  onPressed: () {
-                      setState(() {
-                        state.setpageIndex = index;
-                      });
-                  },
-                ),
-              ),
-            ),
-          ),
-    );
-  }
   final iconList = <IconData>[
-    Icons.home_filled,
+    Icons.home_outlined,
     Icons.search,
-    Icons.notifications,
-    Icons.account_box,
+    Icons.notifications_none,
+    Icons.person_outline,
   ];
-   // AnimationController _controller;
-   // Animation<double> animation;
- 
+
+  final labels = <String>[
+    'Ana',
+    'Arama',
+    'Bildirim',
+    'Profil',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    var state = Provider.of<AppState>(context,);
-     return AnimatedBottomNavigationBar.builder(
-       itemCount: iconList.length,
-       tabBuilder: (int index, bool isActive) {
-         final color = isActive ? HexColor('#FFA400') : Colors.white;
-         return Column(
-           mainAxisSize: MainAxisSize.min,
-           mainAxisAlignment: MainAxisAlignment.center,
-           children: [
-             Icon(
-               iconList[index],
-               size: 24,
-               color: color,
-             ),
-             // const SizedBox(height: 4),
-             // Padding(
-             //   padding: const EdgeInsets.symmetric(horizontal: 8),
-             //   child: Text(
-             //     "brightness $index",
-             //     maxLines: 1,
-             //     style: TextStyle(color: color),
-             //   ),
-             // )
-           ],
-         );
-       },
-       backgroundColor: HexColor('#373A36'),
-       activeIndex: state.pageIndex,
-       splashColor: HexColor('#FFA400'),
-       splashSpeedInMilliseconds: 300,
-       notchSmoothness: NotchSmoothness.verySmoothEdge,
-       gapLocation: GapLocation.center,
-       leftCornerRadius: 32,
-       rightCornerRadius: 32,
-       onTap: (index) => setState(() => state.setpageIndex = index),
-     );
-   }
+    var state = Provider.of<AppState>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final barColor = isDark ? AppColor.surfaceDark : theme.cardColor;
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      clipBehavior: Clip.antiAlias,
+      elevation: 0,
+      color: barColor,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.dividerColor.withOpacity(isDark ? 0.7 : 0.3),
+              width: 0.6,
+            ),
+          ),
+        ),
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navIcon(context, state, 0),
+              _navIcon(context, state, 1),
+              const SizedBox(width: 56),
+              _navIcon(context, state, 2),
+              _navIcon(context, state, 3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navIcon(BuildContext context, AppState state, int index) {
+    final isActive = state.pageIndex == index;
+    final theme = Theme.of(context);
+    final Color activeColor = Colors.white;
+    final Color inactiveColor =
+        theme.colorScheme.onSurface.withOpacity(0.6);
+    final color = isActive ? activeColor : inactiveColor;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => state.setpageIndex = index),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 6.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(iconList[index], size: 24, color: color),
+              const SizedBox(height: 2),
+              Text(
+                labels[index],
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 

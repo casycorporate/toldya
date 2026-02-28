@@ -38,7 +38,7 @@ class _ChatListPageState extends State<ChatListPage> {
     final searchState = Provider.of<SearchState>(context, listen: false);
     if (state.chatUserList == null) {
       return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30),
+        padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
         child: EmptyList(
           'No message available ',
           subTitle:
@@ -53,6 +53,7 @@ class _ChatListPageState extends State<ChatListPage> {
       final chatList = state.chatUserList ?? [];
       return ListView.separated(
         physics: BouncingScrollPhysics(),
+        padding: EdgeInsets.symmetric(vertical: spacing8),
         itemCount: chatList.length,
         itemBuilder: (context, index) {
           final ul = searchState.userlist;
@@ -72,10 +73,11 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   Widget _userCard(UserModel model, ChatMessage lastMessage) {
+    final theme = Theme.of(context);
     return Container(
-      color: Colors.white,
+      color: theme.scaffoldBackgroundColor,
       child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 10),
+        contentPadding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 4),
         onTap: () {
           final chatState = Provider.of<ChatState>(context, listen: false);
           final searchState = Provider.of<SearchState>(context, listen: false);
@@ -93,19 +95,7 @@ class _ChatListPageState extends State<ChatListPage> {
             Navigator.of(context).pushNamed('/ProfilePage/${model.userId}');
           },
           borderRadius: BorderRadius.circular(28),
-          child: Container(
-            height: 56,
-            width: 56,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 2),
-              borderRadius: BorderRadius.circular(28),
-              image: DecorationImage(
-                  image: customAdvanceNetworkImage(
-                    model.profilePic ?? dummyProfilePic,
-                  ),
-                  fit: BoxFit.cover),
-            ),
-          ),
+          child: customProfileImage(context, model.profilePic, userId: model.userId, height: 56),
         ),
         title: TitleText(
           model.displayName ?? "NA",
@@ -115,7 +105,9 @@ class _ChatListPageState extends State<ChatListPage> {
         ),
         subtitle: customText(
           getLastMessage(lastMessage.message) ?? '@${model.displayName}',
-          style: onPrimarySubTitleText.copyWith(color: Colors.black54),
+          context: context,
+          style: onPrimarySubTitleText.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
         trailing: lastMessage == null
             ? SizedBox.shrink()
@@ -168,7 +160,7 @@ class _ChatListPageState extends State<ChatListPage> {
         onActionPressed: onSettingIconPressed,
       ),
       floatingActionButton: _newMessageButton(),
-      backgroundColor: ToldyaColor.mystic,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _body(),
     );
   }

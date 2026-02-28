@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class GoogleLoginButton extends StatelessWidget {
@@ -43,33 +44,48 @@ class GoogleLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? theme.colorScheme.surface : Colors.white;
+    final textColor = theme.colorScheme.onSurface.withOpacity(0.9);
     return RippleButton(
       onPressed: () => _googleLogin(context),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Color(0xffeeeeee),
-              blurRadius: 15,
-              offset: Offset(5, 5),
-            ),
-          ],
+          color: bgColor,
+          borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.4),
+            width: 1,
+          ),
+          boxShadow: isDark
+              ? null
+              : <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0xffeeeeee),
+                    blurRadius: 15,
+                    offset: Offset(5, 5),
+                  ),
+                ],
         ),
         child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             Image.asset(
               'assets/images/google_logo.png',
-              height: 20,
-              width: 20,
+              height: 22,
+              width: 22,
             ),
-            SizedBox(width: 10),
-            TitleText(
+            SizedBox(width: 12),
+            Text(
               'Google ile Bağlan',
-              color: Colors.black54,
+              style: GoogleFonts.sawarabiMincho(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
             ),
           ],
         ),

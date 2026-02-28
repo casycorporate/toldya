@@ -8,7 +8,7 @@ import 'package:bendemistim/helper/enum.dart';
 import 'package:bendemistim/model/feedModel.dart';
 import 'package:bendemistim/state/searchState.dart';
 
-class ComposeTweetState extends ChangeNotifier {
+class ComposeToldyaState extends ChangeNotifier {
   bool showUserList = false;
   bool enableSubmitButton = false;
   bool hideUserList = false;
@@ -185,7 +185,7 @@ class ComposeTweetState extends ChangeNotifier {
         "receiverId": user.userId ?? '',
         "title": "title",
         "body": "",
-        "tweetId": ""
+        "toldyaId": ""
       },
       'to': user.fcmToken
     });
@@ -259,7 +259,7 @@ class ComposeTweetState extends ChangeNotifier {
         "receiverId": user.userId ?? '',
         "title": "başlıkkk",
         "body": "deneme body",
-        "tweetId":model.key
+        "toldyaId":model.key
       },
       'to': user.fcmToken
     });

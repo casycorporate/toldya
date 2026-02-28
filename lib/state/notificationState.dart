@@ -70,9 +70,9 @@ class NotificationState extends AppState {
         if (snapshot.value != null) {
           var map = snapshot.value as Map<dynamic, dynamic>;
           if (map != null) {
-            map.forEach((tweetKey, value) {
+            map.forEach((toldyaKey, value) {
               var map = value as Map<dynamic, dynamic>;
-              var model = NotificationModel.fromJson(tweetKey, map);
+              var model = NotificationModel.fromJson(toldyaKey, map);
               addNotificationList(model);
             });
             _notificationList!
@@ -88,13 +88,13 @@ class NotificationState extends AppState {
   }
 
   /// get `Tweet` present in notification
-  Future<FeedModel?> getTweetDetail(String tweetId) async {
-    var event = await kDatabase.child('tweet').child(tweetId).once();
+  Future<FeedModel?> getToldyaDetail(String toldyaId) async {
+    var event = await kDatabase.child('toldya').child(toldyaId).once();
     if (event.snapshot.value != null) {
       var map = event.snapshot.value as Map<dynamic, dynamic>;
-      var _tweetDetail = FeedModel.fromJson(map);
-      _tweetDetail.key = event.snapshot.key;
-      return _tweetDetail;
+      var _toldyaDetail = FeedModel.fromJson(map);
+      _toldyaDetail.key = event.snapshot.key;
+      return _toldyaDetail;
     }
     return null;
   }
@@ -117,8 +117,8 @@ class NotificationState extends AppState {
   }
 
   /// Remove notification if related Tweet is not found or deleted
-  void removeNotification(String userId, String tweetkey) async {
-    kDatabase.child('notification').child(userId).child(tweetkey).remove();
+  void removeNotification(String userId, String toldyaKey) async {
+    kDatabase.child('notification').child(userId).child(toldyaKey).remove();
   }
 
   /// Trigger when somneone like your tweet
@@ -148,7 +148,7 @@ class NotificationState extends AppState {
       var map = event.snapshot.value as Map<dynamic, dynamic>;
       var model = NotificationModel.fromJson(event.snapshot.key ?? '', map);
       // remove notification from list
-      _notificationList?.removeWhere((x) => x.tweetKey == model.tweetKey);
+      _notificationList?.removeWhere((x) => x.toldyaKey == model.toldyaKey);
       notifyListeners();
       print("Notification Removed");
     }

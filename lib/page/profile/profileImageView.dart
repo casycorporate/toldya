@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bendemistim/helper/constant.dart';
 import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/page/profile/profilePage.dart';
@@ -18,7 +19,7 @@ class ProfileImageView extends StatelessWidget {
     ];
     var authstate = Provider.of<AuthState>(context, listen: false);
     return Scaffold(
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         actions: <Widget>[
           PopupMenuButton<Choice>(
@@ -47,18 +48,27 @@ class ProfileImageView extends StatelessWidget {
       ),
       body: Center(
         child: InteractiveViewer(
-          child: Container(
-            alignment: Alignment.center,
-            width: fullWidth(context),
-            // height: fullWidth(context),
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: customAdvanceNetworkImage(
-                    authstate.profileUserModel?.profilePic ?? ''),
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
+          child: _buildProfileImage(context, authstate),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(BuildContext context, AuthState authstate) {
+    final profilePic = authstate.profileUserModel?.profilePic;
+    final path = (profilePic != null && profilePic.trim().isNotEmpty)
+        ? profilePic
+        : DefaultProfilePics.assetForUser(authstate.profileUserModel?.userId);
+    final isAsset = path.startsWith('assets/');
+    return Container(
+      alignment: Alignment.center,
+      width: fullWidth(context),
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: isAsset
+              ? AssetImage(path)
+              : customAdvanceNetworkImage(path),
+          fit: BoxFit.contain,
         ),
       ),
     );

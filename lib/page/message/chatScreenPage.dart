@@ -54,7 +54,10 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       return Center(
         child: Text(
           'No message found',
-          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       );
     }
@@ -93,9 +96,15 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
             ),
             myMessage
                 ? SizedBox()
-                : CircleAvatar(
-                    backgroundColor: Colors.transparent,
-                    backgroundImage: customAdvanceNetworkImage(userImage),
+                : SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: customProfileImage(
+                      context,
+                      userImage.isEmpty ? null : userImage,
+                      userId: state.chatUser?.userId,
+                      height: 36,
+                    ),
                   ),
             Expanded(
               child: Container(
@@ -113,20 +122,22 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
                       decoration: BoxDecoration(
                         borderRadius: getBorder(myMessage),
                         color: myMessage
-                            ? ToldyaColor.dodgetBlue
-                            : ToldyaColor.mystic,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surface,
                       ),
                       child: UrlText(
                         text: chat.message,
                         style: TextStyle(
                           fontSize: 16,
-                          color: myMessage ? ToldyaColor.white : Colors.black,
+                          color: myMessage
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                         urlStyle: TextStyle(
                           fontSize: 16,
                           color: myMessage
-                              ? ToldyaColor.white
-                              : ToldyaColor.dodgetBlue,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.primary,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -144,10 +155,11 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              backgroundColor: ToldyaColor.white,
+                              backgroundColor: Theme.of(context).colorScheme.surface,
                               content: Text(
                                 'Message copied',
-                                style: TextStyle(color: Colors.black),
+                                style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface),
                               ),
                             ),
                           );
@@ -196,14 +208,23 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
               submitMessage();
             },
             controller: messageController,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 16,
+            ),
             decoration: InputDecoration(
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 10, vertical: 13),
               alignLabelWithHint: true,
-              hintText: 'Start with a message...',
-              suffixIcon:
-                  IconButton(icon: Icon(Icons.send), onPressed: submitMessage),
-              // fillColor: Colors.black12, filled: true
+              hintText: 'Mesaj yazın...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                fontSize: 16,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
+                onPressed: submitMessage,
+              ),
             ),
           ),
         ],
@@ -278,18 +299,20 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
               UrlText(
                 text: state.chatUser.displayName,
                 style: TextStyle(
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
                     fontWeight: FontWeight.bold),
               ),
               Text(
                 state.chatUser?.userName ?? '',
-                style: TextStyle(color: AppColor.darkGrey, fontSize: 15),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 15),
               )
             ],
           ),
-          iconTheme: IconThemeData(color: Colors.blue),
-          backgroundColor: Colors.white,
+          iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           actions: <Widget>[
             IconButton(
                 icon: Icon(Icons.info, color: AppColor.primary),

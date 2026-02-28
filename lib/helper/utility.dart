@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bendemistim/model/feedModel.dart';
 import 'package:bendemistim/model/userPegModel.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -47,7 +48,24 @@ bool isBettingClosed(int? statu, String? endDate) {
   }
 }
 
+/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten bahis yaptıysa true.
+/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek bahis kuralı ihlali.
+bool userAlreadyBetOnOtherSide(FeedModel model, String? userId, int commentFlag) {
+  if (userId == null || userId.isEmpty) return false;
+  if (commentFlag == 0) return (model.unlikeList ?? []).any((e) => e.userId == userId);
+  return (model.likeList ?? []).any((e) => e.userId == userId);
+}
+
 /// Gönderi statu değeri için kısa etiket (UI’da kullanılır).
+/// statu değerini int'e çevirir (Firebase/JSON'dan gelen dynamic tip için).
+int? parseStatu(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
 String getStatuLabel(int? statu) {
   if (statu == null) return '';
   switch (statu) {
@@ -147,6 +165,47 @@ String getEndTime(String date) {
     msg = 'bitti';
   }
   return msg;
+}
+
+/// Görsel: "2d 14h 35m 12s" formatı (parlak kırmızı countdown)
+String getCountdownLong(String? date) {
+  if (date == null || date.isEmpty) return '';
+  try {
+    final dt = DateTime.parse(date).toLocal();
+    if (DateTime.now().toLocal().isAfter(dt)) return 'Bitti';
+    final d = dt.difference(DateTime.now().toLocal());
+    final days = d.inDays;
+    final hours = d.inHours % 24;
+    final minutes = d.inMinutes % 60;
+    final seconds = d.inSeconds % 60;
+    final parts = <String>[];
+    if (days > 0) parts.add('${days}d');
+    parts.add('${hours}h');
+    parts.add('${minutes}m');
+    parts.add('${seconds}s');
+    return parts.join(' ');
+  } catch (_) {
+    return '';
+  }
+}
+
+/// Kalan süre oranı (0.0 = bitti, 1.0 = tam süre). Daire göstergesi için.
+double getCountdownProgress(String? endDate, String? createdAt) {
+  if (endDate == null || endDate.isEmpty) return 0;
+  try {
+    final end = DateTime.parse(endDate).toLocal();
+    final now = DateTime.now().toLocal();
+    if (now.isAfter(end)) return 0;
+    final start = createdAt != null && createdAt.isNotEmpty
+        ? DateTime.parse(createdAt).toLocal()
+        : now.subtract(Duration(days: 7));
+    final total = end.difference(start).inSeconds;
+    final remaining = end.difference(now).inSeconds;
+    if (total <= 0) return 1;
+    return (remaining / total).clamp(0.0, 1.0);
+  } catch (_) {
+    return 0.5;
+  }
 }
 
 String getPollTime(String date) {

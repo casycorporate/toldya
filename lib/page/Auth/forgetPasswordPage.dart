@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/page/Auth/widget/bezierContainer.dart';
 import 'package:bendemistim/state/authState.dart';
@@ -32,9 +33,11 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
     _focusNode.dispose();
     super.dispose();
   }
-  Widget _body(BuildContext context){
-    return  Container(
+  Widget _body(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
       height: fullHeight(context),
+      color: theme.scaffoldBackgroundColor,
       child: Stack(
         children: <Widget>[
           Positioned(
@@ -43,7 +46,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
             child: BezierContainer(),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -86,20 +89,19 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
 }
 
   Widget _backButton() {
+    final theme = Theme.of(context);
     return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-      },
+      onTap: () => Navigator.pop(context),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: <Widget>[
             Container(
               padding: EdgeInsets.only(left: 0, top: 10, bottom: 10),
-              child: Icon(Icons.keyboard_arrow_left, color: Colors.black),
+              child: Icon(Icons.keyboard_arrow_left, color: theme.colorScheme.onSurface),
             ),
-            Text('Back',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))
+            Text('Geri',
+                style: GoogleFonts.sawarabiMincho(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))
           ],
         ),
       ),
@@ -107,83 +109,73 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
   }
 
   Widget _title() {
+    final theme = Theme.of(context);
+    final onS = theme.colorScheme.onSurface;
+    final primary = theme.colorScheme.primary;
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-          text: 'c',
-          style: GoogleFonts.portLligatSans(
-            textStyle: Theme.of(context).textTheme.headlineLarge,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: Color(0xffe46b10),
-          ),
-          children: [
-            TextSpan(
-              text: 'as',
-              style: TextStyle(color: Colors.black, fontSize: 30),
-            ),
-            TextSpan(
-              text: 'y',
-              style: TextStyle(color: Color(0xffe46b10), fontSize: 30),
-            ),
-          ]),
+        text: 't',
+        style: GoogleFonts.portLligatSans(fontSize: 30, fontWeight: FontWeight.w700, color: onS),
+        children: [
+          TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30)),
+          TextSpan(text: 'ya', style: TextStyle(color: onS, fontSize: 30)),
+        ],
+      ),
     );
   }
-  Widget _entryFeild(String hint,{required TextEditingController controller,bool isPassword = false}){
-  return Container(
-    margin: EdgeInsets.symmetric(vertical: 15),
-    decoration: BoxDecoration(
-      color: Colors.grey.shade200,
-      borderRadius: BorderRadius.circular(30)
-    ),
-    child: TextField(
-      focusNode: _focusNode,
-      controller: controller,
-      keyboardType: TextInputType.emailAddress,
-      style: TextStyle(fontStyle: FontStyle.normal,fontWeight: FontWeight.normal),
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        hintText: hint,
-
-        border: InputBorder.none,
-        focusedBorder: OutlineInputBorder(
-           borderRadius: BorderRadius.all(Radius.circular(30.0)),
-              borderSide: BorderSide(color:  Color(0xfff7892b))),
-        contentPadding:EdgeInsets.symmetric(vertical: 15,horizontal: 10)
+  Widget _entryFeild(String hint, {required TextEditingController controller, bool isPassword = false}) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
       ),
-    ),
-  );
-}
-  Widget _submitButton(BuildContext context){
-    return GestureDetector(
-        onTap:_submit,
+      child: TextField(
+        focusNode: _focusNode,
+        controller: controller,
+        keyboardType: TextInputType.emailAddress,
+        style: GoogleFonts.sawarabiMincho(fontSize: 16, color: theme.colorScheme.onSurface),
+        obscureText: isPassword,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          border: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        ),
+      ),
+    );
+  }
+  Widget _submitButton(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _submit,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
         child: Container(
           width: MediaQuery.of(context).size.width,
-          padding: EdgeInsets.symmetric(vertical: 15),
+          padding: EdgeInsets.symmetric(vertical: 16),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(30)),
-              gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [Color(0xfffbb448), Color(0xfff7892b)])),
-          child: Text(
-            'Register Now',
-            style: TextStyle(fontSize: 20, color: Colors.white),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            color: theme.colorScheme.primary,
           ),
-        ));
-    // return Container(
-    //   margin: EdgeInsets.symmetric(vertical: 15),
-    //   width: MediaQuery.of(context).size.width,
-    //   child: FlatButton(
-    //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-    //     color: ToldyaColor.dodgetBlue,
-    //     onPressed:_submit,
-    //     padding: EdgeInsets.symmetric(horizontal: 30,vertical: 10),
-    //     child: Text('Submit',style:TextStyle(color: Colors.white)),
-    //   )
-    // );
+          child: Text(
+            'Şifre sıfırlama bağlantısı gönder',
+            style: GoogleFonts.sawarabiMincho(fontSize: 18, fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
+          ),
+        ),
+      ),
+    );
   }
+
   // Widget _label(){
   //   return Container(
   //     child:Column(
@@ -219,12 +211,8 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      // appBar: AppBar(
-      //   title: customText('Forget Password',context: context,style: TextStyle(fontSize: 20)),
-      //   centerTitle: true,
-      // ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _body(context),
     );
   }
-  
 }
