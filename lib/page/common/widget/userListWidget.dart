@@ -104,7 +104,7 @@ class UserTile extends StatelessWidget {
                 Navigator.of(context).pushNamed('/ProfilePage/' + (user.userId ?? ''));
               },
               borderRadius: BorderRadius.all(Radius.circular(60)),
-              child: customImage(context, user.profilePic ?? '', height: 55),
+              child: customProfileImage(context, user.profilePic, userId: user.userId, height: 55),
             ),
             title: Row(
               children: <Widget>[

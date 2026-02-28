@@ -30,7 +30,7 @@ class ConversationInformation extends StatelessWidget {
                         .pushNamed('/ProfilePage/' + (user?.userId ?? ''));
                   },
                   borderRadius: BorderRadius.circular(40),
-                  child: customImage(context, user.profilePic ?? '', height: 80),
+                  child: customProfileImage(context, user.profilePic, userId: user.userId, height: 80),
                 )),
           ),
           Row(
@@ -39,7 +39,7 @@ class ConversationInformation extends StatelessWidget {
               UrlText(
                 text: user.displayName ?? '',
                 style: onPrimaryTitleText.copyWith(
-                  color: Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20,
                 ),
               ),
@@ -60,8 +60,9 @@ class ConversationInformation extends StatelessWidget {
           ),
           customText(
             user.userName ?? '',
+            context: context,
             style: onPrimarySubTitleText.copyWith(
-              color: Colors.black54,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               fontSize: 15,
             ),
           ),
@@ -74,7 +75,7 @@ class ConversationInformation extends StatelessWidget {
   Widget build(BuildContext context) {
     var user = Provider.of<ChatState>(context).chatUser ?? UserModel();
     return Scaffold(
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
@@ -91,7 +92,7 @@ class ConversationInformation extends StatelessWidget {
           ),
           Container(
             height: 15,
-            color: ToldyaColor.mystic,
+            color: Theme.of(context).colorScheme.surface,
           ),
           SettingRowWidget(
             "Block ${user.userName}",

@@ -4,7 +4,7 @@ import 'package:bendemistim/model/userPegModel.dart';
 class FeedModel {
   String? key;
   String? parentkey;
-  String? childRetwetkey;
+  String? childRetoldyaKey;
   String? description;
   String? userId;
   int? likeCount;
@@ -14,7 +14,7 @@ class FeedModel {
   int? unlikeCount;
   List<UserPegModel>? unlikeList;
   int? commentCount;
-  int? retweetCount;
+  int? retoldyaCount;
   String? createdAt;
   /// Kapanış zamanı: Bahislerin kabul edilmeyeceği an (lock-in)
   String? endDate;
@@ -23,7 +23,7 @@ class FeedModel {
   String? imagePath;
   String? topic;
   List<String>? tags;
-  List<String>? replyTweetKeyList;
+  List<String>? replyToldyaKeyList;
   UserModel? user;
   List<String>? reportList;
   List<String>? favList;
@@ -47,7 +47,7 @@ class FeedModel {
     this.unlikeCount,
     this.unlikeList,
     this.commentCount,
-    this.retweetCount,
+    this.retoldyaCount,
     this.createdAt,
     this.endDate,
     this.imagePath,
@@ -57,11 +57,11 @@ class FeedModel {
     this.favList,
     this.user,
     this.topic,
-    this.replyTweetKeyList,
+    this.replyToldyaKeyList,
     this.parentkey,
     this.statu,
     this.feedResult,
-    this.childRetwetkey,
+    this.childRetoldyaKey,
     this.resolutionDate,
     this.oracleSource,
     this.oracleApiUrl,
@@ -77,7 +77,7 @@ class FeedModel {
       "likeCount": likeCount,
       "unlikeCount": unlikeCount,
       "commentCount": commentCount ?? 0,
-      "retweetCount": retweetCount ?? 0,
+      "retoldyaCount": retoldyaCount ?? 0,
       "createdAt": createdAt,
       "endDate": endDate,
       "imagePath": imagePath,
@@ -87,10 +87,10 @@ class FeedModel {
       "reportList": reportList,
       "favList": favList,
       "topic": topic,
-      "replyTweetKeyList": replyTweetKeyList,
+      "replyToldyaKeyList": replyToldyaKeyList,
       "user": user?.toJson(),
       "parentkey": parentkey,
-      "childRetwetkey": childRetwetkey,
+      "childRetoldyaKey": childRetoldyaKey,
       "statu": statu,
       "feedResult": feedResult,
       "resolutionDate": resolutionDate,
@@ -103,6 +103,14 @@ class FeedModel {
     };
   }
 
+  static int? _parseStatuMap(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   FeedModel.fromJson(Map<dynamic, dynamic> map) {
     key = map['key'];
     description = map['description'];
@@ -112,13 +120,13 @@ class FeedModel {
     likeCount = map['likeCount'] ?? 0;
     unlikeCount = map['unlikeCount'] ?? 0;
     commentCount = map['commentCount'];
-    retweetCount = map["retweetCount"] ?? 0;
+    retoldyaCount = map["retoldyaCount"] ?? map["retweetCount"] ?? 0;
     imagePath = map['imagePath'];
     createdAt = map['createdAt'];
     endDate = map['endDate'];
     imagePath = map['imagePath'];
     topic = map['topic'];
-    statu = map['statu'];
+    statu = _parseStatuMap(map['statu']);
     feedResult = map['feedResult'];
     resolutionDate = map['resolutionDate'];
     oracleSource = map['oracleSource'];
@@ -137,7 +145,7 @@ class FeedModel {
     //  username = map['username'];
     user = map['user'] != null ? UserModel.fromJson(map['user'] as Map<dynamic, dynamic>) : null;
     parentkey = map['parentkey'];
-    childRetwetkey = map['childRetwetkey'];
+    childRetoldyaKey = map['childRetoldyaKey'] ?? map['childRetwetkey'];
     if (map['tags'] != null) {
       tags = <String>[];
       (map['tags'] as Iterable).forEach((value) {
@@ -205,24 +213,25 @@ class FeedModel {
       unlikeCount = 0;
     }
 
-    if (map['replyTweetKeyList'] != null) {
-      replyTweetKeyList = <String>[];
-      for (final value in map['replyTweetKeyList'] as Iterable) {
-        replyTweetKeyList!.add(value.toString());
+    if (map['replyToldyaKeyList'] != null || map['replyTweetKeyList'] != null) {
+      final list = map['replyToldyaKeyList'] ?? map['replyTweetKeyList'];
+      replyToldyaKeyList = <String>[];
+      for (final value in list as Iterable) {
+        replyToldyaKeyList!.add(value.toString());
       }
-      commentCount = replyTweetKeyList!.length;
+      commentCount = replyToldyaKeyList!.length;
     } else {
-      replyTweetKeyList = [];
+      replyToldyaKeyList = [];
       commentCount = 0;
     }
   }
 
-  bool get isValidTweet {
+  bool get isValidToldya {
     final un = this.user?.userName;
     if (un != null && un.isNotEmpty) {
       return true;
     }
-    print("Invalid Tweet found. Id:- $key");
+    print("Invalid Toldya found. Id:- $key");
     return false;
   }
 }

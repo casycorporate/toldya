@@ -9,8 +9,9 @@ class UrlText extends StatelessWidget {
 
   UrlText({this.text, this.style, this.urlStyle, this.onHashTagPressed});
 
-  List<InlineSpan> getTextSpans() {
+  List<InlineSpan> getTextSpans(BuildContext context) {
     List<InlineSpan> widgets = <InlineSpan>[];
+    final defaultColor = Theme.of(context).colorScheme.onSurface;
     RegExp reg = RegExp(
         r"([#])\w+| [@]\w+|(https?|ftp|file|#)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]*");
     final textStr = text ?? '';
@@ -50,7 +51,7 @@ class UrlText extends StatelessWidget {
       } else {
         widgets.add(TextSpan(
             text: result.text,
-            style: style ?? TextStyle(color: Colors.black)));
+            style: style ?? TextStyle(color: defaultColor)));
       }
     }
     return widgets;
@@ -59,7 +60,7 @@ class UrlText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RichText(
-      text: TextSpan(children: getTextSpans()),
+      text: TextSpan(children: getTextSpans(context)),
     );
   }
 }

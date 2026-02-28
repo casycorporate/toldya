@@ -30,8 +30,8 @@ class _ImageViewPgeState extends State<ImageViewPge> {
 
   Widget _body() {
     var state = Provider.of<FeedState>(context);
-    final FeedModel? detailModel = state.tweetDetailModel?.isNotEmpty == true
-        ? state.tweetDetailModel!.last
+    final FeedModel? detailModel = state.toldyaDetailModel?.isNotEmpty == true
+        ? state.toldyaDetailModel!.last
         : state.toldyaToReplyModel;
     final String imagePath = detailModel?.imagePath ?? '';
 
@@ -39,7 +39,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
       children: <Widget>[
         SingleChildScrollView(
           child: Container(
-            color: Colors.brown.shade700,
+            color: Theme.of(context).scaffoldBackgroundColor,
             constraints: BoxConstraints(
               maxHeight: fullHeight(context),
             ),
@@ -64,7 +64,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                       alignment: Alignment.topLeft,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.brown.shade700.withAlpha(200),
+                        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
                       ),
                       child: Wrap(
                         children: <Widget>[
@@ -92,7 +92,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                         scaffoldKey: GlobalKey<ScaffoldState>(),
                       ),
                       Container(
-                        color: Colors.brown.shade700.withAlpha(200),
+                        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
                         padding:
                             EdgeInsets.only(right: 10, left: 10, bottom: 10),
                         child: TextField(
@@ -184,7 +184,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
         profilePic: pic,
         userId: authState.userId);
 
-    var detailList = state.tweetDetailModel;
+    var detailList = state.toldyaDetailModel;
     final FeedModel? currentDetail = detailList?.isNotEmpty == true
         ? detailList!.last
         : state.toldyaToReplyModel;

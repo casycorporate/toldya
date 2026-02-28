@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bendemistim/helper/enum.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/page/Auth/signup.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,63 +16,86 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-
   Widget _submitButton() {
-    return InkWell(
-      onTap: () {
-        var state = Provider.of<AuthState>(context,listen: false);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  SignIn(loginCallback: state.getCurrentUser),
-                            ),
-                          );
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 13),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(5)),
-            boxShadow: <BoxShadow>[
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          var state = Provider.of<AuthState>(context, listen: false);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  SignIn(loginCallback: state.getCurrentUser),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            color: theme.colorScheme.primary,
+            boxShadow: [
               BoxShadow(
-                  color: Color(0xffdf8e33).withAlpha(100),
-                  offset: Offset(2, 4),
-                  blurRadius: 8,
-                  spreadRadius: 2)
+                color: (theme.colorScheme.primary).withOpacity(0.35),
+                offset: Offset(0, 6),
+                blurRadius: 16,
+                spreadRadius: 0,
+              ),
             ],
-            color: Colors.white),
-        child: Text(
-          'Giriş',
-          style: TextStyle(fontSize: 20, color: Color(0xfff7892b)),
+          ),
+          child: Text(
+            'Giriş',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _signUpButton() {
-    return InkWell(
-      onTap: () {
-        var state = Provider.of<AuthState>(context,listen: false);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Signup(loginCallback: state.getCurrentUser),
-                  ),
-                );
-      },
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 13),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(5)),
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-        child: Text(
-          'Kayıt ol',
-          style: TextStyle(fontSize: 20, color: Colors.white),
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          var state = Provider.of<AuthState>(context, listen: false);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  Signup(loginCallback: state.getCurrentUser),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            border: Border.all(
+              color: theme.colorScheme.primary,
+              width: 2,
+            ),
+          ),
+          child: Text(
+            'Kayıt ol',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.primary,
+            ),
+          ),
         ),
       ),
     );
@@ -106,26 +130,45 @@ class _WelcomePageState extends State<WelcomePage> {
   // }
 
   Widget _title() {
-    return RichText(
-      textAlign: TextAlign.center,
-      text: TextSpan(
-          text: 'c',
-          style: GoogleFonts.portLligatSans(
-            textStyle: Theme.of(context).textTheme.displayLarge,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final primary = theme.colorScheme.primary;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            text: 't',
+            style: GoogleFonts.portLligatSans(
+              fontSize: 42,
+              fontWeight: FontWeight.w700,
+              color: onSurface,
+            ),
+            children: [
+              TextSpan(
+                text: 'old',
+                style: TextStyle(color: primary, fontSize: 42),
+              ),
+              TextSpan(
+                text: 'ya',
+                style: TextStyle(color: onSurface, fontSize: 42),
+              ),
+            ],
           ),
-          children: [
-            TextSpan(
-              text: 'as',
-              style: TextStyle(color: Colors.black, fontSize: 30),
-            ),
-            TextSpan(
-              text: 'y',
-              style: TextStyle(color: Colors.white, fontSize: 30),
-            ),
-          ]),
+        ),
+        SizedBox(height: 12),
+        Text(
+          'Tahminlerini paylaş, demiş mi dememiş mi gör.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.sawarabiMincho(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: theme.colorScheme.onSurface.withOpacity(0.75),
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 
@@ -152,48 +195,38 @@ class _WelcomePageState extends State<WelcomePage> {
   //   );
   // }
 
-  Widget _body(){
+  Widget _body() {
+    final theme = Theme.of(context);
     return Scaffold(
-      body:SingleChildScrollView(
-        child:Container(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(5)),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                    color: Colors.grey.shade200,
-                    offset: Offset(2, 4),
-                    blurRadius: 5,
-                    spreadRadius: 2)
-              ],
-              gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xfffbb448), Color(0xffe46b10)])),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _title(),
-              SizedBox(
-                height: 80,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(height: 40),
+                  _title(),
+                  SizedBox(height: 64),
+                  _submitButton(),
+                  SizedBox(height: 16),
+                  _signUpButton(),
+                  SizedBox(height: 32),
+                ],
               ),
-              _submitButton(),
-              SizedBox(
-                height: 20,
-              ),
-              _signUpButton(),
-              SizedBox(
-                height: 20,
-              ),
-              // _label()
-            ],
+            ),
           ),
         ),
       ),
     );
-
   }
   // Widget _body() {
   //   return SafeArea(
@@ -207,7 +240,7 @@ class _WelcomePageState extends State<WelcomePage> {
   //           Container(
   //             width: MediaQuery.of(context).size.width - 80,
   //             height: 40,
-  //             child: Image.asset('assets/images/icon-480.png'),
+  //             child: Image.asset('assets/images/casy.png'),
   //           ),
   //           Spacer(),
   //           TitleText(
@@ -260,12 +293,11 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var state = Provider.of<AuthState>(context,listen: false);
-    return Scaffold(
-      body: state.authStatus == AuthStatus.NOT_LOGGED_IN ||
-              state.authStatus == AuthStatus.NOT_DETERMINED
-          ? _body()
-          : HomePage(),
-    );
+    var state = Provider.of<AuthState>(context, listen: false);
+    if (state.authStatus == AuthStatus.NOT_LOGGED_IN ||
+        state.authStatus == AuthStatus.NOT_DETERMINED) {
+      return _body();
+    }
+    return HomePage();
   }
 }

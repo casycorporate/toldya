@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       var state = Provider.of<AppState>(context, listen: false);
       state.setpageIndex = 0;
-      initTweets();
+      initToldyas();
       initProfile();
       initSearch();
       initNotificaiton();
@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  void initTweets() {
+  void initToldyas() {
     var state = Provider.of<FeedState>(context, listen: false);
     state.databaseInit();
     state.getDataFromDatabase();
@@ -105,9 +105,9 @@ class _HomePageState extends State<HomePage> {
     else if (model.type == NotificationType.Mention.toString() &&
         model.receiverId == authstate.user?.uid) {
       var feedstate = Provider.of<FeedState>(context, listen: false);
-      feedstate.getpostDetailFromDatabase(model.tweetId);
-      Navigator.of(context).pushNamed('/FeedPostDetail/' + model.tweetId);
-       // Navigator.push(context, FeedPostDetail.getRoute(model.tweetId));
+      feedstate.getpostDetailFromDatabase(model.toldyaId);
+      Navigator.of(context).pushNamed('/FeedPostDetail/' + model.toldyaId);
+       // Navigator.push(context, FeedPostDetail.getRoute(model.toldyaId));
     }
   }
 
@@ -165,11 +165,8 @@ class _HomePageState extends State<HomePage> {
   // }
 
   Widget _body() {
-    // _checkNotification();
     return SafeArea(
-      child: Container(
-        child: _getPage(Provider.of<AppState>(context).pageIndex),
-      ),
+      child: _getPage(Provider.of<AppState>(context).pageIndex),
     );
   }
 
@@ -210,20 +207,35 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _floatingActionButton(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: "post",
-      elevation: 8,
-      backgroundColor: HexColor('#FFA400'),
-      child: customIcon(
-        context,
-        icon: AppIcon.moments,
-        istwitterIcon: true,
-        iconColor: Theme.of(context).colorScheme.onPrimary,
-        size: 25,
+    return Container(
+      height: 56,
+      width: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppNeon.green,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      onPressed: () {
-        Navigator.of(context).pushNamed('/CreateFeedPage/tweet');
-      },
+      child: Material(
+        color: Colors.transparent,
+        shape: CircleBorder(),
+        child: InkWell(
+          customBorder: CircleBorder(),
+          onTap: () => Navigator.of(context).pushNamed('/CreateFeedPage/toldya'),
+          child: Center(
+            child: Icon(
+              Icons.bolt,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -231,10 +243,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final bool showFab = MediaQuery.of(context).viewInsets.bottom==0.0;
     return Scaffold(
+      extendBody: true,
       resizeToAvoidBottomInset: true,
       key: _scaffoldKey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton:showFab? _floatingActionButton(context):null,
+      floatingActionButton: showFab ? _floatingActionButton(context) : null,
       bottomNavigationBar: BottomMenubar(),
       drawer: SidebarMenu(),
       body: _body(),

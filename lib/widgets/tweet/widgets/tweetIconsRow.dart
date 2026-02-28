@@ -65,10 +65,10 @@ class ToldyaIconsRow extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 4),
             child: LinearPercentIndicator(
               percent: getPercent(),
-              lineHeight: 8,
+              lineHeight: 10,
               animation: true,
               animationDuration: 600,
-              barRadius: Radius.circular(4),
+              barRadius: Radius.circular(5),
               leading: Text(
                 k_m_b_generator(sumOfVote(model.likeList ?? [])),
                 style: TextStyle(
@@ -85,7 +85,7 @@ class ToldyaIconsRow extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              backgroundColor: Color(0xFFE0E0E0),
+              backgroundColor: hayirColor.withOpacity(0.25),
               progressColor: evetColor,
             ),
           ),
@@ -120,11 +120,7 @@ class ToldyaIconsRow extends StatelessWidget {
 
   void _onVotePressed(BuildContext context, AuthState authState, int commentFlag) {
     final closed = isBettingClosed(model.statu, model.endDate);
-    if (!closed && (authState.userModel?.pegCount ?? 0) != 0) {
-      ToldyaBottomSheet().openRetoldyabottomSheet(
-          commentFlag, context,
-          type: type, model: model, scaffoldKey: scaffoldKey);
-    } else {
+    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
@@ -135,7 +131,24 @@ class ToldyaIconsRow extends StatelessWidget {
         duration: Duration(seconds: 2),
         backgroundColor: Colors.black87,
       ));
+      return;
     }
+    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 4),
+        backgroundColor: Colors.orange.shade800,
+      ));
+      return;
+    }
+    ToldyaBottomSheet().openRetoldyabottomSheet(
+        commentFlag, context,
+        type: type, model: model, scaffoldKey: scaffoldKey);
   }
 
   Widget _voteChip(BuildContext context, {
@@ -271,8 +284,8 @@ class ToldyaIconsRow extends StatelessWidget {
   Widget _likeCommentWidget(BuildContext context) {
     bool isLikeAvailable =
         ((model.likeCount ?? 0) > 0 || (model.unlikeCount ?? 0) > 0);
-    bool isRetweetAvailable = (model.retweetCount ?? 0) > 0;
-    bool isLikeRetweetAvailable = isRetweetAvailable || isLikeAvailable;
+    bool isRetoldyaAvailable = (model.retoldyaCount ?? 0) > 0;
+    bool isLikeRetoldyaAvailable = isRetoldyaAvailable || isLikeAvailable;
     return Column(
       children: <Widget>[
         Divider(
@@ -281,7 +294,7 @@ class ToldyaIconsRow extends StatelessWidget {
         ),
         AnimatedContainer(
             padding:
-                EdgeInsets.symmetric(vertical: isLikeRetweetAvailable ? 12 : 0),
+                EdgeInsets.symmetric(vertical: isLikeRetoldyaAvailable ? 12 : 0),
             duration: Duration(milliseconds: 500),
             child: AnimatedCrossFade(
               firstChild: SizedBox.shrink(),
@@ -325,7 +338,7 @@ class ToldyaIconsRow extends StatelessWidget {
                   : CrossFadeState.showSecond,
               duration: Duration(milliseconds: 300),
             )),
-        !isLikeRetweetAvailable
+        !isLikeRetoldyaAvailable
             ? SizedBox.shrink()
             : Divider(
                 endIndent: 10,

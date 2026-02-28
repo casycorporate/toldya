@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/page/Auth/signup.dart';
 import 'package:bendemistim/page/Auth/widget/bezierContainer.dart';
@@ -39,20 +40,22 @@ class _SignInState extends State<SignIn> {
     super.dispose();
   }
   Widget _body(BuildContext context) {
-    // _emailController.text="sinanylmaz07@gmail.com";
-    // _passwordController.text="1qa2ws3ED";
+    final theme = Theme.of(context);
     return Scaffold(
-        body: Container(
-          height: fullHeight(context),
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                  top: -fullHeight(context) * .15,
-                  right: -MediaQuery.of(context).size.width * .4,
-                  child: BezierContainer()),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: SingleChildScrollView(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        height: fullHeight(context),
+        color: theme.scaffoldBackgroundColor,
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              top: -fullHeight(context) * .15,
+              right: -MediaQuery.of(context).size.width * .4,
+              child: BezierContainer(),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -94,16 +97,18 @@ class _SignInState extends State<SignIn> {
                   ),
                 ),
               ),
-              Positioned(top: 40, left: 0, child: _backButton()),
-            ],
-          ),
-        ));
+            Positioned(top: 40, left: 0, child: _backButton()),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _createAccountLabel() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () {
-        var state = Provider.of<AuthState>(context,listen: false);
+        var state = Provider.of<AuthState>(context, listen: false);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -120,17 +125,20 @@ class _SignInState extends State<SignIn> {
           children: <Widget>[
             Text(
               'Henüz bir hesabın yok mu?',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: GoogleFonts.sawarabiMincho(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withOpacity(0.85),
+              ),
             ),
-            SizedBox(
-              width: 10,
-            ),
+            SizedBox(width: 10),
             Text(
               'Hemen kaydol',
-              style: TextStyle(
-                  color: Color(0xfff79c4f),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600),
+              style: GoogleFonts.sawarabiMincho(
+                color: theme.colorScheme.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -139,52 +147,65 @@ class _SignInState extends State<SignIn> {
   }
 
   Widget _divider() {
+    final theme = Theme.of(context);
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: <Widget>[
-          SizedBox(
-            width: 20,
+          SizedBox(width: 20),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Divider(
+                thickness: 1,
+                color: theme.dividerColor,
+              ),
+            ),
+          ),
+          Text(
+            'veya',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Divider(
                 thickness: 1,
+                color: theme.dividerColor,
               ),
             ),
           ),
-          Text('veya'),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Divider(
-                thickness: 1,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 20,
-          ),
+          SizedBox(width: 20),
         ],
       ),
     );
   }
   Widget _backButton() {
+    final theme = Theme.of(context);
     return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-      },
+      onTap: () => Navigator.pop(context),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: <Widget>[
             Container(
               padding: EdgeInsets.only(left: 0, top: 10, bottom: 10),
-              child: Icon(Icons.keyboard_arrow_left, color: Colors.black),
+              child: Icon(
+                Icons.keyboard_arrow_left,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-            Text('Geri',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))
+            Text(
+              'Geri',
+              style: GoogleFonts.sawarabiMincho(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
           ],
         ),
       ),
@@ -192,115 +213,114 @@ class _SignInState extends State<SignIn> {
   }
 
   Widget _title() {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final primary = theme.colorScheme.primary;
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-          text: 'c',
-          style: GoogleFonts.portLligatSans(
-            textStyle: Theme.of(context).textTheme.headlineLarge,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: Color(0xffe46b10),
-          ),
-          children: [
-            TextSpan(
-              text: 'as',
-              style: TextStyle(color: Colors.black, fontSize: 30),
-            ),
-            TextSpan(
-              text: 'y',
-              style: TextStyle(color: Color(0xffe46b10), fontSize: 30),
-            ),
-          ]),
+        text: 't',
+        style: GoogleFonts.portLligatSans(
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          color: onSurface,
+        ),
+        children: [
+          TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30)),
+          TextSpan(text: 'ya', style: TextStyle(color: onSurface, fontSize: 30)),
+        ],
+      ),
     );
   }
 
 
   Widget _entryFeild(String hint,
       {required TextEditingController controller, bool isPassword = false}) {
+    final theme = Theme.of(context);
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 15),
+      margin: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(30),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.emailAddress,
-        style: TextStyle(
-          fontStyle: FontStyle.normal,
-          fontWeight: FontWeight.normal,
+        style: GoogleFonts.sawarabiMincho(
+          fontSize: 16,
+          color: theme.colorScheme.onSurface,
         ),
         obscureText: isPassword,
         decoration: InputDecoration(
           hintText: hint,
+          hintStyle: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            fontSize: 16,
+          ),
           border: InputBorder.none,
           focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(30.0)),
-              borderSide: BorderSide(color:Color(0xfff7892b))),
-          contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         ),
       ),
     );
   }
 
   Widget _labelButton(String title, {VoidCallback? onPressed}) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onPressed,
       child: Text(
         title,
-        style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w500),
-      ),
-    );
-    // return FlatButton(
-    //   onPressed: () {
-    //     if (onPressed != null) {
-    //       onPressed();
-    //     }
-    //   },
-    //   splashColor: Colors.grey.shade200,
-    //   child: Text(
-    //     title,
-    //         style: TextStyle(
-    //             fontSize: 14, fontWeight: FontWeight.w500),
-    //   ),
-    // );
-  }
-
-  Widget _emailLoginButton(BuildContext context) {
-
-    return GestureDetector(
-      onTap: _emailLogin,
-      child:   Container(
-        width: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(30)),
-            gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xfffbb448), Color(0xfff7892b)])),
-        child: Text(
-          'Giriş',
-          style: TextStyle(fontSize: 20, color: Colors.white),
+        style: GoogleFonts.sawarabiMincho(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: theme.colorScheme.primary,
         ),
       ),
     );
+  }
 
-
-    // return Container(
-    //   width: fullWidth(context),
-    //   margin: EdgeInsets.symmetric(vertical: 35),
-    //   child: FlatButton(
-    //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-    //     color: ToldyaColor.dodgetBlue,
-    //     onPressed: _emailLogin,
-    //     padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-    //     child: TitleText('Kaydol', color: Colors.white),
-    //   ),
-    // );
+  Widget _emailLoginButton(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _emailLogin,
+        borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            color: theme.colorScheme.primary,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.35),
+                offset: Offset(0, 6),
+                blurRadius: 16,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Text(
+            'Giriş',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _emailLogin() {

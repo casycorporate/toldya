@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'package:cupertino_radio_choice/cupertino_radio_choice.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:bendemistim/helper/constant.dart';
 import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/topicMap.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/model/feedModel.dart';
 import 'package:bendemistim/model/user.dart';
@@ -21,19 +19,19 @@ import 'package:bendemistim/widgets/newWidget/title_text.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-class ComposeTweetPage extends StatefulWidget {
-  ComposeTweetPage({Key? key, bool? isRetweet, bool? isTweet = true})
-      : isRetweet = isRetweet ?? false,
-        isTweet = isTweet ?? true,
+class ComposeToldyaPage extends StatefulWidget {
+  ComposeToldyaPage({Key? key, bool? isRetoldya, bool? isToldya = true})
+      : isRetoldya = isRetoldya ?? false,
+        isToldya = isToldya ?? true,
         super(key: key);
 
-  final bool isRetweet;
-  final bool isTweet;
+  final bool isRetoldya;
+  final bool isToldya;
 
-  _ComposeTweetReplyPageState createState() => _ComposeTweetReplyPageState();
+  _ComposeToldyaReplyPageState createState() => _ComposeToldyaReplyPageState();
 }
 
-class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
+class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   bool isScrollingDown = false;
   late FeedModel model;
   late ScrollController scrollcontroller;
@@ -41,23 +39,11 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
 
   File? _image;
   late TextEditingController _textEditingController;
-  late TextEditingController _endDateController;
-  late TextEditingController _resolutionDateController;
-  late TextEditingController _oracleSourceController;
-  late TextEditingController _oracleApiUrlController;
-  late TextEditingController _collateralController;
-  late String endDate;
-  String _selectedTopic = 'spor';
 
   @override
   void dispose() {
     scrollcontroller.dispose();
     _textEditingController.dispose();
-    _endDateController.dispose();
-    _resolutionDateController.dispose();
-    _oracleSourceController.dispose();
-    _oracleApiUrlController.dispose();
-    _collateralController.dispose();
     super.dispose();
   }
 
@@ -68,357 +54,22 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
     scrollcontroller = ScrollController();
     _textEditingController = TextEditingController();
     scrollcontroller..addListener(_scrollListener);
-    _endDateController = TextEditingController();
-    _resolutionDateController = TextEditingController();
-    _oracleSourceController = TextEditingController();
-    _oracleApiUrlController = TextEditingController();
-    _collateralController = TextEditingController(text: '0');
-    final defaultDate = DateTime.now().add(const Duration(hours: 24));
-    _endDateController.text = defaultDate.toUtc().toString();
-    _resolutionDateController.text = defaultDate.add(const Duration(hours: 1)).toUtc().toString();
     super.initState();
-  }
-
-  Future<void> showPickerDateTime(BuildContext context) async {
-    final now = DateTime.now();
-    final minDate = now.add(const Duration(hours: 12));
-    final initialDate = _endDateController.text.isNotEmpty
-        ? DateTime.tryParse(_endDateController.text)?.toLocal() ?? minDate
-        : minDate;
-
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate.isAfter(minDate) ? initialDate : minDate,
-      firstDate: minDate,
-      lastDate: DateTime(now.year + 10),
-      helpText: "Bitiş tarihini seçiniz",
-    );
-    if (pickedDate == null || !mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate),
-      helpText: "Bitiş saatini seçiniz",
-    );
-    if (pickedTime == null || !mounted) return;
-
-    final combined = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-    setState(() {
-      _endDateController.text = combined.toUtc().toString();
-      if (DateTime.parse(_resolutionDateController.text).isBefore(combined)) {
-        _resolutionDateController.text = combined.add(const Duration(hours: 1)).toUtc().toString();
-      }
-    });
-  }
-
-  Future<void> showPickerResolutionDateTime(BuildContext context) async {
-    final closeDate = DateTime.tryParse(_endDateController.text) ?? DateTime.now().add(const Duration(hours: 24));
-    final minDate = closeDate;
-    final initialDate = _resolutionDateController.text.isNotEmpty
-        ? DateTime.tryParse(_resolutionDateController.text)?.toLocal() ?? minDate
-        : minDate.add(const Duration(hours: 1));
-
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate.isBefore(minDate) ? minDate : initialDate,
-      firstDate: minDate,
-      lastDate: DateTime(DateTime.now().year + 10),
-      helpText: "Sonuçlanma tarihini seçiniz",
-      cancelText: "İptal",
-      confirmText: "Tamam",
-    );
-    if (pickedDate == null || !mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate),
-      helpText: "Sonuçlanma saatini seçiniz",
-      cancelText: "İptal",
-      confirmText: "Tamam",
-    );
-    if (pickedTime == null || !mounted) return;
-
-    final combined = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-    if (combined.isBefore(closeDate)) return;
-    setState(() {
-      _resolutionDateController.text = combined.toUtc().toString();
-    });
-  }
-
-  Widget _dateTimePicker() {
-    final dateLabel = getPostTime2(_endDateController.text);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => showPickerDateTime(context),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColor.primary.withOpacity(0.4),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColor.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.calendar_today_rounded,
-                  color: AppColor.primary,
-                  size: 22,
-                ),
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Bitiş tarihi",
-                      style: GoogleFonts.crimsonPro(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodySmall?.color ?? AppColor.darkGrey,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      dateLabel,
-                      style: GoogleFonts.crimsonPro(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: AppColor.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.edit_calendar_rounded,
-                color: AppColor.primary.withOpacity(0.7),
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _resolutionDateTimePicker() {
-    final dateLabel = getPostTime2(_resolutionDateController.text);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => showPickerResolutionDateTime(context),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColor.primary.withOpacity(0.4),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColor.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.schedule_rounded,
-                  color: AppColor.primary,
-                  size: 22,
-                ),
-              ),
-              SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Sonuçlanma tarihi",
-                      style: GoogleFonts.crimsonPro(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodySmall?.color ?? AppColor.darkGrey,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      dateLabel,
-                      style: GoogleFonts.crimsonPro(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: AppColor.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.edit_calendar_rounded,
-                color: AppColor.primary.withOpacity(0.7),
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _oracleSourceField() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColor.primary.withOpacity(0.4),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.source_rounded, color: AppColor.primary, size: 22),
-          SizedBox(width: 14),
-          Expanded(
-            child: TextField(
-              controller: _oracleSourceController,
-              decoration: InputDecoration(
-                hintText: 'Kanıt kaynağı (örn: Resmi haber sitesi, maç skoru)',
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _oracleApiUrlField() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColor.primary.withOpacity(0.4),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.api_rounded, color: AppColor.primary, size: 22),
-          SizedBox(width: 14),
-          Expanded(
-            child: TextField(
-              controller: _oracleApiUrlController,
-              decoration: InputDecoration(
-                hintText: 'API URL (otomatik sonuç, opsiyonel)',
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _collateralField() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColor.primary.withOpacity(0.4),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.security_rounded, color: AppColor.primary, size: 22),
-          SizedBox(width: 14),
-          Expanded(
-            child: TextField(
-              controller: _collateralController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Teminat (Kapak, 0 = yok)',
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   _scrollListener() {
     if (scrollcontroller.position.userScrollDirection ==
         ScrollDirection.reverse) {
       if (!isScrollingDown) {
-        Provider.of<ComposeTweetState>(context, listen: false)
+        Provider.of<ComposeToldyaState>(context, listen: false)
             .setIsScrolllingDown = true;
       }
     }
     if (scrollcontroller.position.userScrollDirection ==
         ScrollDirection.forward) {
-      Provider.of<ComposeTweetState>(context, listen: false)
+      Provider.of<ComposeToldyaState>(context, listen: false)
           .setIsScrolllingDown = false;
     }
-  }
-
-  void onGenderSelected(String genderKey) {
-    setState(() {
-      _selectedTopic = genderKey;
-    });
   }
 
   void _onCrossIconPressed() {
@@ -440,34 +91,6 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
         _textEditingController.text.length > 280) {
       return;
     }
-    var dt = DateTime.parse(_endDateController.text.toString()).toLocal();
-    var dur = dt.difference(DateTime(
-        DateTime.now().year,
-        DateTime.now().month,
-        DateTime.now().day,
-        DateTime.now().hour + 12,
-        DateTime.now().minute).toLocal());
-    if (_endDateController.text == null ||
-        _endDateController.text.isEmpty ||
-        dur.inHours<0) {
-      customSnackBar(_scaffoldKey, '❗LÜTFEN BİTİŞ TARİHİNİ EN AZ 12 SAAT İÇİNDE BİTECEK DURUMDA AYARLAYINIZ ❗');
-      return;
-    }
-    final resolutionDt = DateTime.tryParse(_resolutionDateController.text);
-    if (resolutionDt != null && resolutionDt.isBefore(dt)) {
-      customSnackBar(_scaffoldKey, '❗Sonuçlanma tarihi kapanış tarihinden sonra olmalıdır ❗');
-      return;
-    }
-    final collateral = int.tryParse(_collateralController.text) ?? 0;
-    if (collateral < 0) {
-      customSnackBar(_scaffoldKey, '❗Teminat negatif olamaz ❗');
-      return;
-    }
-    final authState = Provider.of<AuthState>(context, listen: false);
-    if (collateral > 0 && (authState.userModel?.pegCount ?? 0) < collateral) {
-      customSnackBar(_scaffoldKey, '❗Teminat için yeterli Kapak bulunmuyor ❗');
-      return;
-    }
     var state = Provider.of<FeedState>(context, listen: false);
     kScreenloader.showLoader(context);
 
@@ -484,12 +107,12 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
           toldyaModel.imagePath = imagePath;
 
           /// If type of toldya is new toldya
-          if (widget.isTweet) {
+          if (widget.isToldya) {
             state.createToldya(toldyaModel);
           }
 
           /// If type of toldya is retoldya
-          else if (widget.isRetweet) {
+          else if (widget.isRetoldya) {
             state.createReToldya(toldyaModel);
           }
 
@@ -503,10 +126,10 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
 
     /// If toldya did not contain image
     else {
-      if (widget.isTweet) {
+      if (widget.isToldya) {
         state.createToldya(toldyaModel);
       }
-      else if (widget.isRetweet) {
+      else if (widget.isRetoldya) {
         state.createReToldya(toldyaModel);
       }
       else {
@@ -517,7 +140,7 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
     /// Checks for username in tweet description
     /// If foud sends notification to all tagged user
     /// If no user found or not compost tweet screen is closed and redirect back to home page.
-    await Provider.of<ComposeTweetState>(context, listen: false)
+    await Provider.of<ComposeToldyaState>(context, listen: false)
         .sendNotification(
             toldyaModel, Provider.of<SearchState>(context, listen: false))
         .then((_) {
@@ -525,7 +148,7 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
       kScreenloader.hideLoader();
 
       /// Yeni tahmin gönderisinde: inceleme alındı mesajı
-      if (widget.isTweet && mounted) {
+      if (widget.isToldya && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -550,13 +173,7 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
     var authState = Provider.of<AuthState>(context, listen: false);
     final userModel = authState.userModel!;
     userModel.rank = (userModel.rank ?? 0) + 2;
-    final collateral = int.tryParse(_collateralController.text) ?? 0;
-    if (collateral > 0 && widget.isTweet) {
-      userModel.pegCount = (userModel.pegCount ?? 0) - collateral;
-      authState.createUser(userModel);
-    } else {
-      authState.createUser(userModel);
-    }
+    authState.createUser(userModel);
     var myUser = userModel;
     var profilePic = myUser.profilePic ?? dummyProfilePic;
     var commentedUser = UserModel(
@@ -567,25 +184,27 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
         userName: authState.userModel?.userName ?? '');
     var tags = getHashTags(_textEditingController.text);
     FeedModel reply = FeedModel(
-        statu: widget.isTweet ? Statu.statusPendingAiReview : Statu.statusLive,
-        topic: _selectedTopic,
+        statu: (widget.isToldya || (state.toldyaToReplyModel != null && !widget.isRetoldya))
+            ? Statu.statusPendingAiReview
+            : Statu.statusLive,
+        topic: widget.isToldya ? null : state.toldyaToReplyModel?.topic,
         description: _textEditingController.text,
         user: commentedUser,
         createdAt: DateTime.now().toUtc().toString(),
-        endDate: _endDateController.text,
-        resolutionDate: widget.isTweet ? _resolutionDateController.text : null,
-        oracleSource: widget.isTweet ? (_oracleSourceController.text.trim().isEmpty ? null : _oracleSourceController.text.trim()) : null,
-        oracleApiUrl: widget.isTweet ? (_oracleApiUrlController.text.trim().isEmpty ? null : _oracleApiUrlController.text.trim()) : null,
-        collateralAmount: widget.isTweet ? (int.tryParse(_collateralController.text) ?? 0) : null,
+        endDate: null,
+        resolutionDate: null,
+        oracleSource: null,
+        oracleApiUrl: null,
+        collateralAmount: null,
         tags: tags,
-        parentkey: widget.isTweet
+        parentkey: widget.isToldya
             ? null
-            : widget.isRetweet
+            : widget.isRetoldya
                 ? null
                 : state.toldyaToReplyModel?.key,
-        childRetwetkey: widget.isTweet
+        childRetoldyaKey: widget.isToldya
             ? null
-            : widget.isRetweet
+            : widget.isRetoldya
                 ? model.key
                 : null,
         userId: myUser.userId);
@@ -600,25 +219,25 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
         title: customTitleText(''),
         onActionPressed: _submitButton,
         isCrossButton: true,
-        submitButtonText: widget.isTweet
+        submitButtonText: widget.isToldya
             ? 'diyorum'
-            : widget.isRetweet
+            : widget.isRetoldya
                 ? 'Retweet'
-                : 'Reply',
+                : 'Yorum Yap',
         isSubmitDisable:
-            !Provider.of<ComposeTweetState>(context).enableSubmitButton ||
+            !Provider.of<ComposeToldyaState>(context).enableSubmitButton ||
                 Provider.of<FeedState>(context).isBusy,
-        isbootomLine: Provider.of<ComposeTweetState>(context).isScrollingDown,
+        isbootomLine: Provider.of<ComposeToldyaState>(context).isScrollingDown,
       ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         child: Stack(
           children: <Widget>[
             SingleChildScrollView(
               controller: scrollcontroller,
-              child: widget.isRetweet
-                  ? _ComposeRetweet(this)
-                  : _ComposeTweet(this),
+              child: widget.isRetoldya
+                  ? _ComposeRetoldya(this)
+                  : _ComposeToldya(this),
             ),
             // Align(
             //   alignment: Alignment.bottomCenter,
@@ -634,11 +253,11 @@ class _ComposeTweetReplyPageState extends State<ComposeTweetPage> {
   }
 }
 
-class _ComposeRetweet
-    extends WidgetView<ComposeTweetPage, _ComposeTweetReplyPageState> {
-  _ComposeRetweet(this.viewState) : super(viewState);
+class _ComposeRetoldya
+    extends WidgetView<ComposeToldyaPage, _ComposeToldyaReplyPageState> {
+  _ComposeRetoldya(this.viewState) : super(viewState);
 
-  final _ComposeTweetReplyPageState viewState;
+  final _ComposeToldyaReplyPageState viewState;
 
   Widget _tweet(BuildContext context, FeedModel model) {
     return Column(
@@ -659,7 +278,7 @@ class _ComposeRetweet
                   Container(
                     width: 25,
                     height: 25,
-                    child: customImage(context, model.user?.profilePic ?? ''),
+                    child: customProfileImage(context, model.user?.profilePic, userId: model.user?.userId),
                   ),
                   SizedBox(width: 10),
                   ConstrainedBox(
@@ -701,7 +320,7 @@ class _ComposeRetweet
         UrlText(
           text: model.description ?? '',
           style: TextStyle(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
@@ -728,8 +347,8 @@ class _ComposeRetweet
               ),
               Expanded(
                 child: _TextField(
-                  isTweet: false,
-                  isRetweet: true,
+                  isToldya: false,
+                  isRetoldya: true,
                   textEditingController: viewState._textEditingController,
                 ),
               ),
@@ -740,7 +359,7 @@ class _ComposeRetweet
           ),
           Padding(
             padding: EdgeInsets.only(right: 16, left: 80, bottom: 8),
-            child: ComposeTweetImage(
+            child: ComposeToldyaImage(
               image: viewState._image,
               onCrossIconPressed: viewState._onCrossIconPressed,
             ),
@@ -776,11 +395,11 @@ class _ComposeRetweet
   }
 }
 
-class _ComposeTweet
-    extends WidgetView<ComposeTweetPage, _ComposeTweetReplyPageState> {
-  _ComposeTweet(this.viewState) : super(viewState);
+class _ComposeToldya
+    extends WidgetView<ComposeToldyaPage, _ComposeToldyaReplyPageState> {
+  _ComposeToldya(this.viewState) : super(viewState);
 
-  final _ComposeTweetReplyPageState viewState;
+  final _ComposeToldyaReplyPageState viewState;
 
   Widget _tweerCard(BuildContext context) {
     return Row(
@@ -808,7 +427,7 @@ class _ComposeTweet
                     child: UrlText(
                       text: viewState.model.description ?? '',
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),
@@ -822,9 +441,9 @@ class _ComposeTweet
                   SizedBox(height: 30),
                   UrlText(
                     text:
-                        'Replying to ${viewState.model.user?.userName ?? viewState.model.user?.displayName ?? ""}',
+                        '${viewState.model.user?.userName ?? viewState.model.user?.displayName ?? ""} tahminine yanıt',
                     style: TextStyle(
-                      color: ToldyaColor.paleSky,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -835,8 +454,8 @@ class _ComposeTweet
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                customImage(context, viewState.model.user?.profilePic ?? '',
-                    height: 40),
+                customProfileImage(context, viewState.model.user?.profilePic,
+                    userId: viewState.model.user?.userId, height: 40),
                 SizedBox(width: 10),
                 ConstrainedBox(
                   constraints: BoxConstraints(
@@ -884,27 +503,8 @@ class _ComposeTweet
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          viewState.widget.isTweet ? SizedBox.shrink() : _tweerCard(context),
-          viewState._dateTimePicker(),
-          if (viewState.widget.isTweet) ...[
-            SizedBox(height: 12),
-            viewState._resolutionDateTimePicker(),
-            SizedBox(height: 12),
-            viewState._oracleSourceField(),
-            SizedBox(height: 12),
-            viewState._oracleApiUrlField(),
-            SizedBox(height: 12),
-            viewState._collateralField(),
-          ],
+          viewState.widget.isToldya ? SizedBox.shrink() : _tweerCard(context),
           SizedBox(height: 10),
-          CupertinoRadioChoice(
-              selectedColor: AppColor.primary,
-              choices: topic.topicMap,
-              onChange: viewState.onGenderSelected,
-              initialKeyValue: viewState._selectedTopic),
-          SizedBox(
-            height: 10,
-          ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -914,7 +514,7 @@ class _ComposeTweet
               ),
               Expanded(
                 child: _TextField(
-                  isTweet: widget.isTweet,
+                  isToldya: widget.isToldya,
                   textEditingController: viewState._textEditingController,
                 ),
               )
@@ -923,7 +523,7 @@ class _ComposeTweet
           Flexible(
             child: Stack(
               children: <Widget>[
-                ComposeTweetImage(
+                ComposeToldyaImage(
                   image: viewState._image,
                   onCrossIconPressed: viewState._onCrossIconPressed,
                 ),
@@ -944,12 +544,12 @@ class _TextField extends StatelessWidget {
   const _TextField(
       {Key? key,
       required this.textEditingController,
-      this.isTweet = false,
-      this.isRetweet = false})
+      this.isToldya = false,
+      this.isRetoldya = false})
       : super(key: key);
   final TextEditingController textEditingController;
-  final bool isTweet;
-  final bool isRetweet;
+  final bool isToldya;
+  final bool isRetoldya;
 
   @override
   Widget build(BuildContext context) {
@@ -960,18 +560,25 @@ class _TextField extends StatelessWidget {
         TextField(
           controller: textEditingController,
           onChanged: (text) {
-            Provider.of<ComposeTweetState>(context, listen: false)
+            Provider.of<ComposeToldyaState>(context, listen: false)
                 .onDescriptionChanged(text, searchState);
           },
           maxLines: null,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 18,
+          ),
           decoration: InputDecoration(
               border: InputBorder.none,
-              hintText: isTweet
+              hintText: isToldya
                   ? 'Gelecek tahminlerini paylaş'
-                  : isRetweet
+                  : isRetoldya
                       ? 'Add a comment'
-                      : 'Tweet your reply',
-              hintStyle: TextStyle(fontSize: 18)),
+                      : 'Bu tahmine yorum yap',
+              hintStyle: TextStyle(
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              )),
         ),
       ],
     );
@@ -986,12 +593,12 @@ class _UserList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return !Provider.of<ComposeTweetState>(context).displayUserList ||
+    return !Provider.of<ComposeToldyaState>(context).displayUserList ||
             list.isEmpty
         ? SizedBox.shrink()
         : Container(
             padding: EdgeInsetsDirectional.only(bottom: 50),
-            color: ToldyaColor.white,
+            color: Theme.of(context).colorScheme.surface,
             constraints:
                 BoxConstraints(minHeight: 30, maxHeight: double.infinity),
             child: ListView.builder(
@@ -1001,12 +608,12 @@ class _UserList extends StatelessWidget {
                   user: list[index],
                   onUserSelected: (user) {
                     textEditingController.text =
-                        (Provider.of<ComposeTweetState>(context, listen: false)
+                        (Provider.of<ComposeToldyaState>(context, listen: false)
                                 .getDescription(user.userName ?? '') ?? '') +
                             " ";
                     textEditingController.selection = TextSelection.collapsed(
                         offset: textEditingController.text.length);
-                    Provider.of<ComposeTweetState>(context, listen: false)
+                    Provider.of<ComposeToldyaState>(context, listen: false)
                         .onUserSelected();
                   },
                 );
@@ -1027,7 +634,7 @@ class _UserTile extends StatelessWidget {
       onTap: () {
         onUserSelected(user);
       },
-      leading: customImage(context, user.profilePic ?? '', height: 35),
+      leading: customProfileImage(context, user.profilePic, userId: user.userId, height: 35),
       title: Row(
         children: <Widget>[
           ConstrainedBox(

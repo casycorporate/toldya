@@ -5,9 +5,9 @@ import 'package:bendemistim/helper/constant.dart';
 import 'package:bendemistim/helper/enum.dart';
 import 'package:bendemistim/helper/utility.dart';
 import 'package:bendemistim/helper/theme.dart';
+import 'package:bendemistim/helper/topicMap.dart';
 import 'package:bendemistim/model/feedModel.dart';
 import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/page/profile/widgets/tabPainter.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:bendemistim/state/feedState.dart';
 import 'package:bendemistim/widgets/customWidgets.dart';
@@ -18,6 +18,19 @@ import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
 import 'package:bendemistim/widgets/tweet/tweet.dart';
 import 'package:bendemistim/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+double _xpProgress(int xp) {
+  if (xp < AppIcon.xpCaylakMax) return (xp / AppIcon.xpCaylakMax).clamp(0.0, 1.0);
+  if (xp < AppIcon.xpUstaMin) return ((xp - AppIcon.xpCaylakMax) / (AppIcon.xpUstaMin - AppIcon.xpCaylakMax)).clamp(0.0, 1.0);
+  return 1.0;
+}
+
+String _xpProgressLabel(int xp) {
+  if (xp < AppIcon.xpCaylakMax) return '$xp / ${AppIcon.xpCaylakMax}';
+  if (xp < AppIcon.xpUstaMin) return '$xp / ${AppIcon.xpUstaMin}';
+  return '$xp (Usta)';
+}
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.profileId}) : super(key: key);
@@ -52,201 +65,24 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   SliverAppBar getAppbar() {
-    var authstate = Provider.of<AuthState>(context);
     return SliverAppBar(
       forceElevated: false,
-      expandedHeight: 200,
+      expandedHeight: 0,
+      floating: true,
+      pinned: true,
       elevation: 0,
-      stretch: true,
-      iconTheme: IconThemeData(color: HexColor('#FFA400')),
       backgroundColor: Colors.transparent,
-      actions: <Widget>[
-        authstate.isbusy
-            ? SizedBox.shrink()
-            : PopupMenuButton<Choice>(
-                onSelected: (d) {
-                  if (d.title == "Paylaş") {
-                    shareProfile(context);
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                  return choices.map((Choice choice) {
-                    return PopupMenuItem<Choice>(
-                      value: choice,
-                      child: Text(choice.title),
-                    );
-                  }).toList();
-                },
-              ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        stretchModes: <StretchMode>[
-          StretchMode.zoomBackground,
-          StretchMode.blurBackground
-        ],
-        background: authstate.isbusy
-            ? SizedBox.shrink()
-            : Stack(
-                alignment: Alignment.topCenter,
-                children: <Widget>[
-                  SizedBox.expand(
-                    child: Container(
-                      padding: EdgeInsets.only(top: 50),
-                      height: 30,
-                      color: Colors.white,
-                    ),
-                  ),
-                  // Container(height: 50, color: Colors.black),
-
-                  /// Banner image
-                  Container(
-                    height: 180,
-                    padding: EdgeInsets.only(top: 28),
-                    child: customNetworkImage(
-                      authstate.profileUserModel?.bannerImage ?? 'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2Fbanner%2Forigami-936729_960_720.webp?alt=media&token=6e14e64a-8e3d-4060-94b9-61412eb2031d',
-                      fit: BoxFit.fill,
-                    ),
-                  ),
-
-                  /// UserModel avatar, message icon, profile edit and follow/following button
-                  Container(
-                    alignment: Alignment.bottomLeft,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 500),
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white, width: 5),
-                              shape: BoxShape.circle),
-                          child: RippleButton(
-                            child: customImage(
-                              context,
-                              authstate.profileUserModel?.profilePic ?? '',
-                              height: 80,
-                            ),
-                            borderRadius: BorderRadius.circular(50),
-                            onPressed: () {
-                              Navigator.pushNamed(context, "/ProfileImageView");
-                            },
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 90, right: 30),
-                          child: Row(
-                            children: <Widget>[
-                              /*mesaj gönderme başlangıç*/
-                              // isMyProfile
-                              //     ? Container(height: 40)
-                              //     : RippleButton(
-                              //         splashColor: ToldyaColor.dodgetBlue_50
-                              //             .withAlpha(100),
-                              //         borderRadius: BorderRadius.all(
-                              //           Radius.circular(20),
-                              //         ),
-                              //         onPressed: () {
-                              //           if (!isMyProfile) {
-                              //             final chatState =
-                              //                 Provider.of<ChatState>(context,
-                              //                     listen: false);
-                              //             chatState.setChatUser =
-                              //                 authstate.profileUserModel;
-                              //             Navigator.pushNamed(
-                              //                 context, '/ChatScreenPage');
-                              //           }
-                              //         },
-                              //         child: Container(
-                              //           height: 35,
-                              //           width: 35,
-                              //           padding: EdgeInsets.only(
-                              //               bottom: 5,
-                              //               top: 0,
-                              //               right: 0,
-                              //               left: 0),
-                              //           decoration: BoxDecoration(
-                              //               border: Border.all(
-                              //                   color: isMyProfile
-                              //                       ? Colors.black87
-                              //                           .withAlpha(180)
-                              //                       : Colors.blue,
-                              //                   width: 1),
-                              //               shape: BoxShape.circle),
-                              //           child: Icon(
-                              //             IconData(AppIcon.messageEmpty,
-                              //                 fontFamily: 'TwitterIcon'),
-                              //             color: Colors.blue,
-                              //             size: 20,
-                              //           ),
-                              //
-                              //           // customIcon(context, icon:AppIcon.messageEmpty, iconColor: ToldyaColor.dodgetBlue, paddingIcon: 8)
-                              //         ),
-                              //       ),
-                              /*mesaj gönderme bitiş*/
-                              SizedBox(width: 10),
-                              RippleButton(
-                                splashColor:
-                                    ToldyaColor.dodgetBlue_50.withAlpha(100),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(60)),
-                                onPressed: () {
-                                  if (isBlackList()) {
-                                    // authstate.addBlackList(authstate.profileUserModel.userId,removeBlackList: isBlackList());
-                                  } else if (isMyProfile) {
-                                    Navigator.pushNamed(
-                                        context, '/EditProfile');
-                                  } else {
-                                    authstate.followUser(
-                                      removeFollower: isFollower(),
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isFollower()
-                                        ? HexColor('#FFA400')
-                                        : ToldyaColor.white,
-                                    border: Border.all(
-                                        color: HexColor('#FFA400'), width: 1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-
-                                  /// If [isMyProfile] is true then Edit profile button will display
-                                  // Otherwise Follow/Following button will be display
-                                  child: Text(
-                                    isMyProfile
-                                        ? 'Profili Düzenle'
-                                        : isBlackList()
-                                            ? 'engellendin'
-                                            : isFollower()
-                                                ? 'Takip ediliyor'
-                                                : 'Takip et',
-                                    style: TextStyle(
-                                      color: isMyProfile
-                                          ? HexColor('#FFA400')
-                                          : isFollower()
-                                              ? ToldyaColor.white
-                                              : HexColor('#FFA400'),
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
+      iconTheme: IconThemeData(color: Colors.white),
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_rounded),
+        onPressed: () => Navigator.of(context).pop(),
       ),
+      actions: <Widget>[
+        IconButton(
+          icon: Icon(Icons.settings_outlined),
+          onPressed: () => Navigator.pushNamed(context, '/SettingsAndPrivacyPage'),
+        ),
+      ],
     );
   }
 
@@ -257,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage>
       },
       child: customIcon(
         context,
-        icon: AppIcon.fabTweet,
+        icon: AppIcon.fabToldya,
         istwitterIcon: true,
         iconColor: Theme.of(context).colorScheme.onPrimary,
         size: 25,
@@ -301,6 +137,8 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   late TabController _tabController;
+  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Bahislerim sekmesinde)
+  int _bahislerimStatusFilter = 0;
 
   void shareProfile(BuildContext context) async {
     var authstate = context.read<AuthState>();
@@ -335,9 +173,9 @@ class _ProfilePageState extends State<ProfilePage>
       onWillPop: _onWillPop,
       child: Scaffold(
         key: scaffoldKey,
-        // floatingActionButton: !isMyProfile ? null : _floatingActionButton(),
-        backgroundColor: ToldyaColor.mystic,
-        body: NestedScrollView(
+        backgroundColor: MockupDesign.background,
+        body: SafeArea(
+          child: NestedScrollView(
           // controller: _scrollController,
           headerSliverBuilder: (BuildContext context, bool boxIsScrolled) {
             return <Widget>[
@@ -345,73 +183,83 @@ class _ProfilePageState extends State<ProfilePage>
               authstate.isbusy || isBlackList()
                   ? _emptyBox()
                   : SliverToBoxAdapter(
-                      child: Container(
-                        color: Colors.white,
-                        child: authstate.isbusy
-                            ? SizedBox.shrink()
-                            : authstate.profileUserModel != null
-                                ? Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      UserNameRowWidget(
-                                        user: authstate.profileUserModel!,
-                                        isMyProfile: isMyProfile,
-                                      ),
-                                      if (isMyProfile && authstate.canClaimDailyBonus)
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          child: ElevatedButton.icon(
-                                            icon: const Icon(Icons.card_giftcard),
-                                            label: Text(
-                                                'Günlük bonusu al (+${AppIcon.dailyBonusAmount} token)'),
-                                            onPressed: () async {
-                                              final msg =
-                                                  await authstate.claimDailyBonus();
-                                              if (context.mounted) {
-                                                if (msg != null) {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                          SnackBar(content: Text(msg)));
-                                                }
-                                                authstate.getProfileUser(
-                                                    userProfileId: widget.profileId);
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                    ],
-                                  )
-                                : SizedBox.shrink(),
-                      ),
+                      child: authstate.isbusy || authstate.profileUserModel == null
+                          ? SizedBox.shrink()
+                          : _ProfileHeader(
+                              user: authstate.profileUserModel!,
+                              isMyProfile: isMyProfile,
+                              canClaimDailyBonus: isMyProfile && authstate.canClaimDailyBonus,
+                              onClaimDailyBonus: () async {
+                                final msg = await authstate.claimDailyBonus();
+                                if (context.mounted) {
+                                  if (msg != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                                  }
+                                  authstate.getProfileUser(userProfileId: widget.profileId);
+                                }
+                              },
+                              onEditOrFollow: () {
+                                if (isBlackList()) return;
+                                if (isMyProfile) {
+                                  Navigator.pushNamed(context, '/EditProfile');
+                                } else {
+                                  authstate.followUser(removeFollower: isFollower());
+                                }
+                              },
+                              isFollower: isFollower(),
+                              isBlackList: isBlackList(),
+                              onAvatarTap: () => Navigator.pushNamed(context, '/ProfileImageView'),
+                              onTokenManagement: () => Navigator.of(context).pushNamed('/TokenEarnPage'),
+                            ),
                     ),
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    Container(
-                      color: ToldyaColor.white,
-                      child: TabBar(
-                        indicator: TabIndicator(),
-                        controller: _tabController,
-                        tabs: <Widget>[
-                          Text("bahislerim"),
-                          Text("oy verdiklerim"),
-                          // Text("Media")
-                        ],
-                      ),
-                    )
-                  ],
+              SliverToBoxAdapter(
+                child: Container(
+                  color: MockupDesign.background,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: UnderlineTabIndicator(
+                      borderSide: BorderSide(width: 3, color: AppNeon.green),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.grey.shade600,
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    unselectedLabelStyle: TextStyle(fontSize: 15),
+                    tabs: <Widget>[
+                      Tab(text: 'Bahislerim'),
+                      Tab(text: 'Oy verdiklerim'),
+                    ],
+                  ),
                 ),
               )
             ];
           },
           body: isBlackList()
-              ? Container()
+              ? Container(color: MockupDesign.background)
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    /// Display all independent tweers list
-                    _tweetList(context, authstate, list, false, false, id),
+                    /// Display all independent tweers list (bahislerim); kendi profilinde filtre chip'leri
+                    isMyProfile
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _bahislerimFilterChips(context),
+                              Expanded(
+                                child: _tweetList(
+                                  context,
+                                  authstate,
+                                  list,
+                                  false,
+                                  false,
+                                  id,
+                                  statusFilter: _bahislerimStatusFilter,
+                                ),
+                              ),
+                            ],
+                          )
+                        : _tweetList(context, authstate, list, false, false, id),
 
                     /// Display all reply tweet list
                     _tweetList(context, authstate, list, true, false, id),
@@ -420,13 +268,307 @@ class _ProfilePageState extends State<ProfilePage>
                     // _tweetList(context, authstate, list, false, true)
                   ],
                 ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 1. Header: avatar, name, @handle, kompakt Profili Düzenle (saydam koyu gri, ince gri çerçeve)
+  Widget _ProfileHeader({
+    required UserModel user,
+    required bool isMyProfile,
+    required bool canClaimDailyBonus,
+    required VoidCallback onClaimDailyBonus,
+    required VoidCallback onEditOrFollow,
+    required bool isFollower,
+    required bool isBlackList,
+    required VoidCallback onAvatarTap,
+    required VoidCallback onTokenManagement,
+  }) {
+    return Builder(
+      builder: (context) {
+        final handle = user.userName ?? user.displayName ?? '';
+        final displayHandle = handle.startsWith('@') ? handle : '@$handle';
+        return Container(
+          color: MockupDesign.background,
+          padding: EdgeInsets.fromLTRB(24, 16, 24, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: 48,
+                  backgroundColor: Colors.grey.shade800,
+                  child: ClipOval(
+                    child: customProfileImage(
+                      context,
+                      user.profilePic,
+                      userId: user.userId,
+                      height: 96,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 14),
+              Text(
+                user.displayName ?? '',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 4),
+              Text(
+                displayHandle.isEmpty ? '@kullanıcı' : displayHandle,
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              ),
+              SizedBox(height: 14),
+              Center(
+                child: Material(
+                  color: Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(20),
+                  child: InkWell(
+                    onTap: onEditOrFollow,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey.shade600, width: 1),
+                      ),
+                      child: Text(
+                        isMyProfile
+                            ? 'Profili Düzenle'
+                            : isBlackList
+                                ? 'engellendin'
+                                : isFollower
+                                    ? 'Takip ediliyor'
+                                    : 'Takip et',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              _WalletCapsule(
+                user: user,
+                isMyProfile: isMyProfile,
+                canClaimDailyBonus: canClaimDailyBonus,
+                onClaimDailyBonus: onClaimDailyBonus,
+                onTokenManagement: onTokenManagement,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 2. Cüzdan kapsülü: Bakiye + Takipçi | Günlük bonus | Token Yönetimi, Divider(white10)
+  Widget _WalletCapsule({
+    required UserModel user,
+    required bool isMyProfile,
+    required bool canClaimDailyBonus,
+    required VoidCallback onClaimDailyBonus,
+    required VoidCallback onTokenManagement,
+  }) {
+    return Center(
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.monetization_on_rounded, size: 24, color: Color(0xFFFFD700)),
+                    SizedBox(width: 10),
+                    Text(
+                      'Bakiye: ${user.pegCount ?? 0} Token',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${user.getFollower()} Takipçi',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
+              ],
+            ),
+            if (isMyProfile && canClaimDailyBonus) ...[
+              Divider(height: 24, color: Colors.white10),
+              InkWell(
+                onTap: onClaimDailyBonus,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.card_giftcard, size: 20, color: AppNeon.green),
+                      SizedBox(width: 8),
+                      Text(
+                        'Günlük bonusu al (+${AppIcon.dailyBonusAmount} token)',
+                        style: TextStyle(
+                          color: AppNeon.green,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (isMyProfile) ...[
+              Divider(height: 24, color: Colors.white10),
+              InkWell(
+                onTap: onTokenManagement,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.settings_ethernet, size: 18, color: Colors.grey.shade400),
+                      SizedBox(width: 8),
+                      Text(
+                        'Token Yönetimi',
+                        style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _profileBannerImage(BuildContext context,
+      {required String? bannerImage, required String userId}) {
+    final defaultAsset = DefaultBanners.assetForUser(userId);
+
+    if (bannerImage == null || bannerImage.isEmpty) {
+      return Image.asset(defaultAsset, fit: BoxFit.fill);
+    }
+    final assetPath = DefaultBanners.assetForKey(bannerImage);
+    if (assetPath != null) {
+      return Image.asset(assetPath, fit: BoxFit.fill);
+    }
+    return CachedNetworkImage(
+      imageUrl: bannerImage,
+      fit: BoxFit.fill,
+      placeholder: (context, url) => Image.asset(defaultAsset, fit: BoxFit.fill),
+      errorWidget: (context, url, error) =>
+          Image.asset(defaultAsset, fit: BoxFit.fill),
+    );
+  }
+
+  String _emptyListTitle({
+    required bool isreply,
+    required bool isMedia,
+    int? statusFilter,
+    required bool isMyProfile,
+    required String profileUserName,
+  }) {
+    if (!isreply && statusFilter != null && isMyProfile) {
+      switch (statusFilter) {
+        case 0:
+          return 'Aktif tahminin yok';
+        case 1:
+          return 'Bekleyen tahminin yok';
+        case 2:
+          return 'Tamamlanan tahminin yok';
+        case 3:
+          return 'Reddedilen tahminin yok';
+        case 4:
+          return 'Kilitli tahminin yok';
+      }
+    }
+    if (isMyProfile) {
+      return 'Hiç ${isreply ? 'oy vermedin' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}';
+    }
+    return '$profileUserName hiç ${isreply ? 'oy vermedi' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}';
+  }
+
+  /// 3. Filtre chip'leri: seçili = yeşil metin + hafif yeşil arka plan, diğerleri gri; altında kısa yeşil pill
+  Widget _bahislerimFilterChips(BuildContext context) {
+    const labels = ['Aktif', 'Bekleyen', 'Tamamlanan', 'Reddedilen', 'Kilitli'];
+    return Container(
+      color: MockupDesign.background,
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(5, (index) {
+            final selected = _bahislerimStatusFilter == index;
+            return GestureDetector(
+              onTap: () => setState(() => _bahislerimStatusFilter = index),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected ? AppNeon.green.withOpacity(0.18) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      labels[index],
+                      style: TextStyle(
+                        color: selected ? AppNeon.green : Colors.grey.shade500,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
+                      width: selected ? 24 : 0,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: AppNeon.green,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );
   }
 
   Widget _tweetList(BuildContext context, AuthState authstate,
-      List<FeedModel>? tweetsList, bool isreply, bool isMedia, String id) {
+      List<FeedModel>? tweetsList, bool isreply, bool isMedia, String id,
+      {int? statusFilter}) {
     List<FeedModel> list;
 
     /// If user hasn't tweeted yet
@@ -442,23 +584,46 @@ class _ProfilePageState extends State<ProfilePage>
 
       list = tweetsList
           .where((x) =>
-              (x.parentkey == null || x.childRetwetkey != null) &&
+              (x.parentkey == null || x.childRetoldyaKey != null) &&
               x.userId == id)
           .toList();
+
+      /// Bahislerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)
+      if (statusFilter != null && list.isNotEmpty) {
+        list = list.where((x) {
+          final s = parseStatu(x.statu);
+          if (s == null) return false;
+          switch (statusFilter) {
+            case 0: // Aktif: yayında, bahis alınabilir (statu 0, 2)
+              return s == Statu.statusLive || s == Statu.statusOk;
+            case 1: // Bekleyen: admin/AI incelemesi bekliyor (statu 1, 6)
+              return s == Statu.statusPending || s == Statu.statusPendingAiReview;
+            case 2: // Tamamlanan: onaylanmış / sonuçlanmış (statu 2, 4)
+              return s == Statu.statusOk || s == Statu.statusComplete;
+            case 3: // Reddedilen: admin/AI reddi (statu 3, 7)
+              return s == Statu.statusDenied || s == Statu.statusRejectedByAi;
+            case 4: // Kilitli: bahisler kapandı, sonuç bekleniyor (statu 5)
+              return s == Statu.statusLocked;
+            default:
+              return false;
+          }
+        }).toList();
+      }
     } else {
-      /// Display all reply Tweets
-      /// No intependent tweet will display
-      ///
-      // list = tweetsList
-      //     .where((x) => x.parentkey != null && x.childRetwetkey == null)
-      //     .toList();
+      /// Display all reply Tweets (oy verdiklerim - kullanıcının bahis yaptığı tahminler)
+      /// Sadece ilgili statülerdeki gönderiler: Live, Ok, Locked, Complete
       final profileUserId = authstate.profileUserModel?.userId;
       list = tweetsList
-          .where((x) =>
-              (x.likeList ?? []).any(
-                  (id) => id.userId == profileUserId) ||
-              (x.unlikeList ?? [])
-                  .any((id) => id.userId == profileUserId))
+          .where((x) {
+            final hasVoted = (x.likeList ?? []).any(
+                    (e) => e.userId == profileUserId) ||
+                (x.unlikeList ?? []).any((e) => e.userId == profileUserId);
+            if (!hasVoted) return false;
+            final s = parseStatu(x.statu);
+            if (s == null) return false;
+            return s == Statu.statusLive || s == Statu.statusOk ||
+                s == Statu.statusLocked || s == Statu.statusComplete;
+          })
           .toList();
     }
 
@@ -469,7 +634,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: CustomScreenLoader(
               height: double.infinity,
               width: fullWidth(context),
-              backgroundColor: Colors.white,
+              backgroundColor: MockupDesign.background,
             ),
           )
 
@@ -477,24 +642,29 @@ class _ProfilePageState extends State<ProfilePage>
         : list.isEmpty
             ? Container(
                 padding: EdgeInsets.only(top: 20, left: 30, right: 30),
+                color: MockupDesign.background,
                 child: NotifyText(
-                  title: isMyProfile
-                      ? 'Hiç ${isreply ? 'oy vermedin' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}'
-                      : '${authstate.profileUserModel?.userName ?? ''} hiç ${isreply ? 'oy vermedi' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}',
+                  title: _emptyListTitle(
+                    isreply: isreply,
+                    isMedia: isMedia,
+                    statusFilter: statusFilter,
+                    isMyProfile: isMyProfile,
+                    profileUserName: authstate.profileUserModel?.userName ?? '',
+                  ),
                   subTitle:
                       isMyProfile ? 'Şimdi ekle' : 'burada gösterilecekler',
                 ),
               )
 
-            /// If tweets available then tweet list will displayed
+            /// 4. Tahmin kartları: #2C2C2E, 16px radius, çerçeve yok; ince Evet/Hayır butonları
             : ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 0),
+                padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing8),
                 itemCount: list.length,
-                itemBuilder: (context, index) => Container(
-                  color: ToldyaColor.white,
-                  child: Toldya(
+                itemBuilder: (context, index) => Padding(
+                  padding: EdgeInsets.only(bottom: spacing8),
+                  child: _ProfilePredictionCard(
                     model: list[index],
-                    isDisplayOnProfile: true,
+                    scaffoldKey: scaffoldKey,
                     trailing: ToldyaBottomSheet().toldyaOptionIcon(
                       context,
                       model: list[index],
@@ -504,6 +674,217 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
               );
+  }
+}
+
+/// Profil tahmin kartı: koyu gri arka plan, çerçeve yok; oran barı altında ince Evet/Hayır (ok ikonlu)
+class _ProfilePredictionCard extends StatelessWidget {
+  final FeedModel model;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Widget trailing;
+
+  const _ProfilePredictionCard({
+    Key? key,
+    required this.model,
+    required this.scaffoldKey,
+    required this.trailing,
+  }) : super(key: key);
+
+  void _onCardTap(BuildContext context) {
+    Provider.of<FeedState>(context, listen: false).getpostDetailFromDatabase(model.key ?? '', model: model);
+    Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
+  }
+
+  void _onVoteTap(BuildContext context, int commentFlag) {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final closed = isBettingClosed(model.statu, model.endDate);
+    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          closed ? 'Kapandığı için seçim yapılamaz' : 'Token yetersiz',
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.black87,
+      ));
+      return;
+    }
+    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 4),
+        backgroundColor: Colors.orange.shade800,
+      ));
+      return;
+    }
+    ToldyaBottomSheet().openRetoldyabottomSheet(
+      commentFlag,
+      context,
+      type: ToldyaType.Detail,
+      model: model,
+      scaffoldKey: scaffoldKey,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalYes = sumOfVote(model.likeList ?? []);
+    final totalNo = sumOfVote(model.unlikeList ?? []);
+    final total = totalYes + totalNo;
+    final percent = total == 0 ? 0.5 : totalYes / total;
+    final closed = isBettingClosed(model.statu, model.endDate);
+    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
+    const cardColor = Color(0xFF2C2C2E);
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () => _onCardTap(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          model.description ?? '',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              '@${model.user?.userName ?? model.user?.displayName ?? ''}',
+                              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(width: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                topicLabel,
+                                style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  trailing,
+                ],
+              ),
+              SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: percent,
+                  backgroundColor: AppNeon.red.withOpacity(0.4),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppNeon.green),
+                  minHeight: 8,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      k_m_b_generator(totalYes),
+                      style: TextStyle(color: AppNeon.green, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      k_m_b_generator(totalNo),
+                      style: TextStyle(color: AppNeon.red, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Material(
+                      color: AppNeon.green.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => _onVoteTap(context, AppIcon.evetCommentFlag),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.trending_up_rounded, size: 20, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text(
+                                'Evet ${total > 0 ? (percent * 100).round() : 50}',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Material(
+                      color: AppNeon.red.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        onTap: () => _onVoteTap(context, AppIcon.hayirCommentFlag),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.trending_down_rounded, size: 20, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text(
+                                'Hayır ${total > 0 ? ((1 - percent) * 100).round() : 50}',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -541,7 +922,7 @@ class UserNameRowWidget extends StatelessWidget {
           ),
           customText(
             '$text',
-            style: TextStyle(color: AppColor.darkGrey, fontSize: 17),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), fontSize: 17),
           ),
         ],
       ),
@@ -563,7 +944,7 @@ class UserNameRowWidget extends StatelessWidget {
               UrlText(
                 text: user.displayName,
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -596,39 +977,91 @@ class UserNameRowWidget extends StatelessWidget {
         //   ),
         // ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              customIcon(context,
-                  icon: AppIcon.blueTick,
-                  size: 24,
-                  istwitterIcon: true,
-                  paddingIcon: 5,
-                  iconColor: ToldyaColor.dodgetBlue),
-              SizedBox(width: 10),
-              Expanded(
-                child: customText(
-                  user.pegCount.toString(),
-                  style: TextStyle(color: AppColor.darkGrey),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.monetization_on, size: 24, color: Theme.of(context).primaryColor),
+                SizedBox(width: 10),
+                Text(
+                  '${user.pegCount ?? 0}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
-              )
-            ],
+                SizedBox(width: 4),
+                Text(
+                  'Token',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+        if (isMyProfile && (user.xp != null)) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'XP',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                      ),
+                    ),
+                    Text(
+                      _xpProgressLabel(user.xp ?? 0),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _xpProgress(user.xp ?? 0),
+                    minHeight: 8,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             children: <Widget>[
-              Icon(Icons.emoji_events, size: 20, color: HexColor('#FFA400')),
+              Icon(Icons.emoji_events, size: 20, color: Theme.of(context).primaryColor),
               SizedBox(width: 8),
-              customText('Bahisçi: ', style: TextStyle(color: AppColor.darkGrey)),
-              customText('${user.rank ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: HexColor('#FFA400'))),
+              customText('Bahisçi: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
+              customText('${user.rank ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
               SizedBox(width: 20),
-              Icon(Icons.lightbulb_outline, size: 20, color: HexColor('#4CAF50')),
+              Icon(Icons.lightbulb_outline, size: 20, color: AppNeon.green),
               SizedBox(width: 8),
-              customText('Tahminci: ', style: TextStyle(color: AppColor.darkGrey)),
-              customText('${user.predictorScore ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: HexColor('#4CAF50'))),
+              customText('Tahminci: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
+              customText('${user.predictorScore ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: AppNeon.green)),
             ],
           ),
         ),
@@ -640,7 +1073,7 @@ class UserNameRowWidget extends StatelessWidget {
               SizedBox(width: 10),
               customText(
                 user.getLevel(),
-                style: TextStyle(color: AppColor.darkGrey),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
               ),
             ],
           ),
@@ -690,7 +1123,7 @@ class ChoiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextStyle? textStyle = Theme.of(context).textTheme.headlineLarge;
     return Card(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

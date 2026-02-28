@@ -61,12 +61,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
             ),
-            color: Colors.blueAccent,
+            color: Theme.of(context).colorScheme.primary,
             onPressed: _submit,
             padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
             child: TitleText(
-              'Send Link',
-              color: Colors.white,
+              'Bağlantı Gönder',
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ],
@@ -81,12 +81,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: ToldyaColor.mystic,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () {
             var state = Provider.of<AuthState>(context, listen: false);
             Navigator.push(

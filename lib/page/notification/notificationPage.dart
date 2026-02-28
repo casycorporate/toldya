@@ -8,11 +8,9 @@ import 'package:bendemistim/model/user.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:bendemistim/state/feedState.dart';
 import 'package:bendemistim/state/notificationState.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
 import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
+import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 import 'package:bendemistim/widgets/newWidget/emptyList.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
 import 'package:provider/provider.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -42,14 +40,34 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ToldyaColor.mystic,
-      appBar: CustomAppBar(
-        scaffoldKey: widget.scaffoldKey,
-        title: customTitleText(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        leading: widget.scaffoldKey != null
+            ? Padding(
+                padding: EdgeInsets.all(10),
+                child: GestureDetector(
+                  onTap: () => widget.scaffoldKey!.currentState?.openDrawer(),
+                  child: customProfileImage(
+                    context,
+                    Provider.of<AuthState>(context).userModel?.profilePic,
+                    userId: Provider.of<AuthState>(context).userModel?.userId,
+                    height: 30,
+                  ),
+                ),
+              )
+            : BackButton(color: Colors.white),
+        title: Text(
           'Bildirimler',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 21,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        //icon: AppIcon.settings,
-        //onActionPressed: onSettingIconPressed,
+        titleSpacing: 0,
       ),
       body: NotificationPageBody(),
     );
@@ -62,7 +80,7 @@ class NotificationPageBody extends StatelessWidget {
   Widget _notificationRow(BuildContext context, NotificationModel model) {
     var state = Provider.of<NotificationState>(context);
     return FutureBuilder<FeedModel?>(
-      future: state.getTweetDetail(model.tweetKey ?? ''),
+      future: state.getToldyaDetail(model.toldyaKey ?? ''),
       builder: (BuildContext context, AsyncSnapshot<FeedModel?> snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           return NotificationTile(
@@ -70,13 +88,19 @@ class NotificationPageBody extends StatelessWidget {
           );
         } else if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.active) {
-          return SizedBox(
-            height: 4,
-            child: LinearProgressIndicator(),
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: CustomScreenLoader(
+                height: 36,
+                width: 36,
+                backgroundColor: Colors.transparent,
+              ),
+            ),
           );
         } else {
           var authstate = Provider.of<AuthState>(context);
-          state.removeNotification(authstate.userId, model.tweetKey ?? '');
+          state.removeNotification(authstate.userId, model.toldyaKey ?? '');
           return SizedBox();
         }
       },
@@ -88,13 +112,16 @@ class NotificationPageBody extends StatelessWidget {
     var state = Provider.of<NotificationState>(context);
     var list = state.notificationList;
     if (state?.isbusy ?? true && (list == null || list.isEmpty)) {
-      return SizedBox(
-        height: 3,
-        child: LinearProgressIndicator(),
+      return Center(
+        child: CustomScreenLoader(
+          height: 80,
+          width: 80,
+          backgroundColor: Colors.transparent,
+        ),
       );
     } else if (list == null || list.isEmpty) {
       return Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30),
+        padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
         child: EmptyList(
           'Henüz bir Bildirim yok',
           subTitle: 'Yeni bildirim bulunduğunda burada görünürler.',
@@ -105,7 +132,11 @@ class NotificationPageBody extends StatelessWidget {
     }
     return ListView.builder(
       addAutomaticKeepAlives: true,
-      itemBuilder: (context, index) => _notificationRow(context, list![index]),
+      padding: EdgeInsets.symmetric(vertical: spacing8),
+      itemBuilder: (context, index) => Padding(
+        padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing4),
+        child: _notificationRow(context, list![index]),
+      ),
       itemCount: list!.length,
     );
   }
@@ -114,118 +145,189 @@ class NotificationPageBody extends StatelessWidget {
 class NotificationTile extends StatelessWidget {
   final FeedModel model;
   const NotificationTile({Key? key, required this.model}) : super(key: key);
-  Widget _userList(BuildContext context, List<UserPegModel> list) {
-    // List<String> names = [];
-    // list=list.toSet().toList();//aynı olan kullanıcılar(hem like hem dislike) teke indirilir
-    final ids = list.map((e) => e.userId).toSet();
-    list.retainWhere((x) => ids.remove(x.userId));
-    var length = list.length;
-    List<Widget> avaterList = [];
-    final int noOfUser = list.length;
-    var state = Provider.of<NotificationState>(context);
-    if (list != null && list.length > 5) {
-      list = list.take(5).toList();
-    }
-    avaterList = list.map((userId) {
-      return _userAvater(userId.userId, state, (name) {
-        // names.add(name);
-      });
-    }).toList();
-    if (noOfUser > 5) {
-      avaterList.add(
-        Text(
-          " +${noOfUser - 5}",
-          style: subtitleStyle.copyWith(fontSize: 16),
+
+  static const double _avatarSize = 32.0;
+  static const double _overlap = 10.0; // ~30% overlap
+  static const double _avatarBorderWidth = 1.0;
+  static const double _heartBadgeSize = 18.0; // rozet için ayrılan alan
+
+  Widget _buildOverlappingAvatars(
+    BuildContext context,
+    List<UserPegModel> list,
+  ) {
+    var displayList = List<UserPegModel>.from(list);
+    final noOfUser = displayList.length;
+    final state = Provider.of<NotificationState>(context);
+    if (displayList.length > 5) displayList = displayList.take(5).toList();
+
+    final avatarWidgets = displayList.asMap().entries.map((entry) {
+      final i = entry.key;
+      final userId = entry.value.userId;
+      return Transform.translate(
+        offset: Offset(i * (_avatarSize - _overlap), 0),
+        child: _userAvatar(
+          context,
+          userId,
+          state,
+          (name) {},
+          borderColor: Theme.of(context).scaffoldBackgroundColor,
         ),
       );
-    }
+    }).toList();
 
-    var col = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            SizedBox(width: 20),
-            customIcon(context,
-                icon: AppIcon.heartFill,
-                iconColor: ToldyaColor.ceriseRed,
-                istwitterIcon: true,
-                size: 25),
-            SizedBox(width: 10),
-            Row(children: avaterList),
-          ],
-        ),
-        // names.length > 0 ? Text(names[0]) : SizedBox(),
-        Padding(
-          padding: EdgeInsets.only(left: 60, bottom: 5, top: 5),
-          child: TitleText(
-            '$length kişi paylaşımınıza oy verdi',
-            fontSize: 18,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
+    // Genişlik: avatarlar + kalp rozeti (overflow olmaması için)
+    final contentWidth = (displayList.length * (_avatarSize - _overlap)) + _overlap;
+    final extraForBadge = displayList.isNotEmpty ? _heartBadgeSize : 0.0;
+    final extraForCount = noOfUser > 5 ? 20.0 : 0.0;
+    final totalWidth = contentWidth + extraForBadge + extraForCount;
+
+    return SizedBox(
+      width: totalWidth,
+      height: _avatarSize + 14,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...avatarWidgets,
+              if (noOfUser > 5)
+                Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text(
+                    '+${noOfUser - 5}',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        )
-      ],
+          // Kalp rozeti: son avatarın sağ alt köşesine binen mini rozet
+          if (displayList.isNotEmpty)
+            Positioned(
+              right: extraForBadge + extraForCount,
+              bottom: 0,
+              child: Container(
+                padding: EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                    width: 0.5,
+                  ),
+                ),
+                child: Icon(
+                  Icons.favorite,
+                  size: 12,
+                  color: ToldyaColor.ceriseRed,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
-    return col;
   }
 
-  Widget _userAvater(
-      String userId, NotificationState state, ValueChanged<String> name) {
+  Widget _userAvatar(
+    BuildContext context,
+    String userId,
+    NotificationState state,
+    ValueChanged<String> name, {
+    Color? borderColor,
+  }) {
     return FutureBuilder<UserModel?>(
       future: state.getuserDetail(userId),
       builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           final data = snapshot.data!;
           name(data.displayName ?? '');
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 3),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.of(context)
-                    .pushNamed('/ProfilePage/' + (data.userId ?? ''));
-              },
-              child: customImage(context, data.profilePic ?? '', height: 30),
+          return GestureDetector(
+            onTap: () {
+              Navigator.of(context).pushNamed('/ProfilePage/${data.userId ?? ''}');
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: borderColor ?? Colors.grey.shade800,
+                  width: _avatarBorderWidth,
+                ),
+              ),
+              child: customProfileImage(
+                context,
+                data.profilePic,
+                userId: data.userId,
+                height: _avatarSize,
+              ),
             ),
           );
-        } else {
-          return Container();
         }
+        return SizedBox(width: _avatarSize, height: _avatarSize);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    var description = (model.description?.length ?? 0) > 150
-        ? (model.description?.substring(0, 150) ?? '') + '...'
-        : model.description ?? '';
-    return Column(
-      children: <Widget>[
-        Container(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          color: ToldyaColor.white,
-          child: ListTile(
-            onTap: () {
-              var state = Provider.of<FeedState>(context, listen: false);
-              state.getpostDetailFromDatabase(model.key ?? '', model: model);
-              Navigator.of(context).pushNamed('/FeedPostDetail/${model.key ?? ''}');
-            },
-            title: _userList(context, (model.likeList ?? []) + (model.unlikeList ?? [])),
-            subtitle: Padding(
-              padding: EdgeInsets.only(left: 60),
-              child: UrlText(
-                text: description ?? '',
-                style: TextStyle(
-                  color: AppColor.darkGrey,
-                  fontWeight: FontWeight.w400,
-                ),
+    final rawList = (model.likeList ?? []) + (model.unlikeList ?? []);
+    final seen = <String>{};
+    final list = rawList.where((x) => seen.add(x.userId)).toList();
+    final length = list.length;
+    final description = model.description ?? '';
+
+    return InkWell(
+      onTap: () {
+        final state = Provider.of<FeedState>(context, listen: false);
+        state.getpostDetailFromDatabase(model.key ?? '', model: model);
+        Navigator.of(context).pushNamed('/FeedPostDetail/${model.key ?? ''}');
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOverlappingAvatars(context, list),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$length kişi paylaşımınıza oy verdi',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ],
               ),
             ),
-          ),
+          ],
         ),
-        Divider(height: 0, thickness: .6)
-      ],
+      ),
     );
   }
 }

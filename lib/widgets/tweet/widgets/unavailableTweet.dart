@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bendemistim/helper/enum.dart';
 import 'package:bendemistim/helper/theme.dart';
 import 'package:bendemistim/model/feedModel.dart';
+import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 
 class UnavailableToldya extends StatelessWidget {
   const UnavailableToldya({Key? key, required this.snapshot, required this.type}) : super(key: key);
@@ -28,13 +29,11 @@ class UnavailableToldya extends StatelessWidget {
         borderRadius: BorderRadius.all(Radius.circular(10)),
       ),
       child: snapshot.connectionState == ConnectionState.waiting
-          ? SizedBox(
-              height: 2,
-              child: LinearProgressIndicator(
-                backgroundColor: AppColor.extraLightGrey,
-                valueColor: AlwaysStoppedAnimation(
-                  AppColor.darkGrey.withValues(alpha: .3),
-                ),
+          ? Center(
+              child: CustomScreenLoader(
+                height: 40,
+                width: 40,
+                backgroundColor: Colors.transparent,
               ),
             )
           : Text('This Tweet is unavailable', style: userNameStyle),

@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bendemistim/widgets/customWidgets.dart';
 
-class ComposeTweetImage extends StatelessWidget {
+class ComposeToldyaImage extends StatelessWidget {
   final File? image;
   final VoidCallback? onCrossIconPressed;
-  const ComposeTweetImage({Key? key, this.image, this.onCrossIconPressed})
+  const ComposeToldyaImage({Key? key, this.image, this.onCrossIconPressed})
       : super(key: key);
 
   @override

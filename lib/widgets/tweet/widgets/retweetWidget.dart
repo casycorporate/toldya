@@ -15,10 +15,10 @@ import 'package:provider/provider.dart';
 
 class RetoldyaWidget extends StatelessWidget {
   const RetoldyaWidget(
-      {Key? key, required this.childRetwetkey, required this.type, this.isImageAvailable = false})
+      {Key? key, required this.childRetoldyaKey, required this.type, this.isImageAvailable = false})
       : super(key: key);
 
-  final String childRetwetkey;
+  final String childRetoldyaKey;
   final bool isImageAvailable;
   final ToldyaType type;
 
@@ -36,7 +36,7 @@ class RetoldyaWidget extends StatelessWidget {
               Container(
                 width: 25,
                 height: 25,
-                child: customImage(context, model.user?.profilePic ?? ''),
+                child: customProfileImage(context, model.user?.profilePic, userId: model.user?.userId),
               ),
               SizedBox(width: 10),
               ConstrainedBox(
@@ -83,7 +83,7 @@ class RetoldyaWidget extends StatelessWidget {
                 child: UrlText(
                   text: model.description ?? '',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
@@ -101,7 +101,7 @@ class RetoldyaWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     var feedstate = Provider.of<FeedState>(context, listen: false);
     return FutureBuilder(
-      future: feedstate.fetchTweet(childRetwetkey),
+      future: feedstate.fetchToldya(childRetoldyaKey),
       builder: (context, AsyncSnapshot<FeedModel?> snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           return Container(

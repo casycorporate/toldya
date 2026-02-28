@@ -6,6 +6,7 @@ import 'package:bendemistim/model/user.dart';
 import 'package:bendemistim/state/searchState.dart';
 import 'package:bendemistim/widgets/customAppBar.dart';
 import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 import 'package:bendemistim/widgets/newWidget/emptyList.dart';
 import 'package:provider/provider.dart';
 
@@ -37,17 +38,18 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: ToldyaColor.mystic,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: BackButton(),
         title: customTitleText('Liderlik Tablosu'),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: AppColor.primary),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        iconTheme: IconThemeData(color: theme.colorScheme.primary),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: HexColor('#FFA400'),
-          unselectedLabelColor: AppColor.darkGrey,
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
           tabs: [
             Tab(
               child: Row(
@@ -75,7 +77,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       body: Consumer<SearchState>(
         builder: (context, state, _) {
           if (state.isBusy || state.userlist == null) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+              child: CustomScreenLoader(
+                height: 80,
+                width: 80,
+                backgroundColor: Colors.transparent,
+              ),
+            );
           }
           final list = state.userlist ?? [];
           final topPredictors = List<UserModel>.from(list)
@@ -169,15 +177,12 @@ class _LeaderTile extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: rank <= 3 ? HexColor('#FFA400') : AppColor.darkGrey,
+                color: rank <= 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
           ),
           SizedBox(width: 8),
-          CircleAvatar(
-            backgroundImage: NetworkImage(user.profilePic ?? ''),
-            radius: 24,
-          ),
+          customProfileImage(context, user.profilePic, userId: user.userId, height: 48),
         ],
       ),
       title: Row(

@@ -24,7 +24,7 @@ class AppIcon{
   AppIcon._();
 
   static const _kFontFam = 'TwitterIcon';
-  static const IconData fabTweet = IconData(0xf029, fontFamily: _kFontFam);
+  static const IconData fabToldya = IconData(0xf029, fontFamily: _kFontFam);
   static const IconData messageEmpty = IconData(0xf187, fontFamily: _kFontFam);
   static const IconData messageFill = IconData(0xf554, fontFamily: _kFontFam);
   static const IconData search = IconData(0xf058, fontFamily: _kFontFam);
@@ -88,6 +88,9 @@ class AppIcon{
   static const int poolThreshold = 1000;
   static const int maxBetSmallPool = 100;
   static const int dailyBonusAmount = 500;
+
+  /// Cloud Functions base URL (doğrudan HTTP ile çağrı – GMS broker hatası bypass)
+  static const String cloudFunctionsBaseUrl = 'https://us-central1-casy-570c4.cloudfunctions.net';
 }
 
 class Tokenomics {
@@ -108,6 +111,61 @@ class Role{
 
   static final int defaultRole=1;
   static final int adminRole=0;
+}
+
+/// Uygulama temasına uyumlu varsayılan kapak görselleri (profil banner).
+/// Kullanıcı banner'ı yoksa veya URL yüklenemezse bunlardan biri rastgele gösterilir.
+class DefaultBanners {
+  DefaultBanners._();
+
+  static const String key1 = 'default_1';
+  static const String key2 = 'default_2';
+  static const String key3 = 'default_3';
+
+  static const List<String> keys = [key1, key2, key3];
+
+  static const String asset1 = 'assets/images/banner_1.png';
+  static const String asset2 = 'assets/images/banner_2.png';
+  static const String asset3 = 'assets/images/banner_3.png';
+
+  static const List<String> assets = [asset1, asset2, asset3];
+
+  static bool isDefaultBannerKey(String? value) {
+    if (value == null || value.isEmpty) return false;
+    return value == key1 || value == key2 || value == key3;
+  }
+
+  static String? assetForKey(String? key) {
+    if (key == key1) return asset1;
+    if (key == key2) return asset2;
+    if (key == key3) return asset3;
+    return null;
+  }
+
+  /// Kullanıcıya göre sabit bir varsayılan banner (null/boş banner için).
+  static String assetForUser(String? userId) {
+    final index = (userId?.hashCode ?? DateTime.now().millisecondsSinceEpoch).abs() % 3;
+    return assets[index];
+  }
+}
+
+/// Varsayılan profil resimleri (5 adet). Boş profil resmi yerine kullanıcıya göre biri gösterilir.
+class DefaultProfilePics {
+  DefaultProfilePics._();
+
+  static const String asset1 = 'assets/images/avatar_1.png';
+  static const String asset2 = 'assets/images/avatar_2.png';
+  static const String asset3 = 'assets/images/avatar_3.png';
+  static const String asset4 = 'assets/images/avatar_4.png';
+  static const String asset5 = 'assets/images/avatar_5.png';
+
+  static const List<String> assets = [asset1, asset2, asset3, asset4, asset5];
+
+  /// Kullanıcıya göre sabit bir varsayılan avatar (profil resmi boş/null için).
+  static String assetForUser(String? userId) {
+    final index = (userId?.hashCode ?? 0).abs() % 5;
+    return assets[index];
+  }
 }
 
 class Statu{

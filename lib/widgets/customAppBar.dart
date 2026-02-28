@@ -41,24 +41,31 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => appBarHeight;
 
-  Widget _searchField() {
+  Widget _searchField(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
         height: 50,
         padding: EdgeInsets.symmetric(vertical: 5),
         child: TextField(
           onChanged: onSearchChanged ?? (_) {},
           controller: textController,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 16,
+          ),
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderSide: BorderSide(width: 0, style: BorderStyle.none),
-              borderRadius: const BorderRadius.all(
-                const Radius.circular(25.0),
-              ),
+              borderRadius: BorderRadius.circular(radiusCard),
             ),
             hintText: 'Arama..',
-            fillColor: AppColor.extraLightGrey,
+            hintStyle: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 16,
+            ),
+            fillColor: theme.colorScheme.surface,
             filled: true,
-            focusColor: Colors.white,
+            focusColor: theme.colorScheme.surface,
             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           ),
         ));
@@ -77,12 +84,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 },
                 child: Container(
                   alignment: Alignment.center,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   decoration: BoxDecoration(
                     color: !isSubmitDisable
                         ? Theme.of(context).primaryColor
                         : Theme.of(context).primaryColor.withAlpha(150),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(radiusCard),
                   ),
                   child: Text(
                     submitButtonText ?? '',
@@ -117,16 +124,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           scaffoldKey?.currentState?.openDrawer();
         },
         child:
-            customImage(context, authState.userModel?.profilePic ?? '', height: 30),
+            customProfileImage(context, authState.userModel?.profilePic, userId: authState.userModel?.userId, height: 30),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AppBar(
-      iconTheme: IconThemeData(color: Colors.blue),
-      backgroundColor: Colors.white,
+      iconTheme: IconThemeData(color: theme.colorScheme.primary),
+      backgroundColor: theme.scaffoldBackgroundColor,
       leading: isBackButton
           ? BackButton()
           : isCrossButton
@@ -138,12 +146,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   },
                 )
               : _getUserAvatar(context),
-      title: title != null ? title : _searchField(),
+      title: title != null ? title : _searchField(context),
       actions: _getActionButtons(context),
       bottom: PreferredSize(
         child: Container(
           color: isbootomLine
-              ? Colors.grey.shade200
+              ? Theme.of(context).dividerColor
               : Theme.of(context).colorScheme.surface,
           height: 1.0,
         ),

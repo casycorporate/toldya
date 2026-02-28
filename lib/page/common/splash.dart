@@ -14,6 +14,7 @@ import 'package:bendemistim/page/homePage.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:bendemistim/state/feedState.dart';
 import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -61,7 +62,7 @@ class _SplashPageState extends State<SplashPage> {
     var id = deepLink.path.split("/")[2];
     if (type == "profile") {
       Navigator.of(context).pushNamed('/ProfilePage/' + id);
-    } else if (type == "tweet") {
+    } else if (type == "toldya") {
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(id);
       Navigator.of(context).pushNamed('/FeedPostDetail/' + id);
@@ -141,40 +142,14 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Widget _body() {
-    var height = 150.0;
     return Container(
       height: fullHeight(context),
       width: fullWidth(context),
-      child: Container(
-        height: height,
-        width: height,
-        alignment: Alignment.center,
-        child: Container(
-          padding: EdgeInsets.all(50),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(
-              Radius.circular(10),
-            ),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              Platform.isIOS
-                  ? CupertinoActivityIndicator(
-                      radius: 35,
-                    )
-                  : CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-              Image.asset(
-                'assets/images/casy.png',
-                height: 30,
-                width: 30,
-              )
-            ],
-          ),
-        ),
+      alignment: Alignment.center,
+      child: CustomScreenLoader(
+        height: 150,
+        width: 150,
+        backgroundColor: Colors.transparent,
       ),
     );
   }
@@ -184,7 +159,7 @@ class _SplashPageState extends State<SplashPage> {
     var state = Provider.of<AuthState>(context);
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: state.authStatus == AuthStatus.NOT_DETERMINED
           ? _body()
           : state.authStatus == AuthStatus.NOT_LOGGED_IN

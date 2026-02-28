@@ -4,6 +4,7 @@ import 'package:bendemistim/page/feed/composeTweet/state/composeTweetState.dart'
 import 'package:bendemistim/state/searchState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:bendemistim/helper/constant.dart';
 import 'package:bendemistim/helper/enum.dart';
 import 'package:bendemistim/helper/theme.dart';
@@ -43,7 +44,7 @@ class ToldyaBottomSheet {
         required FeedModel model,
         required GlobalKey<ScaffoldState> scaffoldKey}) async {
     var authState = Provider.of<AuthState>(context, listen: false);
-    bool isMyTweet = authState.userId == model.userId;
+    bool isMyToldya = authState.userId == model.userId;
     bool isAdmin = authState.userModel?.role == Role.adminRole;
     bool isReported = model.reportList?.contains(authState.userId) ?? false;
     bool isInBlackList = authState.userModel?.blackList?.contains(model.userId ?? '') ?? false;
@@ -52,34 +53,28 @@ class ToldyaBottomSheet {
       context: context,
       builder: (context) {
         return Container(
-            padding: EdgeInsets.only(top: 5, bottom: 0),
+            padding: EdgeInsets.only(bottom: 0),
             height: fullHeight(context) *
                 (type == ToldyaType.Toldya
-                    ? (isMyTweet ? .50 : .44)
-                    : (isMyTweet ? .38 : .52)),
+                    ? (isMyToldya ? .50 : .44)
+                    : (isMyToldya ? .38 : .52)),
             width: fullWidth(context),
             decoration: BoxDecoration(
-              color: Theme
-                  .of(context)
-                  .bottomSheetTheme
-                  .backgroundColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: Color(0xFF1A1F2E).withOpacity(0.95),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: type == ToldyaType.Toldya
                 ? _tweetOptions(context,
                 isAdmin: isAdmin,
                 scaffoldKey: scaffoldKey,
-                isMyTweet: isMyTweet,
+                isMyToldya: isMyToldya,
                 model: model,
                 isReported: isReported,
                 isInBlackList: isInBlackList,
                 type: type)
                 : _tweetDetailOptions(context,
                 scaffoldKey: scaffoldKey,
-                isMyTweet: isMyTweet,
+                isMyToldya: isMyToldya,
                 model: model,
                 type: type));
       },
@@ -87,7 +82,7 @@ class ToldyaBottomSheet {
   }
 
   Widget _tweetDetailOptions(BuildContext context,
-      {required bool isMyTweet,
+      {required bool isMyToldya,
         required FeedModel model,
         required ToldyaType type,
         required GlobalKey<ScaffoldState> scaffoldKey}) {
@@ -109,7 +104,7 @@ class ToldyaBottomSheet {
             text: 'Bağlantıyı kopyala', isEnable: true, onPressed: () async {
               var uri = await Utility.createLinkToCopy(
                 context,
-                "tweet/${model.key}",
+                "toldya/${model.key}",
                 socialMetaTagParameters: SocialMetaTagParameters(
                     description: model.description ??
                         "${model.user?.displayName ?? ''} bir gönderi paylaştı",
@@ -125,7 +120,7 @@ class ToldyaBottomSheet {
                   uri.toString(),
                   message: "Panoya kopyalandı");
             }),
-        // isMyTweet
+        // isMyToldya
         //     ? _widgetBottomSheetRow(
         //         context,
         //         AppIcon.unFollow,
@@ -136,7 +131,7 @@ class ToldyaBottomSheet {
         //         AppIcon.unFollow,
         //         text: '${model.user.displayName} Takibi bırak ',
         //       ),
-        isMyTweet
+        isMyToldya
             ? _widgetBottomSheetRow(
           context,
           AppIcon.delete,
@@ -150,9 +145,10 @@ class ToldyaBottomSheet {
             );
           },
           isEnable: true,
+          isDestructive: true,
         )
             : Container(),
-        isMyTweet
+        isMyToldya
             ? Container()
             : _widgetBottomSheetRow(
           context,
@@ -169,26 +165,27 @@ class ToldyaBottomSheet {
           AppIcon.viewHidden,
           text: 'Gizli yanıtları görüntüle',
         ),
-        isMyTweet
+        isMyToldya
             ? Container()
             : _widgetBottomSheetRow(
           context,
           AppIcon.block,
           text: '${model.user?.displayName ?? ''} engelle',
         ),
-        isMyTweet
+        isMyToldya
             ? Container()
             : _widgetBottomSheetRow(
           context,
           AppIcon.report,
           text: 'Rapor et',
         ),
+        SizedBox(height: 20),
       ],
     );
   }
 
   Widget _tweetOptions(BuildContext context,
-      {required bool isMyTweet,
+      {required bool isMyToldya,
         required bool isAdmin,
         required bool isReported,
         required bool isInBlackList,
@@ -198,22 +195,19 @@ class ToldyaBottomSheet {
     return Column(
       children: <Widget>[
         Container(
-          width: fullWidth(context) * .1,
-          height: 5,
+          margin: EdgeInsets.only(top: 12, bottom: 8),
+          height: 4,
+          width: 40,
           decoration: BoxDecoration(
-            color: Theme
-                .of(context)
-                .dividerColor,
-            borderRadius: BorderRadius.all(
-              Radius.circular(10),
-            ),
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         _widgetBottomSheetRow(context, AppIcon.link,
             text: 'Bağlantıyı kopyala', isEnable: true, onPressed: () async {
               var uri = await Utility.createLinkToCopy(
                 context,
-                "tweet/${model.key ?? ''}",
+                "toldya/${model.key ?? ''}",
                 socialMetaTagParameters: SocialMetaTagParameters(
                     description: model.description ??
                         "${model.user?.displayName ?? ''} bir gönderi paylaştı.",
@@ -241,7 +235,7 @@ class ToldyaBottomSheet {
         //         text: 'Bununla ilgilenmiyorum',
         //         // text: 'Not interested in this',
         //       ),
-        // isMyTweet
+        // isMyToldya
         //     ? _widgetBottomSheetRow(
         //         context,
         //         AppIcon.thumbpinFill,
@@ -252,7 +246,7 @@ class ToldyaBottomSheet {
         //         AppIcon.sadFace,
         //         text: 'Bununla ilgilenmiyorum',
         //       ),
-        isMyTweet
+        isMyToldya
             ? _widgetBottomSheetRow(
           context,
           AppIcon.delete,
@@ -266,23 +260,24 @@ class ToldyaBottomSheet {
             );
           },
           isEnable: true,
+          isDestructive: true,
         )
             : Container(),
-        // isMyTweet
+        // isMyToldya
         //     ? Container()
         //     : _widgetBottomSheetRow(
         //         context,
         //         AppIcon.unFollow,
         //         text: '${model.user.displayName} Takibi bırak',
         //       ),
-        // isMyTweet
+        // isMyToldya
         //     ? Container()
         //     : _widgetBottomSheetRow(
         //         context,
         //         AppIcon.mute,
         //         text: '${model.user.displayName} sessize al',
         //       ),
-        isMyTweet
+        isMyToldya
             ? Container()
             : _widgetBottomSheetRow(context, AppIcon.block,
             text: isInBlackList
@@ -296,7 +291,7 @@ class ToldyaBottomSheet {
                 parentkey: model.parentkey,
               );
             }),
-        isMyTweet
+        isMyToldya
             ? Container()
             : _widgetBottomSheetRow(context, AppIcon.report,
             text: isReported ? 'şikayeti geri al' : 'Rapor et',
@@ -304,7 +299,7 @@ class ToldyaBottomSheet {
               _addReportList(context, model, Statu.statusPending,
                   ConfirmWinner.None, scaffoldKey);
             }, isEnable: true),
-        _shouldShowDispute(model, isMyTweet, isAdmin)
+        _shouldShowDispute(model, isMyToldya, isAdmin)
             ? _widgetBottomSheetRow(context, Icons.gavel_rounded,
             text: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? 'İtiraz ettiniz' : 'İtiraz et',
             onPressed: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? null : () {
@@ -377,6 +372,7 @@ class ToldyaBottomSheet {
           text: 'reddet',
         )
             : Container(),
+        SizedBox(height: 20),
       ],
     );
   }
@@ -387,7 +383,14 @@ class ToldyaBottomSheet {
   );
 
   Widget _widgetBottomSheetRow(BuildContext context, IconData icon,
-      {String text = '', Function? onPressed, bool isEnable = false}) {
+      {String text = '', Function? onPressed, bool isEnable = false, bool isDestructive = false}) {
+    final bool hasAction = onPressed != null;
+    final Color iconColor = isDestructive
+        ? Colors.redAccent
+        : (hasAction ? Colors.white : Colors.white70);
+    final Color textColor = isDestructive
+        ? Colors.redAccent
+        : (isEnable ? Colors.white : Colors.white70);
     return Expanded(
       child: customInkWell(
         context: context,
@@ -408,8 +411,7 @@ class ToldyaBottomSheet {
                 istwitterIcon: true,
                 size: 25,
                 paddingIcon: 8,
-                iconColor:
-                onPressed != null ? AppColor.darkGrey : AppColor.lightGrey,
+                iconColor: iconColor,
               ),
               SizedBox(
                 width: 15,
@@ -418,9 +420,9 @@ class ToldyaBottomSheet {
                 text,
                 context: context,
                 style: TextStyle(
-                  color: isEnable ? AppColor.secondary : AppColor.lightGrey,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
+                  color: textColor,
+                  fontSize: isDestructive ? 16 : 18,
+                  fontWeight: isDestructive ? FontWeight.w500 : FontWeight.w400,
                 ),
               )
             ],
@@ -492,8 +494,8 @@ class ToldyaBottomSheet {
     Navigator.of(context).pop();
   }
 
-  bool _shouldShowDispute(FeedModel model, bool isMyTweet, bool isAdmin) {
-    if (isMyTweet || isAdmin) return false;
+  bool _shouldShowDispute(FeedModel model, bool isMyToldya, bool isAdmin) {
+    if (isMyToldya || isAdmin) return false;
     return model.statu == Statu.statusPending || model.statu == Statu.statusOk;
   }
 
@@ -527,7 +529,7 @@ class ToldyaBottomSheet {
       // Close Tweet detail page
       Navigator.of(context).pop();
       // Remove last tweet from tweet detail stack page
-      state.removeLastTweetDetail(toldyaId);
+      state.removeLastToldyaDetail(toldyaId);
     }
   }
 
@@ -547,18 +549,20 @@ class ToldyaBottomSheet {
       context: context,
       builder: (context) {
         return Container(
-            padding: EdgeInsets.only(top: 5, bottom: 0),
-            height: fullHeight(context) * 0.30,
+            padding: EdgeInsets.only(top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
+            height: fullHeight(context) * 0.36,
             width: fullWidth(context),
             decoration: BoxDecoration(
-              color: Theme
-                  .of(context)
-                  .bottomSheetTheme
-                  .backgroundColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: MockupDesign.card,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(MockupDesign.cardRadius)),
+              border: Border(top: BorderSide(color: MockupDesign.cardBorder, width: 1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
             ),
             child: _retweet(context, model, type, commentFlag));
       },
@@ -568,26 +572,26 @@ class ToldyaBottomSheet {
   Widget _retweet(BuildContext context, FeedModel model, ToldyaType type,
       int commentFlag) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: fullWidth(context) * .1,
-          height: 5,
+          width: 40,
+          height: 4,
           decoration: BoxDecoration(
-            color: Theme
-                .of(context)
-                .dividerColor,
-            borderRadius: BorderRadius.all(
-              Radius.circular(10),
-            ),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        SizedBox(
-          height: 5,
+        SizedBox(height: 16),
+        Text(
+          'Bahis miktarını belirle',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: MockupDesign.textPrimary,
+          ),
         ),
-        customText("Kaç Kapak basıyorsunuz?"),
-        SizedBox(
-          height: 5,
-        ),
+        SizedBox(height: 12),
         // _widgetBottomSheetRow(
         //   context,
         //   AppIcon.heartEmpty,
@@ -650,7 +654,59 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
     var state = Provider.of<FeedState>(context, listen: false);
 
     void _send() async {
+      debugPrint('=== BEN DEDIM BUTONUNA BASILDI ===');
+      debugPrint('_period: $_period');
+      debugPrint('maxVal: $maxVal');
+      debugPrint('commentFlag: ${widget.commentFlag}');
+      debugPrint('userId: ${authState.userId}');
+      debugPrint('model.key: ${widget.model.key}');
+      
+      // Miktar kontrolü
+      if (_period <= 0) {
+        debugPrint('[HATA] Bahis miktarı 0 veya negatif!');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lütfen bahis miktarı seçin!'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+      
+      if (_period > maxVal) {
+        debugPrint('[HATA] Bahis miktarı maksimumdan fazla! $_period > $maxVal');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Maksimum bahis: $maxVal token'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapılabilir
+      final userId = authState.userId;
+      if (userAlreadyBetOnOtherSide(widget.model, userId, widget.commentFlag)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+              ),
+              duration: Duration(seconds: 4),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
+        }
+        return;
+      }
+
       try {
+        debugPrint('[BAHIS] placeBet çağrılıyor...');
         await state.placeBet(
           authState,
           widget.model,
@@ -658,27 +714,88 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           _period,
           widget.commentFlag,
         );
+        debugPrint('[BAHIS] placeBet başarılı!');
+        
         state.setToldyaToReply = widget.model;
+        debugPrint('[BAHIS] Bildirim gönderiliyor...');
         authState.getuserDetail(widget.model.userId ?? '').then((user) {
           final ownUser = authState.userModel;
           if (user != null && ownUser != null && context.mounted) {
-            Provider.of<ComposeTweetState>(context, listen: false)
+            Provider.of<ComposeToldyaState>(context, listen: false)
                 .sendNotificationToFeed(
                     widget.model, user, ownUser, widget.commentFlag, _period)
-                .then((_) {});
+                .then((_) {
+                  debugPrint('[BAHIS] Bildirim gönderildi');
+                });
           }
         });
-        if (context.mounted) Navigator.pop(context);
-      } on FirebaseFunctionsException catch (e) {
+        
+        if (context.mounted) {
+          debugPrint('[BAHIS] Bottom sheet kapatılıyor...');
+          Navigator.pop(context);
+        }
+      } on PlatformException catch (e) {
+        // Native Android hataları PlatformException olarak gelir
+        debugPrint('[BAHIS HATASI] PlatformException');
+        debugPrint('[BAHIS HATASI] code: ${e.code}');
+        debugPrint('[BAHIS HATASI] message: ${e.message}');
+        debugPrint('[BAHIS HATASI] details: ${e.details}');
+        debugPrint('[BAHIS HATASI] stacktrace: ${e.stacktrace}');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Bahis gönderilemedi.')),
+            SnackBar(
+              content: Text('Google Play Services hatası: ${e.message ?? e.code ?? "Bilinmeyen hata"}'),
+              duration: Duration(seconds: 6),
+              backgroundColor: Colors.red,
+            ),
           );
         }
-      } catch (e) {
+      } on FirebaseFunctionsException catch (e) {
+        // Konsol + Logcat'te görünmesi için (Android Studio Run/Debug sekmesi)
+        debugPrint('[BAHIS HATASI] FirebaseFunctionsException');
+        debugPrint('[BAHIS HATASI] code: ${e.code}');
+        debugPrint('[BAHIS HATASI] message: ${e.message}');
+        debugPrint('[BAHIS HATASI] details: ${e.details}');
         if (context.mounted) {
+          String errorMessage = 'Bahis gönderilemedi.';
+          
+          // Hata koduna göre daha anlamlı mesajlar
+          if (e.code == 'internal' || e.code == 'INTERNAL') {
+            errorMessage = 'Google Play Services hatası. Lütfen cihazınızı yeniden başlatın veya Google Play Services\'i güncelleyin.';
+          } else if (e.code == 'unauthenticated') {
+            errorMessage = 'Giriş yapmanız gerekiyor.';
+          } else if (e.code == 'deadline-exceeded') {
+            errorMessage = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+          } else if (e.message != null && e.message!.isNotEmpty) {
+            errorMessage = e.message!;
+          } else if (e.code.isNotEmpty) {
+            errorMessage = 'Hata: ${e.code}';
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bahis gönderilemedi.')),
+            SnackBar(
+              content: Text(errorMessage),
+              duration: Duration(seconds: 6),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e, stackTrace) {
+        // Tüm hataları konsola yazdır – Android Studio'da Run/Debug çıktısında görürsün
+        debugPrint('[BAHIS HATASI] Genel Exception');
+        debugPrint('[BAHIS HATASI] Type: ${e.runtimeType}');
+        debugPrint('[BAHIS HATASI] Message: $e');
+        debugPrint('[BAHIS HATASI] Stack trace: $stackTrace');
+        if (context.mounted) {
+          final msg = e.toString().length > 120
+              ? '${e.toString().substring(0, 120)}...'
+              : e.toString();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $msg'),
+              duration: Duration(seconds: 6),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -693,8 +810,52 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       Tokenomics.maxBetByRank(balance, xp),
       Tokenomics.maxBetByPool(totalPool),
     ].reduce((a, b) => a < b ? a : b);
-    return new Column(children: <Widget>[
 
+    const presetAmounts = [20, 30, 50, 100];
+    final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
+
+    final accent = MockupDesign.accentOrange;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (validPresets.isNotEmpty) ...[
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: validPresets.map((amount) {
+              final isSelected = _period == amount;
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => setState(() => _period = amount),
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 150),
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isSelected ? accent.withOpacity(0.2) : Theme.of(context).colorScheme.surface.withOpacity(0.6),
+                      border: Border.all(
+                        color: isSelected ? accent : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '$amount',
+                      style: TextStyle(
+                        color: isSelected ? accent : MockupDesign.textSecondary,
+                        fontSize: 14,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 14),
+        ],
       Container(
         padding: EdgeInsets.all(3),
         // decoration: BoxDecoration(
@@ -713,9 +874,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                     });
                   },
                   child: Icon(
-                    Icons.remove,
-                    color: Color(0xfff7892b),
-                    size: 24,
+                    Icons.remove_circle_outline,
+                    color: Theme.of(context).primaryColor,
+                    size: 28,
                   )),
               onLongPressStart: (_) async {
                 isPressed = true;
@@ -734,10 +895,13 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
               margin: EdgeInsets.symmetric(horizontal: 3),
               padding: EdgeInsets.symmetric(horizontal: 3, vertical: 2),
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(3), color: Colors.white),
+                  borderRadius: BorderRadius.circular(3),
+                  color: Theme.of(context).colorScheme.surface),
               child: Text(
                 '$_period',
-                style: TextStyle(color: Colors.black, fontSize: 16),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16),
               ),
             ),
             GestureDetector(
@@ -751,9 +915,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                     });
                   },
                   child: Icon(
-                    Icons.add,
-                    color: Color(0xfff7892b),
-                    size: 24,
+                    Icons.add_circle_outline,
+                    color: Theme.of(context).primaryColor,
+                    size: 28,
                   )),
               onLongPressStart: (_) async {
                 isPressed = true;
@@ -773,22 +937,17 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       ),
       SliderTheme(
         data: SliderTheme.of(context).copyWith(
-          activeTrackColor: Color(0xfff7892b),
-          inactiveTrackColor: Color(0xfffbb448),
+          activeTrackColor: Theme.of(context).primaryColor,
+          inactiveTrackColor: Theme.of(context).primaryColor.withOpacity(0.3),
           trackShape: RoundedRectSliderTrackShape(),
           trackHeight: 4.0,
-          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12.0),
-          thumbColor: Color(0xfffbb448),
-          overlayColor: Color(0xfff7892b).withAlpha(32),
-          overlayShape: RoundSliderOverlayShape(overlayRadius: 28.0),
-          tickMarkShape: RoundSliderTickMarkShape(),
-          activeTickMarkColor: Color(0xfff7892b),
-          inactiveTickMarkColor: Color(0xfffbb448),
+          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 10.0),
+          thumbColor: Theme.of(context).primaryColor,
+          overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
+          overlayShape: RoundSliderOverlayShape(overlayRadius: 24.0),
           valueIndicatorShape: PaddleSliderValueIndicatorShape(),
-          valueIndicatorColor: Color(0xfffbb448),
-          valueIndicatorTextStyle: TextStyle(
-            color: Colors.white,
-          ),
+          valueIndicatorColor: Theme.of(context).primaryColor,
+          valueIndicatorTextStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
         ),
         child: Slider(
             value: _period.toDouble(),
@@ -804,21 +963,58 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       ),
       GestureDetector(
         onTap: () {
-          _send();
+          debugPrint('=== BEN DEDIM BUTONU TIKLANDI ===');
+          if (_period <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lütfen bahis miktarı seçin!'), duration: Duration(seconds: 2)),
+            );
+            return;
+          }
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Bahsi onayla',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18),
+              ),
+              content: Text(
+                '$_period token ile bahis yapmak istediğinize emin misiniz?',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9)),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('İptal', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _send();
+                  },
+                  child: Text('Onayla'),
+                ),
+              ],
+            ),
+          );
         },
         child: Container(
           width: fullWidth(context) * 0.5,
-          padding: EdgeInsets.symmetric(vertical: 5),
+          padding: EdgeInsets.symmetric(vertical: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(30)),
-              gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [Color(0xfffbb448), Color(0xfff7892b)])),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            color: Theme.of(context).primaryColor,
+            boxShadow: MockupDesign.cardShadow,
+          ),
           child: Text(
             'ben dedim',
-            style: TextStyle(fontSize: 20, color: Colors.white),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
           ),
         ),
       ),

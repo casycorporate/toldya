@@ -12,13 +12,17 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:bendemistim/widgets/newWidget/DataHolder.dart';
+import 'package:bendemistim/widgets/newWidget/customLoader.dart';
 import 'newWidget/ImageGridItem.dart';
 
 Widget customTitleText(String title, {BuildContext? context}) {
+  final color = context != null
+      ? Theme.of(context).colorScheme.onSurface
+      : Colors.black87;
   return Text(
     title,
     style: TextStyle(
-      color: Colors.black87,
+      color: color,
       fontFamily: 'HelveticaNeue',
       fontWeight: FontWeight.w900,
       fontSize: 20,
@@ -130,7 +134,8 @@ Widget customText(String msg,
       width: 0,
     );
   } else {
-    TextStyle? textStyle = style;
+    TextStyle? textStyle = style ??
+        (context != null ? Theme.of(context).textTheme.bodyMedium : null);
     if (context != null && textStyle != null) {
       var fontSize =
           textStyle.fontSize ?? Theme.of(context).textTheme.bodyLarge?.fontSize;
@@ -164,6 +169,33 @@ Widget customImage(
       maxRadius: height / 2,
       backgroundColor: Theme.of(context).cardColor,
       backgroundImage: customAdvanceNetworkImage(path ?? dummyProfilePic),
+    ),
+  );
+}
+
+/// Profil resmi: boşsa varsayılan 5 avatar'dan userId'ye göre biri, değilse URL'den gösterir.
+Widget customProfileImage(
+  BuildContext context,
+  String? profilePic, {
+  String? userId,
+  double height = 50,
+  bool isBorder = false,
+}) {
+  final effectivePath = (profilePic != null && profilePic.trim().isNotEmpty)
+      ? profilePic
+      : DefaultProfilePics.assetForUser(userId);
+  final isAsset = effectivePath.startsWith('assets/');
+  return Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+    ),
+    child: CircleAvatar(
+      maxRadius: height / 2,
+      backgroundColor: Theme.of(context).cardColor,
+      backgroundImage: isAsset
+          ? AssetImage(effectivePath)
+          : customAdvanceNetworkImage(effectivePath),
     ),
   );
 }
@@ -292,17 +324,22 @@ Widget customAlert(BuildContext context,
     required String title,
     String okText = 'OK',
     String cancelText = 'Cancel'}) {
+  final onSurface = Theme.of(context).colorScheme.onSurface;
   return AlertDialog(
     title: Text('Alert',
         style: TextStyle(
-            fontSize: getDimention(context, 25), color: Colors.black54)),
-    content: customText(title, style: TextStyle(color: Colors.black45)),
+            fontSize: getDimention(context, 25),
+            color: onSurface.withOpacity(0.8))),
+    content: customText(title,
+        context: context,
+        style: TextStyle(color: onSurface.withOpacity(0.7))),
     actions: <Widget>[
       TextButton(
         onPressed: () {
           Navigator.pop(context);
         },
-        child: Text(cancelText, style: TextStyle(color: Colors.grey)),
+        child: Text(cancelText,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
       ),
       TextButton(
         onPressed: () {
@@ -390,18 +427,14 @@ Widget emptyListWidget(BuildContext context, String title,
   );
 }
 
-Widget loader() {
-  if (Platform.isIOS) {
-    return Center(
-      child: CupertinoActivityIndicator(),
-    );
-  } else {
-    return Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-      ),
-    );
-  }
+Widget loader(BuildContext context) {
+  return Center(
+    child: CustomScreenLoader(
+      height: 80,
+      width: 80,
+      backgroundColor: Colors.transparent,
+    ),
+  );
 }
 
 Widget customSwitcherWidget(

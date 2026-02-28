@@ -14,112 +14,104 @@ class PrivacyAndSaftyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
-      backgroundColor: ToldyaColor.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Privacy and safety',
+        title: 'Gizlilik ve güvenlik',
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Tweets'),
+          HeaderWidget('Paylaşımlar'),
           SettingRowWidget(
-            "Protect your tweet",
+            "Paylaşımlarınızı koru",
             subtitle:
-                'Only current followers and people you approve in future will be able to see your tweets.',
+                'Paylaşımlarınızı yalnızca mevcut takipçileriniz ve ileride onay vereceğiniz kişiler görebilir.',
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           SettingRowWidget(
-            "Photo tagging",
-            subtitle: 'Anyone can tag you',
+            "Fotoğraf etiketleme",
+            subtitle: 'Herkes sizi etiketleyebilir',
           ),
           HeaderWidget(
-            'Direct Message',
+            'Canlı yayın',
             secondHeader: true,
           ),
           SettingRowWidget(
-            'Direct Message',
-            navigateTo: 'DirectMessagesPage',
-          ),
-          HeaderWidget(
-            'Live Video',
-            secondHeader: true,
-          ),
-          SettingRowWidget(
-            "Connect to Periscope",
+            "Canlı yayına bağlan",
             subtitle:
-                'If selected, you can go live and comment on Periscope broadcasts, and people will be able to see when you\'re watching. if this setting is off, people won\'t be able comment or broadcast live.',
+                'Açık olduğunda canlı yayın yapabilir ve yorum yapabilirsiniz; kapalı olduğunda diğerleri canlı yayın veya yorum yapamaz.',
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           HeaderWidget(
-            'Discoverability and contacts',
+            'Keşfedilebilirlik ve kişiler',
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Discoverability and contacts",
+            "Keşfedilebilirlik ve kişiler",
             vPadding: 15,
             showDivider: false,
           ),
           SettingRowWidget(
             '',
             subtitle:
-                'Learn more about how this data is used to connect you with people',
+                'Bu verilerin sizi diğer kişilerle nasıl eşleştirmek için kullanıldığı hakkında daha fazla bilgi edinin.',
             vPadding: 15,
             showDivider: false,
           ),
           HeaderWidget(
-            'Safety',
+            'Güvenlik',
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Display media that may contain sensitive content",
-            vPadding: 15,
-            showDivider: false,
-            visibleSwitch: true,
-          ),
-          SettingRowWidget(
-            "Mark media you tweet as containing material thta may be sensitive",
+            "Hassas içerik barındırabilecek medyayı göster",
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           SettingRowWidget(
-            "Blocked Accounts",
+            "Paylaştığınız medyayı hassas içerik barındırabilir olarak işaretle",
+            vPadding: 15,
+            showDivider: false,
+            visibleSwitch: true,
+          ),
+          SettingRowWidget(
+            "Engellenen hesaplar",
             showDivider: false,
           ),
           SettingRowWidget(
-            "Muted Accounts",
+            "Sessize alınan hesaplar",
             showDivider: false,
           ),
           SettingRowWidget(
-            "Muted Words",
+            "Sessize alınan kelimeler",
             showDivider: false,
           ),
           HeaderWidget(
-            'Location',
+            'Konum',
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Precise location",
+            "Tam konum",
             subtitle:
-                'Disabled \n\n\nIf enabled, Fwitter will collect, store, and use your device\'s precise location, such as your GPS information. This lets Fwitter improve your experience - for example, showing you mpre local content, ads, and recommendations.',
+                'Kapalı \n\n\nAçık olduğunda Toldya, cihazınızın tam konumunu (GPS bilgisi gibi) toplar, saklar ve kullanır. Bu sayede Toldya deneyiminizi iyileştirir; örneğin daha yerel içerik, reklam ve öneriler sunar.',
           ),
           HeaderWidget(
-            'Personalisation and data',
+            'Kişiselleştirme ve veri',
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Personalisation and data",
-            subtitle: "Allow all",
+            "Kişiselleştirme ve veri",
+            subtitle: "Tümüne izin ver",
           ),
           SettingRowWidget(
-            "See your Fwitter data",
+            "Toldya verilerinizi görüntüle",
             subtitle:
-                "Review and edit your profile information and data associated with your account.",
+                "Profil bilgilerinizi ve hesabınızla ilişkili verileri inceleyin ve düzenleyin.",
           ),
         ],
       ),

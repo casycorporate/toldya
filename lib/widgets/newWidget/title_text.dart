@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class TitleText extends StatelessWidget {
   final String text;
   final double fontSize;
-  final Color color;
+  final Color? color;
   final FontWeight fontWeight;
   final TextAlign textAlign;
   final TextOverflow overflow;
@@ -12,19 +12,20 @@ class TitleText extends StatelessWidget {
     this.text, {
     Key? key,
     this.fontSize = 18,
-    this.color = Colors.black,
+    this.color,
     this.fontWeight = FontWeight.w800,
     this.textAlign = TextAlign.left,
     this.overflow = TextOverflow.visible,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = color ?? Theme.of(context).colorScheme.onSurface;
     return Text(
       text,
       style: GoogleFonts.sawarabiMincho(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color,
+        color: effectiveColor,
       ),
       textAlign: textAlign,
       overflow: overflow,

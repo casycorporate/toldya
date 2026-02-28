@@ -19,12 +19,15 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           Text(
             subtitle ?? '',
-            style: TextStyle(color: AppColor.darkGrey, fontSize: 18),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              fontSize: 18,
+            ),
           )
         ],
       ),
-      iconTheme: IconThemeData(color: Colors.blue),
-      backgroundColor: Colors.white,
+      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     );
   }
 

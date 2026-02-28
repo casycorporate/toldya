@@ -8,10 +8,10 @@ import 'package:provider/provider.dart';
 
 class ParentToldyaWidget extends StatelessWidget {
   ParentToldyaWidget(
-      {Key? key, required this.childRetwetkey, required this.type, this.isImageAvailable = false, this.trailing = const SizedBox.shrink()})
+      {Key? key, required this.childRetoldyaKey, required this.type, this.isImageAvailable = false, this.trailing = const SizedBox.shrink()})
       : super(key: key);
 
-  final String childRetwetkey;
+  final String childRetoldyaKey;
   final ToldyaType type;
   final Widget trailing;
   final bool isImageAvailable;
@@ -26,7 +26,7 @@ class ParentToldyaWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     var feedstate = Provider.of<FeedState>(context, listen: false);
     return FutureBuilder(
-        future: feedstate.fetchTweet(childRetwetkey),
+        future: feedstate.fetchToldya(childRetoldyaKey),
         builder: (context, AsyncSnapshot<FeedModel?> snapshot) {
           if (snapshot.hasData && snapshot.data != null) {
             return Toldya(

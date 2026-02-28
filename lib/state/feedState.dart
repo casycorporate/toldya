@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:bendemistim/model/userPegModel.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -13,11 +14,14 @@ import 'package:bendemistim/model/user.dart';
 import 'package:bendemistim/state/appState.dart';
 import 'package:bendemistim/state/authState.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as Path;
 
 class FeedState extends AppState {
   bool isBusy = false;
-  Map<String, List<FeedModel>> tweetReplyMap = {};
+  Map<String, List<FeedModel>> toldyaReplyMap = {};
   FeedModel? _toldyaToReplyModel;
 
   FeedModel? get toldyaToReplyModel => _toldyaToReplyModel;
@@ -31,12 +35,12 @@ class FeedState extends AppState {
   List<FeedModel>? _feedlist;
   List<FeedModel>? _filterfeedlist;
   dabase.Query? _feedQuery;
-  List<FeedModel>? _tweetDetailModelList;
+  List<FeedModel>? _toldyaDetailModelList;
   List<String>? _userfollowingList;
 
   List<String>? get followingList => _userfollowingList;
 
-  List<FeedModel>? get tweetDetailModel => _tweetDetailModelList;
+  List<FeedModel>? get toldyaDetailModel => _toldyaDetailModelList;
 
   /// `feedlist` always [contain all tweets] fetched from firebase database
   List<FeedModel>? get feedlist {
@@ -49,7 +53,7 @@ class FeedState extends AppState {
   }
 
   /// contain tweet list for home page
-  List<FeedModel> getTweetListByFollow(UserModel? userModel) {
+  List<FeedModel> getToldyaListByFollow(UserModel? userModel) {
     if (userModel == null) {
       return [];
     }
@@ -57,7 +61,7 @@ class FeedState extends AppState {
     if (!isBusy && feedlist != null && feedlist!.isNotEmpty) {
       final list = feedlist!.where((x) {
         if (x.parentkey != null &&
-            x.childRetwetkey == null &&
+            x.childRetoldyaKey == null &&
             x.user?.userId != userModel.userId) {
           return false;
         }
@@ -75,13 +79,13 @@ class FeedState extends AppState {
   }
 
   /// contain tweet list for home page
-  List<FeedModel> getTweetList(UserModel? userModel) {
+  List<FeedModel> getToldyaList(UserModel? userModel) {
     if (userModel == null) return [];
     if (!isBusy && feedlist != null && feedlist!.isNotEmpty) {
       return feedlist!.where((x) {
         if (x.parentkey != null &&
             x.statu == Statu.statusLive &&
-            x.childRetwetkey == null &&
+            x.childRetoldyaKey == null &&
             x.user?.userId != userModel.userId) {
           return false;
         }
@@ -91,7 +95,7 @@ class FeedState extends AppState {
     return [];
   }
 
-  List<FeedModel> getTweetListByTopic(UserModel? userModel, List<String> inBlackList, String searchWord, int statu,
+  List<FeedModel> getToldyaListByTopic(UserModel? userModel, List<String> inBlackList, String searchWord, int statu,
       {String topic_val = "Akış"}) {
     if (userModel == null || feedlist == null) return [];
     List<FeedModel> filterList = feedlist!;
@@ -114,7 +118,7 @@ class FeedState extends AppState {
       }
       final list = filterList.where((x) {
         if (x.parentkey != null &&
-            x.childRetwetkey == null &&
+            x.childRetoldyaKey == null &&
             x.user?.userId != userModel.userId) {
           return false;
         }
@@ -149,7 +153,7 @@ class FeedState extends AppState {
     return [];
   }
 
-  void getTweetListByTopicAndSearch(UserModel? userModel, String searchWord,
+  void getToldyaListByTopicAndSearch(UserModel? userModel, String searchWord,
       {String topic_val = "Akış"}) {
     if (userModel == null || feedlist == null) {
       _feedlist = [];
@@ -175,7 +179,7 @@ class FeedState extends AppState {
       }
       final list = filterList.where((x) {
         if (x.parentkey != null &&
-            x.childRetwetkey == null &&
+            x.childRetoldyaKey == null &&
             x.user?.userId != userModel.userId) {
           return false;
         }
@@ -197,43 +201,43 @@ class FeedState extends AppState {
 
   /// set tweet for detail tweet page
   /// Setter call when tweet is tapped to view detail
-  /// Add Tweet detail is added in _tweetDetailModelList
+  /// Add Tweet detail is added in _toldyaDetailModelList
   /// It makes `Fwitter` to view nested Tweets
   set setFeedModel(FeedModel model) {
-    if (_tweetDetailModelList == null) {
-      _tweetDetailModelList = [];
+    if (_toldyaDetailModelList == null) {
+      _toldyaDetailModelList = [];
     }
 
     /// [Skip if any duplicate tweet already present]
-    if (_tweetDetailModelList!.length >= 0) {
-      _tweetDetailModelList!.add(model);
+    if (_toldyaDetailModelList!.length >= 0) {
+      _toldyaDetailModelList!.add(model);
       cprint(
-          "Detail Tweet added. Total Tweet: ${_tweetDetailModelList!.length}");
+          "Detail Tweet added. Total Tweet: ${_toldyaDetailModelList!.length}");
       notifyListeners();
     }
   }
 
   /// `remove` last Tweet from tweet detail page stack
   /// Function called when navigating back from a Tweet detail
-  /// `_tweetDetailModelList` is map which contain lists of commment Tweet list
-  /// After removing Tweet from Tweet detail Page stack its commnets tweet is also removed from `_tweetDetailModelList`
-  void removeLastTweetDetail(String tweetKey) {
-    if (_tweetDetailModelList != null && _tweetDetailModelList!.length > 0) {
-      FeedModel removeTweet =
-          _tweetDetailModelList!.lastWhere((x) => x.key == tweetKey);
-      _tweetDetailModelList!.remove(removeTweet);
-      tweetReplyMap.removeWhere((key, value) => key == tweetKey);
+  /// `_toldyaDetailModelList` is map which contain lists of commment Tweet list
+  /// After removing Tweet from Tweet detail Page stack its commnets tweet is also removed from `_toldyaDetailModelList`
+  void removeLastToldyaDetail(String toldyaKey) {
+    if (_toldyaDetailModelList != null && _toldyaDetailModelList!.length > 0) {
+      FeedModel removeToldya =
+          _toldyaDetailModelList!.lastWhere((x) => x.key == toldyaKey);
+      _toldyaDetailModelList!.remove(removeToldya);
+      toldyaReplyMap.removeWhere((key, value) => key == toldyaKey);
       cprint(
-          "Last Tweet removed from stack. Remaining Tweet: ${_tweetDetailModelList!.length}");
+          "Last Tweet removed from stack. Remaining Tweet: ${_toldyaDetailModelList!.length}");
     }
   }
 
   /// [clear all tweets] if any tweet present in tweet detail page or comment tweet
   void clearAllDetailAndReplyToldyaStack() {
-    if (_tweetDetailModelList != null) {
-      _tweetDetailModelList!.clear();
+    if (_toldyaDetailModelList != null) {
+      _toldyaDetailModelList!.clear();
     }
-    tweetReplyMap.clear();
+    toldyaReplyMap.clear();
     cprint('Empty tweets from stack');
   }
 
@@ -241,10 +245,10 @@ class FeedState extends AppState {
   Future<bool> databaseInit() {
     try {
       if (_feedQuery == null) {
-        _feedQuery = kDatabase.child("tweet");
-        _feedQuery!.onChildAdded.listen(_onTweetAdded);
-        _feedQuery!.onValue.listen(_onTweetChanged);
-        _feedQuery!.onChildRemoved.listen(_onTweetRemoved);
+        _feedQuery = kDatabase.child("toldya");
+        _feedQuery!.onChildAdded.listen(_onToldyaAdded);
+        _feedQuery!.onValue.listen(_onToldyaChanged);
+        _feedQuery!.onChildRemoved.listen(_onToldyaRemoved);
       }
 
       return Future.value(true);
@@ -260,14 +264,14 @@ class FeedState extends AppState {
       isBusy = true;
       _feedlist = null;
       notifyListeners();
-      kDatabase.child('tweet').once().then((snapshot) {
+      kDatabase.child('toldya').once().then((snapshot) {
         _feedlist = <FeedModel>[];
         if (snapshot.snapshot.value != null) {
           final map = Map<dynamic, dynamic>.from(snapshot.snapshot.value as Map);
           map.forEach((key, value) {
             var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
             model.key = key.toString();
-            if (model.isValidTweet) {
+            if (model.isValidToldya) {
               _feedlist!.add(model);
             }
           });
@@ -291,33 +295,33 @@ class FeedState extends AppState {
   /// After getting tweet detail fetch tweet coments from firebase
   void getpostDetailFromDatabase(String postID, {FeedModel? model}) async {
     try {
-      FeedModel? _tweetDetail;
+      FeedModel? _toldyaDetail;
       if (model != null) {
-        _tweetDetail = model;
-        setFeedModel = _tweetDetail;
+        _toldyaDetail = model;
+        setFeedModel = _toldyaDetail;
       } else {
         await kDatabase
-            .child('tweet')
+            .child('toldya')
             .child(postID)
             .once()
             .then((snapshot) {
           if (snapshot.snapshot.value != null) {
             final map = Map<String, dynamic>.from(snapshot.snapshot.value as Map);
-            _tweetDetail = FeedModel.fromJson(map);
-            _tweetDetail!.key = snapshot.snapshot.key ?? '';
-            setFeedModel = _tweetDetail!;
+            _toldyaDetail = FeedModel.fromJson(map);
+            _toldyaDetail!.key = snapshot.snapshot.key ?? '';
+            setFeedModel = _toldyaDetail!;
           }
         });
       }
 
-      if (_tweetDetail != null) {
+      if (_toldyaDetail != null) {
         _commentlist = <FeedModel>[];
-        final replyList = _tweetDetail!.replyTweetKeyList;
+        final replyList = _toldyaDetail!.replyToldyaKeyList;
         if (replyList != null && replyList.isNotEmpty) {
           for (final x in replyList) {
             if (x == null) continue;
             kDatabase
-                .child('tweet')
+                .child('toldya')
                 .child(x)
                 .once()
                 .then((snapshot) {
@@ -332,13 +336,13 @@ class FeedState extends AppState {
               if (x == replyList.last) {
                 _commentlist!.sort((a, b) => DateTime.parse(b.createdAt ?? '')
                     .compareTo(DateTime.parse(a.createdAt ?? '')));
-                tweetReplyMap.putIfAbsent(postID, () => _commentlist!);
+                toldyaReplyMap.putIfAbsent(postID, () => _commentlist!);
                 notifyListeners();
               }
             });
           }
         } else {
-          tweetReplyMap.putIfAbsent(postID, () => _commentlist!);
+          toldyaReplyMap.putIfAbsent(postID, () => _commentlist!);
           notifyListeners();
         }
       }
@@ -349,23 +353,23 @@ class FeedState extends AppState {
 
   /// Fetch `Retweet` model from firebase realtime kDatabase.
   /// Retweet itself  is a type of `Tweet`
-  Future<FeedModel?> fetchTweet(String postID) async {
-    FeedModel? _tweetDetail;
+  Future<FeedModel?> fetchToldya(String postID) async {
+    FeedModel? _toldyaDetail;
 
     if (feedlist != null && feedlist!.any((x) => x.key == postID)) {
-      _tweetDetail = feedlist!.firstWhere((x) => x.key == postID);
+      _toldyaDetail = feedlist!.firstWhere((x) => x.key == postID);
     } else {
       cprint("Fetched from DB: " + postID);
-      final snapshot = await kDatabase.child('tweet').child(postID).once();
+      final snapshot = await kDatabase.child('toldya').child(postID).once();
       if (snapshot.snapshot.value != null) {
         final map = Map<String, dynamic>.from(snapshot.snapshot.value as Map);
-        _tweetDetail = FeedModel.fromJson(map);
-        _tweetDetail!.key = snapshot.snapshot.key ?? '';
+        _toldyaDetail = FeedModel.fromJson(map);
+        _toldyaDetail!.key = snapshot.snapshot.key ?? '';
       } else {
         cprint("Fetched null value from  DB");
       }
     }
-    return _tweetDetail;
+    return _toldyaDetail;
   }
 
   /// create [New Tweet]
@@ -374,7 +378,7 @@ class FeedState extends AppState {
     isBusy = true;
     notifyListeners();
     try {
-      kDatabase.child('tweet').push().set(model.toJson());
+      kDatabase.child('toldya').push().set(model.toJson());
     } catch (error) {
       cprint(error, errorIn: 'createToldya');
     }
@@ -389,7 +393,7 @@ class FeedState extends AppState {
       createToldya(model);
       final reply = _toldyaToReplyModel;
       if (reply != null) {
-        reply.retweetCount = (reply.retweetCount ?? 0) + 1;
+        reply.retoldyaCount = (reply.retoldyaCount ?? 0) + 1;
         updateToldya(reply);
       }
     } catch (error) {
@@ -405,16 +409,16 @@ class FeedState extends AppState {
   deleteToldya(String toldyaId, ToldyaType type, {String? parentkey}) {
     try {
       /// Delete tweet if it is in nested tweet detail page
-      kDatabase.child('tweet').child(toldyaId).remove().then((_) {
+      kDatabase.child('toldya').child(toldyaId).remove().then((_) {
         if (type == ToldyaType.Detail &&
-            _tweetDetailModelList != null &&
-            _tweetDetailModelList!.length > 0) {
-          _tweetDetailModelList!.removeWhere((x) => x.key == toldyaId);
-          if (_tweetDetailModelList!.isEmpty) {
-            _tweetDetailModelList = null;
+            _toldyaDetailModelList != null &&
+            _toldyaDetailModelList!.length > 0) {
+          _toldyaDetailModelList!.removeWhere((x) => x.key == toldyaId);
+          if (_toldyaDetailModelList!.isEmpty) {
+            _toldyaDetailModelList = null;
           }
 
-          cprint('Tweet deleted from nested tweet detail page tweet');
+          cprint('Toldya deleted from nested toldya detail page');
         }
       });
     } catch (error) {
@@ -429,7 +433,7 @@ class FeedState extends AppState {
       notifyListeners();
       var storageReference = FirebaseStorage.instance
           .ref()
-          .child("tweetImage")
+          .child("toldyaImage")
           .child(Path.basename(file.path));
       await storageReference.putFile(file);
 
@@ -462,7 +466,7 @@ class FeedState extends AppState {
 
   /// [update] tweet
   updateToldya(FeedModel model) async {
-    await kDatabase.child('tweet').child(model.key ?? '').set(model.toJson());
+    await kDatabase.child('toldya').child(model.key ?? '').set(model.toJson());
   }
 
   /// Pari-Mutuel: Kazananlara token dağıtımı
@@ -528,12 +532,12 @@ class FeedState extends AppState {
         likeList.add(UserPegModel(userId: userId, pegCount: count));
       }
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('likeList')
           .set(likeList.map((e) => e.toJson()).toList());
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('likeCount')
           .set(model.likeCount);
@@ -580,12 +584,12 @@ class FeedState extends AppState {
       }
       model.unlikeCount = (model.unlikeCount ?? 0) + count;
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('unlikeList')
           .set(unlikeList.map((e) => e.toJson()).toList());
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('unlikeCount')
           .set(model.unlikeCount);
@@ -606,31 +610,133 @@ class FeedState extends AppState {
   /// Bahis işlemini backend (placeBet Callable) üzerinden yapar; limit ve bakiye kontrolü sunucuda.
   /// Başarıda authState bakiye güncellenir ve yerel feed listesi güncellenir.
   Future<void> placeBet(AuthState authState, FeedModel model, String userId, int amount, int commentFlag) async {
-    final callable = FirebaseFunctions.instance.httpsCallable("placeBet");
-    final side = commentFlag == 0 ? 1 : 2; // 1 = Evet (like), 2 = Hayır (unlike)
-    final result = await callable.call(<String, dynamic>{
-      "tweetId": model.key,
-      "side": side,
-      "amount": amount,
-    });
-    final data = result.data as Map<dynamic, dynamic>?;
-    if (data == null || data["ok"] != true) {
+    debugPrint('[placeBet] Başlatılıyor...');
+    debugPrint('[placeBet] toldyaId: ${model.key}');
+    debugPrint('[placeBet] side: ${commentFlag == 0 ? 1 : 2} (commentFlag: $commentFlag)');
+    debugPrint('[placeBet] amount: $amount');
+    debugPrint('[placeBet] userId: $userId');
+    
+    // Authentication kontrolü
+    final currentUser = authState.user;
+    if (currentUser == null) {
+      debugPrint('[placeBet] HATA: Kullanıcı giriş yapmamış!');
       throw FirebaseFunctionsException(
-        code: "unknown",
-        message: "Bahis kabul edilemedi.",
+        code: "unauthenticated",
+        message: "Giriş yapmanız gerekiyor.",
       );
     }
-    final newBalance = data["newBalance"] as int? ?? 0;
-    final newStashBalance = data["newStashBalance"] as int? ?? 0;
-    authState.updateBalanceFromBet(newBalance, newStashBalance);
-    _updateLocalFeedModelAfterBet(model.key, userId, amount, commentFlag == 0);
-    notifyListeners();
+    debugPrint('[placeBet] Kullanıcı doğrulandı: ${currentUser.uid}');
+    
+    // Authentication token'ı kontrol et ve yenile
+    try {
+      debugPrint('[placeBet] Authentication token kontrol ediliyor...');
+      final tokenResult = await currentUser.getIdTokenResult();
+      debugPrint('[placeBet] Token geçerli: ${tokenResult.token?.isNotEmpty ?? false}');
+      debugPrint('[placeBet] Token expiration: ${tokenResult.expirationTime}');
+      
+      // Token'ı yenile (eğer gerekiyorsa)
+      await currentUser.getIdToken(true); // Force refresh
+      debugPrint('[placeBet] Token yenilendi');
+    } catch (tokenError) {
+      debugPrint('[placeBet] Token hatası (devam ediliyor): $tokenError');
+      // Token hatası olsa bile devam et, Cloud Functions kendi token'ını alacak
+    }
+    
+    try {
+      final side = commentFlag == 0 ? 1 : 2; // 1 = Evet (like), 2 = Hayır (unlike)
+      final idToken = await currentUser.getIdToken(true);
+      if (idToken == null || idToken.isEmpty) {
+        throw FirebaseFunctionsException(
+          code: "unauthenticated",
+          message: "Oturum bilgisi alınamadı. Lütfen tekrar giriş yapın.",
+        );
+      }
+
+      // Doğrudan HTTP ile çağır (Firebase SDK callable GMS broker hatası bypass)
+      final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/placeBet');
+      debugPrint('[placeBet] HTTP çağrılıyor: $uri');
+      debugPrint('[placeBet] Parametreler: toldyaId=${model.key}, side=$side, amount=$amount');
+
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'data': {
+                'toldyaId': model.key,
+                'side': side,
+                'amount': amount,
+              },
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              debugPrint('[placeBet] TIMEOUT: İstek zaman aşımına uğradı');
+              throw FirebaseFunctionsException(
+                code: "deadline-exceeded",
+                message: "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
+              );
+            },
+          );
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>? ?? {};
+      if (body.containsKey('error')) {
+        final err = body['error'] as Map<String, dynamic>? ?? {};
+        final code = (err['status'] as String?)?.toLowerCase().replaceAll('_', '-') ?? 'unknown';
+        final message = err['message'] as String? ?? 'Bahis kabul edilemedi.';
+        debugPrint('[placeBet] Sunucu hatası: $code - $message');
+        throw FirebaseFunctionsException(code: code, message: message);
+      }
+
+      final result = body['result'] as Map<String, dynamic>?;
+      final data = result;
+      if (data == null || data['ok'] != true) {
+        debugPrint('[placeBet] HATA: data null veya ok != true');
+        debugPrint('[placeBet] data: $data');
+        throw FirebaseFunctionsException(
+          code: "unknown",
+          message: "Bahis kabul edilemedi.",
+        );
+      }
+
+      final newBalance = (data['newBalance'] as num?)?.toInt() ?? 0;
+      final newStashBalance = (data['newStashBalance'] as num?)?.toInt() ?? 0;
+      debugPrint('[placeBet] Yeni bakiye: $newBalance, stash: $newStashBalance');
+
+      authState.updateBalanceFromBet(newBalance, newStashBalance);
+      _updateLocalFeedModelAfterBet(model.key, userId, amount, commentFlag == 0);
+      notifyListeners();
+      debugPrint('[placeBet] Başarıyla tamamlandı!');
+    } on PlatformException catch (e) {
+      // Native Android hataları PlatformException olarak gelir
+      debugPrint('[placeBet] PlatformException');
+      debugPrint('[placeBet] code: ${e.code}');
+      debugPrint('[placeBet] message: ${e.message}');
+      debugPrint('[placeBet] details: ${e.details}');
+      debugPrint('[placeBet] stacktrace: ${e.stacktrace}');
+      rethrow; // Hatayı yukarı fırlat ki _send() içinde yakalansın
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('[placeBet] FirebaseFunctionsException');
+      debugPrint('[placeBet] code: ${e.code}');
+      debugPrint('[placeBet] message: ${e.message}');
+      debugPrint('[placeBet] details: ${e.details}');
+      rethrow; // Hatayı yukarı fırlat ki _send() içinde yakalansın
+    } catch (e, stackTrace) {
+      debugPrint('[placeBet] EXCEPTION: $e');
+      debugPrint('[placeBet] Type: ${e.runtimeType}');
+      debugPrint('[placeBet] Stack trace: $stackTrace');
+      rethrow; // Hatayı yukarı fırlat ki _send() içinde yakalansın
+    }
   }
 
-  void _updateLocalFeedModelAfterBet(String? tweetKey, String userId, int amount, bool isLike) {
-    if (tweetKey == null || _feedlist == null) return;
+  void _updateLocalFeedModelAfterBet(String? toldyaKey, String userId, int amount, bool isLike) {
+    if (toldyaKey == null || _feedlist == null) return;
     for (final f in _feedlist!) {
-      if (f.key == tweetKey) {
+      if (f.key == toldyaKey) {
         if (isLike) {
           f.likeList ??= [];
           final idx = f.likeList!.indexWhere((e) => e.userId == userId);
@@ -659,7 +765,7 @@ class FeedState extends AppState {
       if (model.disputeUserIds!.contains(userId)) return;
       model.disputeUserIds!.add(userId);
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('disputeUserIds')
           .set(model.disputeUserIds);
@@ -678,7 +784,7 @@ class FeedState extends AppState {
       }
 
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('reportList')
           .set(model.reportList);
@@ -697,7 +803,7 @@ class FeedState extends AppState {
       }
 
       kDatabase
-          .child('tweet')
+          .child('toldya')
           .child(model.key ?? '')
           .child('favList')
           .set(model.favList);
@@ -708,7 +814,7 @@ class FeedState extends AppState {
 
   /// Add [new comment tweet] to any tweet
   /// Comment is a Tweet itself
-  addcommentToPost(FeedModel replyTweet) {
+  addcommentToPost(FeedModel replyToldya) {
     try {
       isBusy = true;
       notifyListeners();
@@ -720,11 +826,11 @@ class FeedState extends AppState {
           feedlist.isNotEmpty &&
           feedlist.any((x) => x.key == toReply.key)) {
         FeedModel parentToldya = feedlist.firstWhere((x) => x.key == toReply.key);
-        var json = replyTweet.toJson();
-        kDatabase.child('tweet').push().set(json).then((value) {
+        var json = replyToldya.toJson();
+        kDatabase.child('toldya').push().set(json).then((value) {
           final lastKey = feedlist.isNotEmpty ? feedlist.last.key : null;
           if (lastKey != null) {
-            (parentToldya.replyTweetKeyList ??= []).add(lastKey);
+            (parentToldya.replyToldyaKeyList ??= []).add(lastKey);
           }
           updateToldya(parentToldya);
         });
@@ -739,7 +845,7 @@ class FeedState extends AppState {
   /// Trigger when any tweet changes or update
   /// When any tweet changes it update it in UI
   /// No matter if Tweet is in home page or in detail page or in comment section.
-  _onTweetChanged(DatabaseEvent event) {
+  _onToldyaChanged(DatabaseEvent event) {
     final value = event.snapshot.value;
     if (value == null) return;
     final map = Map<String, dynamic>.from(value as Map);
@@ -752,7 +858,7 @@ class FeedState extends AppState {
       if (idx >= 0) feedlist[idx] = model;
     }
 
-    final detailList = _tweetDetailModelList;
+    final detailList = _toldyaDetailModelList;
     if (detailList != null && detailList.isNotEmpty) {
       if (detailList.any((x) => x.key == model.key)) {
         var oldEntry = detailList.lastWhere((entry) => entry.key == event.snapshot.key);
@@ -761,12 +867,12 @@ class FeedState extends AppState {
       }
       final parentKey = model.parentkey;
       if (parentKey != null) {
-        var list = tweetReplyMap[parentKey];
+        var list = toldyaReplyMap[parentKey];
         if (list != null && list.isNotEmpty) {
           final idx = list.indexWhere((x) => x.key == model.key);
           if (idx >= 0) list[idx] = model;
         } else {
-          tweetReplyMap[parentKey] = [model];
+          toldyaReplyMap[parentKey] = [model];
         }
       }
     }
@@ -780,18 +886,18 @@ class FeedState extends AppState {
   /// Trigger when new tweet added
   /// It will add new Tweet in home page list.
   /// IF Tweet is comment it will be added in comment section too.
-  _onTweetAdded(DatabaseEvent event) {
+  _onToldyaAdded(DatabaseEvent event) {
     final value = event.snapshot.value;
     if (value == null) return;
     final map = Map<String, dynamic>.from(value as Map);
-    FeedModel tweet = FeedModel.fromJson(map);
-    tweet.key = event.snapshot.key ?? '';
+    FeedModel toldya = FeedModel.fromJson(map);
+    toldya.key = event.snapshot.key ?? '';
 
-    _onCommentAdded(tweet);
+    _onCommentAdded(toldya);
     _feedlist ??= <FeedModel>[];
-    if ((_feedlist!.isEmpty || _feedlist!.any((x) => x.key != tweet.key)) &&
-        tweet.isValidTweet) {
-      _feedlist!.add(tweet);
+    // Sadece listede aynı key yoksa ekle (getDataFromDatabase + onChildAdded aynı kaydı iki kez eklemesin)
+    if (toldya.isValidToldya && !_feedlist!.any((x) => x.key == toldya.key)) {
+      _feedlist!.add(toldya);
     }
     isBusy = false;
     notifyListeners();
@@ -801,11 +907,11 @@ class FeedState extends AppState {
   /// Check if Tweet is a comment
   /// If Yes it will add tweet in comment list.
   /// add [new tweet] comment to comment list
-  _onCommentAdded(FeedModel tweet) {
-    if (tweet.childRetwetkey != null) return;
-    final parentKey = tweet.parentkey;
+  _onCommentAdded(FeedModel toldya) {
+    if (toldya.childRetoldyaKey != null) return;
+    final parentKey = toldya.parentkey;
     if (parentKey != null) {
-      (tweetReplyMap[parentKey] ??= []).add(tweet);
+      (toldyaReplyMap[parentKey] ??= []).add(toldya);
       cprint('Comment Added');
     }
     isBusy = false;
@@ -814,110 +920,110 @@ class FeedState extends AppState {
 
   /// Trigger when Tweet `Deleted`
   /// It removed Tweet from home page list, Tweet detail page list and from comment section if present
-  _onTweetRemoved(DatabaseEvent event) async {
+  _onToldyaRemoved(DatabaseEvent event) async {
     final value = event.snapshot.value;
     if (value == null) return;
     final map = Map<String, dynamic>.from(value as Map);
-    FeedModel tweet = FeedModel.fromJson(map);
-    tweet.key = event.snapshot.key ?? '';
-    var tweetId = tweet.key ?? '';
-    var parentkey = tweet.parentkey;
+    FeedModel toldya = FeedModel.fromJson(map);
+    toldya.key = event.snapshot.key ?? '';
+    var toldyaId = toldya.key ?? '';
+    var parentkey = toldya.parentkey;
 
-    ///  Delete tweet in [Home Page]
+    ///  Delete toldya in [Home Page]
     try {
-      FeedModel? deletedTweet;
+      FeedModel? deletedToldya;
       final feedlist = _feedlist;
       if (feedlist != null &&
           feedlist.isNotEmpty &&
-          tweetId.isNotEmpty &&
-          feedlist.any((x) => x.key == tweetId)) {
-        /// Delete tweet if it is in home page tweet.
-        deletedTweet = feedlist.firstWhere((x) => x.key == tweetId);
-        _feedlist!.remove(deletedTweet);
+          toldyaId.isNotEmpty &&
+          feedlist.any((x) => x.key == toldyaId)) {
+        /// Delete toldya if it is in home page list.
+        deletedToldya = feedlist.firstWhere((x) => x.key == toldyaId);
+        _feedlist!.remove(deletedToldya);
 
-        final dpk = deletedTweet.parentkey;
+        final dpk = deletedToldya.parentkey;
         if (dpk != null &&
             _feedlist!.isNotEmpty &&
             _feedlist!.any((x) => x.key == dpk)) {
-          // Decrease parent Tweet comment count and update
+          // Decrease parent toldya comment count and update
           var parentModel = _feedlist!.firstWhere((x) => x.key == dpk);
-          (parentModel.replyTweetKeyList ??= []).remove(deletedTweet.key);
+          (parentModel.replyToldyaKeyList ??= []).remove(deletedToldya.key);
           parentModel.commentCount =
-              (parentModel.replyTweetKeyList ?? []).length;
+              (parentModel.replyToldyaKeyList ?? []).length;
           updateToldya(parentModel);
         }
         if (_feedlist!.isEmpty) {
           _feedlist = null;
         }
-        cprint('Tweet deleted from home page tweet list');
+        cprint('Toldya deleted from home page list');
       }
 
-      /// [Delete tweet] if it is in nested tweet detail comment section page
+      /// [Delete toldya] if it is in nested toldya detail comment section page
       if (parentkey != null &&
           parentkey.isNotEmpty &&
-          tweetReplyMap.isNotEmpty &&
-          tweetReplyMap.containsKey(parentkey)) {
-        final replyList = tweetReplyMap[parentkey];
+          toldyaReplyMap.isNotEmpty &&
+          toldyaReplyMap.containsKey(parentkey)) {
+        final replyList = toldyaReplyMap[parentkey];
         if (replyList != null &&
             replyList.isNotEmpty &&
-            replyList.any((x) => x.key == tweetId)) {
-          deletedTweet ??=
-              replyList.firstWhere((x) => x.key == tweetId);
-          tweetReplyMap[parentkey]!.remove(deletedTweet);
-          if (tweetReplyMap[parentkey]!.isEmpty) {
-            tweetReplyMap.remove(parentkey);
+            replyList.any((x) => x.key == toldyaId)) {
+          deletedToldya ??=
+              replyList.firstWhere((x) => x.key == toldyaId);
+          toldyaReplyMap[parentkey]!.remove(deletedToldya);
+          if (toldyaReplyMap[parentkey]!.isEmpty) {
+            toldyaReplyMap.remove(parentkey);
           }
 
-          if (_tweetDetailModelList != null &&
-              _tweetDetailModelList!.isNotEmpty &&
-              _tweetDetailModelList!.any((x) => x.key == parentkey)) {
+          if (_toldyaDetailModelList != null &&
+              _toldyaDetailModelList!.isNotEmpty &&
+              _toldyaDetailModelList!.any((x) => x.key == parentkey)) {
             var parentModel =
-                _tweetDetailModelList!.firstWhere((x) => x.key == parentkey);
-            (parentModel.replyTweetKeyList ??= []).remove(deletedTweet.key);
+                _toldyaDetailModelList!.firstWhere((x) => x.key == parentkey);
+            (parentModel.replyToldyaKeyList ??= []).remove(deletedToldya.key);
             parentModel.commentCount =
-                (parentModel.replyTweetKeyList ?? []).length;
-            cprint('Parent tweet comment count updated on child tweet removal');
+                (parentModel.replyToldyaKeyList ?? []).length;
+            cprint('Parent toldya comment count updated on child toldya removal');
             updateToldya(parentModel);
           }
 
-          cprint('Tweet deleted from nested tweet detail comment section');
+          cprint('Toldya deleted from nested toldya detail comment section');
         }
       }
 
-      if (deletedTweet == null) return;
+      if (deletedToldya == null) return;
 
-      /// Delete tweet image from firebase storage if exist.
-      if (deletedTweet.imagePath != null &&
-          deletedTweet.imagePath!.isNotEmpty) {
-        deleteFile(deletedTweet.imagePath!, 'tweetImage');
+      /// Delete toldya image from firebase storage if exist.
+      if (deletedToldya.imagePath != null &&
+          deletedToldya.imagePath!.isNotEmpty) {
+        deleteFile(deletedToldya.imagePath!, 'toldyaImage');
       }
 
-      /// If a retweet is deleted then retweetCount of original tweet should be decrease by 1.
-      if (deletedTweet.childRetwetkey != null) {
-        await fetchTweet(deletedTweet.childRetwetkey!).then((retweetModel) {
-          if (retweetModel == null) {
+      /// If a retoldya is deleted then retoldyaCount of original toldya should be decrease by 1.
+      if (deletedToldya.childRetoldyaKey != null) {
+        await fetchToldya(deletedToldya.childRetoldyaKey!).then((retoldyaModel) {
+          if (retoldyaModel == null) {
             return;
           }
-          if ((retweetModel.retweetCount ?? 0) > 0) {
-            retweetModel.retweetCount = (retweetModel.retweetCount ?? 0) - 1;
+          if ((retoldyaModel.retoldyaCount ?? 0) > 0) {
+            retoldyaModel.retoldyaCount = (retoldyaModel.retoldyaCount ?? 0) - 1;
           }
-          updateToldya(retweetModel);
+          updateToldya(retoldyaModel);
         });
       }
 
-      /// Delete notification related to deleted Tweet.
-      if ((deletedTweet.likeCount ?? 0) > 0 &&
-          tweet.userId != null &&
-          tweet.key != null) {
+      /// Delete notification related to deleted Toldya.
+      if ((deletedToldya.likeCount ?? 0) > 0 &&
+          toldya.userId != null &&
+          toldya.key != null) {
         kDatabase
             .child('notification')
-            .child(tweet.userId!)
-            .child(tweet.key!)
+            .child(toldya.userId!)
+            .child(toldya.key!)
             .remove();
       }
       notifyListeners();
     } catch (error) {
-      cprint(error, errorIn: '_onTweetRemoved');
+      cprint(error, errorIn: '_onToldyaRemoved');
     }
   }
 }
