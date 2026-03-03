@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Dark theme: surface arka plan (tema ile uyumlu) -->
+  <rect width="1024" height="1024" rx="220" fill="#1C1C1E"/>
+
+  <!-- Symbol (beyaz) -->
+  <g fill="#FFFFFF">
+
+    <!-- Top T Bar -->
+    <path d="M260 340 
+             Q260 300 300 300 
+             L724 300 
+             Q764 300 764 340 
+             L764 360 
+             L260 360 Z"/>
+
+    <!-- Owl Brow Shape -->
+    <path d="M300 360 
+             Q512 440 724 360 
+             L724 400 
+             Q512 460 300 400 Z"/>
+
+    <!-- Stem -->
+    <rect x="472" y="400" width="80" height="360" rx="40"/>
+
+    <!-- Eyes -->
+    <circle cx="400" cy="480" r="48"/>
+    <circle cx="624" cy="480" r="48"/>
+
+  </g>
+
+</svg>

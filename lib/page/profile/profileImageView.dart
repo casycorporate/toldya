@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/profile/profilePage.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/profile/profilePage.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'package:provider/provider.dart';
 
 class ProfileImageView extends StatelessWidget {
@@ -59,6 +60,14 @@ class ProfileImageView extends StatelessWidget {
     final path = (profilePic != null && profilePic.trim().isNotEmpty)
         ? profilePic
         : DefaultProfilePics.assetForUser(authstate.profileUserModel?.userId);
+    if (path == kToldyaLogo) {
+      return Center(
+        child: ToldyaLogo(
+          width: fullWidth(context) * 0.6,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
     final isAsset = path.startsWith('assets/');
     return Container(
       alignment: Alignment.center,

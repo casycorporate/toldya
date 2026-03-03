@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'DataHolder.dart';
 
 class ImageGridItem extends StatefulWidget {
@@ -62,8 +64,7 @@ class _ImageGridItemState extends State<ImageGridItem> {
               : CircularProgressIndicator(
             strokeWidth: 2,
           ),
-          Image.asset(
-            'assets/images/casy.png',
+          ToldyaLogo(
             height: 30,
             width: 30,
           )

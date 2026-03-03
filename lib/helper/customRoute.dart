@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/routes.dart';
+import 'package:toldya/helper/routes.dart';
 
 class CustomRoute<T> extends MaterialPageRoute<T> {
   CustomRoute({required WidgetBuilder builder, RouteSettings? settings})

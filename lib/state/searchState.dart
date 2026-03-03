@@ -1,7 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
 import 'appState.dart';
 
 class SearchState extends AppState {

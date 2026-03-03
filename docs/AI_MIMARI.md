@@ -1,6 +1,6 @@
 # Yapay Zeka Entegrasyonu – Mimari Özet
 
-Bu doküman, Ben Demiştim uygulamasında **gönderi moderasyonu** (topluluk kuralları + tahmin tutarlılığı) ve **15 dakikalık işte tahmin tutarlılık kontrolü + dağıtım** için kullanılabilecek teknolojileri ve akışı **sadece mimari seviyede** açıklar. Geliştirme yapılmaz; sadece tasarım ve teknoloji seçenekleri çıkarılır.
+Bu doküman, Toldya uygulamasında **gönderi moderasyonu** (topluluk kuralları + tahmin tutarlılığı) ve **15 dakikalık işte tahmin tutarlılık kontrolü + dağıtım** için kullanılabilecek teknolojileri ve akışı **sadece mimari seviyede** açıklar. Geliştirme yapılmaz; sadece tasarım ve teknoloji seçenekleri çıkarılır.
 
 ---
 

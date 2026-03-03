@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 
 class ComposeToldyaImage extends StatelessWidget {
   final File? image;

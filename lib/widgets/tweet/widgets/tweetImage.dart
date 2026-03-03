@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
 
 class ToldyaImage extends StatelessWidget {

@@ -1,24 +1,35 @@
 import 'package:flutter/material.dart';
 
-String dummyProfilePic = 'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d';
+/// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
+const String kToldyaLogo = 'assets/images/toldya.svg';
+
+/// Dark tema logosu: koyu arka plan (#1C1C1E), beyaz baykuş.
+const String kToldyaLogoDark = 'assets/images/toldya_dark.svg';
+
+/// Varsayılan profil resmi (uygulama logosu).
+String dummyProfilePic = kToldyaLogo;
 String appFont = 'HelveticaNeuea';
+/// Kayıt sırasında rastgele atanacak varsayılan avatarlar.
 List<String> dummyProfilePicList = [
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d'
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFDjXj1F8Ix-rRFgY_r3GerDoQwfiOMXVt-tZdv_Mcou_yIlUC&s',
-  // 'http://www.azembelani.co.za/wp-content/uploads/2016/07/20161014_58006bf6e7079-3.png',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzDG366qY7vXN2yng09wb517WTWqp-oua-mMsAoCadtncPybfQ&s',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTq7BgpG1CwOveQ_gEFgOJASWjgzHAgVfyozkIXk67LzN1jnj9I&s',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPxjRIYT8pG0zgzKTilbko-MOv8pSnmO63M9FkOvfHoR9FvInm&s',
-  // 'https://cdn5.f-cdn.com/contestentries/753244/11441006/57c152cc68857_thumb900.jpg',
-  // 'https://cdn6.f-cdn.com/contestentries/753244/20994643/57c189b564237_thumb900.jpg'
+  'assets/images/avatar_1.png',
+  'assets/images/avatar_2.png',
+  'assets/images/avatar_3.png',
+  'assets/images/avatar_4.png',
+  'assets/images/avatar_5.png',
+  kToldyaLogo,
+  'assets/images/avatar_1.png',
+  'assets/images/avatar_2.png',
 ];
+
+/// Toldya logosu – yeni mavi baykuş (light/dark varyantlar).
+class ToldyaBranding {
+  ToldyaBranding._();
+  static const String appIcon = kToldyaLogo;
+  static const String logoPrimary = kToldyaLogo;
+  static const String logoHorizontal = kToldyaLogo;
+  static const String logoCompact = kToldyaLogo;
+  static const String logoDark = kToldyaLogoDark;
+}
 
 class AppIcon{
   AppIcon._();

@@ -1,19 +1,19 @@
 import 'dart:io';
 
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/customRoute.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/page/common/usersListPage.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/customRoute.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/page/common/usersListPage.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 

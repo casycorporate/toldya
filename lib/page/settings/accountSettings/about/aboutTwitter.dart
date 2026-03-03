@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({Key? key}) : super(key: key);
@@ -16,12 +18,21 @@ class AboutPage extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'About Fwitter',
+          'Toldya Hakkında',
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: ToldyaLogo(
+                height: 56,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
           HeaderWidget(
             'Help',
             secondHeader: true,
@@ -31,7 +42,7 @@ class AboutPage extends StatelessWidget {
             vPadding: 0,
             showDivider: false,
             onPressed: (){
-              launchURL("https://github.com/TheAlphamerc/casy/issues");
+              launchURL("https://github.com/casycorporate/toldya/issues");
             },
           ),
           HeaderWidget('Legal'),
@@ -53,7 +64,7 @@ class AboutPage extends StatelessWidget {
             onPressed: () async {
               showLicensePage(
                 context: context,
-                applicationName: 'Fwitter',
+                applicationName: 'Toldya',
                 applicationVersion: '1.0.0',
                 useRootNavigator: true,
               );

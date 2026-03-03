@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
 
 class EditProfilePage extends StatefulWidget {

@@ -23,7 +23,7 @@ Bildirimler **Cloud Functions** tarafından gönderilir. Tetikleyici: Realtime D
 1. **İki hesap kullanın:** Cihaz 1 = Tahmin sahibi (A), Cihaz 2 veya emülatör = Bahis yapan (B).
 2. **A hesabıyla** giriş yapın, bir tahmin oluşturun (bitiş tarihi en az 1 saat sonra). Tahmin onaylandıktan sonra akışta görünsün.
 3. **A cihazında** uygulamayı arka plana alın veya kapatmayın; bildirim gelmesi için A’nın **FCM token’ı** veritabanında olmalı (aşağıda “FCM token kontrolü”ne bakın).
-4. **B hesabıyla** giriş yapın, A’nın tahminine Evet veya Hayır bahsi yapın (Bendemistim ile token yatırın).
+4. **B hesabıyla** giriş yapın, A’nın tahminine Evet veya Hayır bahsi yapın (Toldya ile token yatırın).
 5. **Beklenen:** A cihazında “Tahminine Bahis Yapıldı!” bildirimi gelir.
 
 **Tetikleyici:** `placeBet` Cloud Function’ı `notification/{tahminSahibiUserId}/{toldyaId}` path’ine yazı yapar → `onBetCreated` tetiklenir → A’nın `profile/{A}/fcmToken` değeri kullanılarak FCM gönderilir.

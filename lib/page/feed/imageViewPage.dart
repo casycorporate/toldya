@@ -1,14 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/tweet/widgets/tweetIconsRow.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/tweet/widgets/tweetIconsRow.dart';
 import 'package:provider/provider.dart';
 
 class ImageViewPge extends StatefulWidget {

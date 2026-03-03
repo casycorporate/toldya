@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -372,7 +372,7 @@ class Utility {
     final ShortDynamicLink shortLink =
     await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     url = shortLink.shortUrl;
-    share(url.toString(), subject: "casy");
+    share(url.toString(), subject: "Toldya");
     // return url;
     // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.casy");
     //return url;
@@ -407,8 +407,8 @@ class Utility {
     var url = createLinkToShare(context, id,
         socialMetaTagParameters: socialMetaTagParameters);
 
-    share(url.toString(), subject: "casy");
-    // share('https://play.google.com/store/apps/details?id=com.casycorporate.casy', subject: "casy");
+    share(url.toString(), subject: "Toldya");
+    // share('https://play.google.com/store/apps/details?id=com.casycorporate.casy', subject: "Toldya");
   }
 }
 void copyToClipBoard({

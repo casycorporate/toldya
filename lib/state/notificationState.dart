@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/utility.dart';
 import 'package:firebase_database/firebase_database.dart' as dabase;
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/notificationModel.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/appState.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/notificationModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/appState.dart';
 import '../helper/locator.dart';
 import '../helper/push_notification_service.dart';
 

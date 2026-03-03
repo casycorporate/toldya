@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/utility.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

@@ -1,6 +1,6 @@
 {
-  "name": "bendemistim-functions",
-  "description": "Firebase Cloud Functions for Ben demiştim - Sosyal Tahmin Pazarı",
+  "name": "toldya-functions",
+  "description": "Firebase Cloud Functions for Toldya - Sosyal Tahmin Pazarı",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

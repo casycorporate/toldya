@@ -1,10 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'package:provider/provider.dart';
 
 class SidebarMenu extends StatefulWidget {
@@ -72,14 +73,20 @@ class _SidebarMenuState extends State<SidebarMenu> {
                     ],
                   ),
                   child: ClipOval(
-                    child: Image(
-                      image: customAdvanceNetworkImage(
-                        state.userModel?.profilePic ?? dummyProfilePic,
-                      ),
-                      fit: BoxFit.cover,
-                      width: _avatarSize,
-                      height: _avatarSize,
-                    ),
+                    child: (state.userModel?.profilePic ?? dummyProfilePic) == kToldyaLogo
+                        ? ToldyaLogo(
+                            width: _avatarSize,
+                            height: _avatarSize,
+                            fit: BoxFit.cover,
+                          )
+                        : Image(
+                            image: customAdvanceNetworkImage(
+                              state.userModel?.profilePic ?? dummyProfilePic,
+                            ),
+                            fit: BoxFit.cover,
+                            width: _avatarSize,
+                            height: _avatarSize,
+                          ),
                   ),
                 ),
                 SizedBox(width: 14),

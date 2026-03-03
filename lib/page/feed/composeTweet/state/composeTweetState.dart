@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/state/searchState.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/searchState.dart';
 
 class ComposeToldyaState extends ChangeNotifier {
   bool showUserList = false;
@@ -109,7 +109,7 @@ class ComposeToldyaState extends ChangeNotifier {
   ///  {
   ///    "key": "FCM server key here"
   ///  } ```
-  /// For more detail visit:- https://github.com/TheAlphamerc/casy/issues/28#issue-611695533
+  /// For more detail visit:- https://github.com/casycorporate/toldya
   /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
   Future<Null> getFCMServerKey() async {
     /// If FCM server key is already fetched then no need to fetch it again.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/Auth/signup.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/Auth/signup.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../homePage.dart';
@@ -240,7 +240,6 @@ class _WelcomePageState extends State<WelcomePage> {
   //           Container(
   //             width: MediaQuery.of(context).size.width - 80,
   //             height: 40,
-  //             child: Image.asset('assets/images/casy.png'),
   //           ),
   //           Spacer(),
   //           TitleText(

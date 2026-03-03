@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
-import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
-import 'package:bendemistim/widgets/tweet/widgets/tweetImage.dart';
-import 'package:bendemistim/widgets/tweet/widgets/unavailableTweet.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/newWidget/rippleButton.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
+import 'package:toldya/widgets/tweet/widgets/tweetImage.dart';
+import 'package:toldya/widgets/tweet/widgets/unavailableTweet.dart';
 import 'package:provider/provider.dart';
 
 class RetoldyaWidget extends StatelessWidget {

@@ -6,7 +6,7 @@
 1. **Android Studio'yu aç**
 2. **Sağ tarafta Gradle sekmesini aç** (yoksa: View → Tool Windows → Gradle)
 3. **Proje yapısını genişlet:**
-   - `bendemistim` → `android` → `app` → `Tasks` → `android`
+   - `toldya` → `android` → `app` → `Tasks` → `android`
 4. **`signingReport` görevini çift tıkla**
 5. **Alttaki Run sekmesinde SHA-1 ve SHA-256 hash'lerini bul:**
    ```
@@ -30,7 +30,7 @@
 
 2. **Proje klasörüne git:**
    ```powershell
-   cd C:\Users\sinan.yilmaz\Desktop\bendemistim\android
+   cd C:\Users\...\toldya\android
    ```
 
 3. **Gradle ile SHA hash'lerini al:**

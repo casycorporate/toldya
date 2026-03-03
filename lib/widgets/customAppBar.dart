@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 import 'customWidgets.dart';

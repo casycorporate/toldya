@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
 
 /// Ana sayfa ve tahmin detayda ortak: EVET/HAYIR bar + donut tooltip
 class YesNoProgressWithTooltip extends StatelessWidget {

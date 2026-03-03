@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 
 class CustomLoader {
   static CustomLoader? _customLoader;
@@ -101,10 +103,10 @@ class CustomScreenLoader extends StatelessWidget {
                         ? theme.colorScheme.onSurface.withOpacity(0.12)
                         : null,
                   ),
-            Image.asset(
-              'assets/images/casy.png',
+            ToldyaLogo(
               height: 30,
               width: 30,
+              fit: BoxFit.contain,
             )
           ],
         ),

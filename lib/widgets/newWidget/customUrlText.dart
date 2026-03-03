@@ -1,6 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/utility.dart';
 class UrlText extends StatelessWidget {
   final String? text;
   final TextStyle? style;

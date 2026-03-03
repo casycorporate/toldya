@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 /// Mockup’a uygun Token Kazanma: Reklam izle, Günlük bonus, Token paketleri.

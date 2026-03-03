@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
 
 class UnavailableToldya extends StatelessWidget {
   const UnavailableToldya({Key? key, required this.snapshot, required this.type}) : super(key: key);

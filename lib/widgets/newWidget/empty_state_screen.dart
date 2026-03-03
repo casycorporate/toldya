@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
+import 'package:toldya/helper/theme.dart';
 
 /// Ortak boş durum içeriği: minimalist dark arka plan, ikon, başlık, alt yazı.
 class EmptyStateContent extends StatelessWidget {
@@ -58,7 +58,7 @@ class EmptyStateContent extends StatelessWidget {
   }
 }
 
-/// Modern, minimalist empty state for "Ben Demiştim" social betting app.
+/// Modern, minimalist empty state for Toldya social betting app.
 /// Dark mode, readable, with FAB and BottomAppBar.
 class EmptyStateScreen extends StatelessWidget {
   const EmptyStateScreen({
@@ -95,7 +95,7 @@ class EmptyStateScreen extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          'Ben demiştim',
+          'Toldya',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 20,

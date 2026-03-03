@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/page/common/usersListPage.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/page/common/usersListPage.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 class FollowingListPage extends StatelessWidget {

@@ -1,5 +1,5 @@
-name: bendemistim
-description: Ben demiştim - Flutter uygulaması.
+name: toldya
+description: Toldya - Flutter uygulaması.
 
 version: 1.0.1+9
 
@@ -50,6 +50,7 @@ dependencies:
   flutter_picker: ^2.0.2
   crypto: ^3.0.3
   percent_indicator: ^4.2.3
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -60,17 +61,26 @@ dev_dependencies:
   json_annotation: ^4.9.0
   json_serializable: ^6.8.0
 
-flutter_icons:
-  ios: true
+# Launcher ikonu: yeni mavi baykuş (toldya_1024.png)
+flutter_launcher_icons:
   android: true
-  image_path_ios: "assets/images/casy.png"
-  image_path_android: "assets/images/casy.png"
+  ios: true
+  image_path: "assets/images/toldya_1024.png"
+  remove_alpha_ios: true
+  # Android 8+ adaptive icon – eski siyah/altın ikon yerine yeni logo
+  adaptive_icon_background: "#2563EB"
+  adaptive_icon_foreground: "assets/images/toldya_1024.png"
 
 flutter:
   uses-material-design: true
 
   assets:
-   - assets/images/casy.png
+   - assets/images/toldya.svg
+   - assets/images/toldya_dark.svg
+   - assets/images/toldya_1024.png
+   - assets/images/toldya_512.png
+   - assets/images/toldya_192.png
+   - assets/images/favicon_32.png
    - assets/images/qr.png
    - assets/images/bulb.png
    - assets/images/google_logo.png

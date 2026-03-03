@@ -141,7 +141,7 @@ https://[region]-[project-id].cloudfunctions.net/runStashDrip
 **Örnek:**
 ```bash
 # cURL ile
-curl https://us-central1-bendemistim.cloudfunctions.net/runStashDrip
+curl https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/runStashDrip
 
 # Yanıt:
 {

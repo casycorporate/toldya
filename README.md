@@ -1,4 +1,4 @@
-# Bendemistim
+# Toldya
 
 Sosyal tahmin uygulaması (Flutter + Firebase). Tahminler statu değerleriyle yaşam döngüsünden geçer; Cloud Functions içindeki batch’ler belirli statu’deki kayıtları işleyip başka statu’lere taşır veya dağıtım yapar.
 

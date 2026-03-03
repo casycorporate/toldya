@@ -1,4 +1,4 @@
-# Ben Demiştim – Token Ekonomisi (Tokenomics) Tasarım Belgesi
+# Toldya – Token Ekonomisi (Tokenomics) Tasarım Belgesi
 
 **Sürüm:** 1.0  
 **Tarih:** Şubat 2025  

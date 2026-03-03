@@ -8,7 +8,7 @@
 
 ### Yöntem A: Dosyadan (önerilen – 404 / “payload empty” hatalarını önler)
 
-Proje kökünde (örn. `bendemistim`) **PowerShell**:
+Proje kökünde (örn. `toldya`) **PowerShell**:
 
 ```powershell
 # 1) functions klasöründe geçici dosya oluştur; aşağıdaki BURAYA_KEY kısmını

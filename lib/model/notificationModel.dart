@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bendemistim/model/user.dart';
+import 'package:toldya/model/user.dart';
 
 
 class NotificationModel {

@@ -6,13 +6,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:bendemistim/widgets/newWidget/DataHolder.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/DataHolder.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'newWidget/ImageGridItem.dart';
 
 Widget customTitleText(String title, {BuildContext? context}) {
@@ -160,6 +161,20 @@ Widget customImage(
   double height = 50,
   bool isBorder = false,
 }) {
+  final effectivePath = path ?? dummyProfilePic;
+  if (effectivePath == kToldyaLogo) {
+    return Container(
+      width: height,
+      height: height,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      ),
+      child: ClipOval(
+        child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
+      ),
+    );
+  }
   return Container(
     decoration: BoxDecoration(
       shape: BoxShape.circle,
@@ -168,7 +183,7 @@ Widget customImage(
     child: CircleAvatar(
       maxRadius: height / 2,
       backgroundColor: Theme.of(context).cardColor,
-      backgroundImage: customAdvanceNetworkImage(path ?? dummyProfilePic),
+      backgroundImage: customAdvanceNetworkImage(effectivePath),
     ),
   );
 }
@@ -184,6 +199,19 @@ Widget customProfileImage(
   final effectivePath = (profilePic != null && profilePic.trim().isNotEmpty)
       ? profilePic
       : DefaultProfilePics.assetForUser(userId);
+  if (effectivePath == kToldyaLogo) {
+    return Container(
+      width: height,
+      height: height,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      ),
+      child: ClipOval(
+        child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
+      ),
+    );
+  }
   final isAsset = effectivePath.startsWith('assets/');
   return Container(
     decoration: BoxDecoration(
@@ -275,9 +303,20 @@ SizedBox sizedBox({double height = 5, String? title}) {
 }
 
 Widget customNetworkImage(String path, {BoxFit fit = BoxFit.contain}) {
+  final url = path ?? dummyProfilePic;
+  if (url == kToldyaLogo) {
+    return ToldyaLogo(fit: fit);
+  }
+  if (url.startsWith('assets/')) {
+    return Image.asset(
+      url,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Icon(Icons.error),
+    );
+  }
   return CachedNetworkImage(
     fit: fit,
-    imageUrl: path ?? dummyProfilePic,
+    imageUrl: url,
     imageBuilder: (context, imageProvider) => Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -298,9 +337,11 @@ dynamic customAdvanceNetworkImage(String path) {
   if (path == null) {
     path = dummyProfilePic;
   }
-  return CachedNetworkImageProvider(
-    path ?? dummyProfilePic,
-  );
+  path = path ?? dummyProfilePic;
+  if (path.startsWith('assets/')) {
+    return AssetImage(path);
+  }
+  return CachedNetworkImageProvider(path);
 }
 
 void showAlert(BuildContext context,

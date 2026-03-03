@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/common/splash.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/common/splash.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 
 class UpdateApp extends StatefulWidget {
   const UpdateApp({Key? key}) : super(key: key);
@@ -42,7 +44,10 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Image.asset("assets/images/casy.png"),
+            ToldyaLogo(
+              height: 80,
+              fit: BoxFit.contain,
+            ),
             TitleText(
               "Yeni Güncelleme mevcut",
               fontSize: 25,

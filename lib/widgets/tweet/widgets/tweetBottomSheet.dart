@@ -1,19 +1,19 @@
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/model/userPegModel.dart';
-import 'package:bendemistim/page/feed/composeTweet/state/composeTweetState.dart';
-import 'package:bendemistim/state/searchState.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/model/userPegModel.dart';
+import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
+import 'package:toldya/state/searchState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
 
 class ToldyaBottomSheet {
@@ -549,16 +549,15 @@ class ToldyaBottomSheet {
       context: context,
       builder: (context) {
         return Container(
-            padding: EdgeInsets.only(top: 12, bottom: MediaQuery.of(context).padding.bottom + 12),
-            height: fullHeight(context) * 0.36,
+            padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).padding.bottom + 20),
+            constraints: BoxConstraints(maxHeight: fullHeight(context) * 0.6),
             width: fullWidth(context),
             decoration: BoxDecoration(
-              color: MockupDesign.card,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(MockupDesign.cardRadius)),
-              border: Border(top: BorderSide(color: MockupDesign.cardBorder, width: 1)),
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 20,
                   offset: Offset(0, -4),
                 ),
@@ -571,54 +570,86 @@ class ToldyaBottomSheet {
 
   Widget _retweet(BuildContext context, FeedModel model, ToldyaType type,
       int commentFlag) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(2),
+    final totalLike = sumOfVote(model.likeList ?? []);
+    final totalUnlike = sumOfVote(model.unlikeList ?? []);
+    final total = totalLike + totalUnlike;
+    final evetPercent = total > 0 ? (totalLike * 100 / total).round() : 50;
+    final hayirPercent = total > 0 ? (totalUnlike * 100 / total).round() : 50;
+    final isEvet = commentFlag == 0;
+    const evetGreen = Color(0xFFE8F5E9);
+    const hayirGray = Color(0xFFF5F5F5);
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
-        SizedBox(height: 16),
-        Text(
-          'Bahis miktarını belirle',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: MockupDesign.textPrimary,
+          SizedBox(height: 20),
+          Text(
+            model.description ?? 'Tahmin',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
+              height: 1.3,
+            ),
           ),
-        ),
-        SizedBox(height: 12),
-        // _widgetBottomSheetRow(
-        //   context,
-        //   AppIcon.heartEmpty,
-        //   isEnable: true,
-        //   text: 'Kaç Kapak basıyorsunuz?',
-        //   onPressed: () {
-        //     // var state = Provider.of<FeedState>(context, listen: false);
-        //     // var authState = Provider.of<AuthState>(context, listen: false);
-        //     // var myUser = authState.userModel;
-        //     // myUser = UserModel(
-        //     //     displayName: myUser.displayName ?? myUser.email.split('@')[0],
-        //     //     profilePic: myUser.profilePic,
-        //     //     userId: myUser.userId,
-        //     //     isVerified: authState.userModel.isVerified,
-        //     //     userName: authState.userModel.userName);
-        //     // // Prepare current Tweet model to reply
-        //     // FeedModel post = new FeedModel(
-        //     //     childRetwetkey: model.key,
-        //     //     createdAt: DateTime.now().toUtc().toString(),
-        //     //     user: myUser,
-        //     //     userId: myUser.userId);
-        //     // state.createReTweet(post);
-        //     // Navigator.pop(context);
-        //   },
-        // ),
-        SliderInNavigationBar(model: model, commentFlag: commentFlag),
-      ],
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isEvet ? evetGreen : hayirGray,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isEvet ? Color(0xFF4CAF50) : Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Evet', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                      Text('$evetPercent%', style: TextStyle(fontSize: 14, color: isEvet ? Color(0xFF2E7D32) : Color(0xFF757575))),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: !isEvet ? Color(0xFFFFEBEE) : hayirGray,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: !isEvet ? Color(0xFFE53935) : Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Hayır', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                      Text('$hayirPercent%', style: TextStyle(fontSize: 14, color: !isEvet ? Color(0xFFC62828) : Color(0xFF757575))),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24),
+          SliderInNavigationBar(model: model, commentFlag: commentFlag),
+        ],
+      ),
     );
   }
 }
@@ -811,213 +842,128 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       Tokenomics.maxBetByPool(totalPool),
     ].reduce((a, b) => a < b ? a : b);
 
-    const presetAmounts = [20, 30, 50, 100];
+    const presetAmounts = [10, 25, 50, 100];
     final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
+    const greenPrimary = Color(0xFF4CAF50);
 
-    final accent = MockupDesign.accentOrange;
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (validPresets.isNotEmpty) ...[
-          Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: validPresets.map((amount) {
-              final isSelected = _period == amount;
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => setState(() => _period = amount),
-                  borderRadius: BorderRadius.circular(12),
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 150),
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: isSelected ? accent.withOpacity(0.2) : Theme.of(context).colorScheme.surface.withOpacity(0.6),
-                      border: Border.all(
-                        color: isSelected ? accent : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      '$amount',
-                      style: TextStyle(
-                        color: isSelected ? accent : MockupDesign.textSecondary,
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      ),
+        Text(
+          'Bahis miktarı',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF757575),
+          ),
+        ),
+        SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Color(0xFFFAFAFA),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Color(0xFFE0E0E0)),
+          ),
+          child: Text(
+            '$_period token',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+        ),
+        SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: validPresets.map((amount) {
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => setState(() => _period = (_period + amount).clamp(0, maxVal)),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: Text(
+                    '+$amount',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF424242),
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: 14),
-        ],
-      Container(
-        padding: EdgeInsets.all(3),
-        // decoration: BoxDecoration(
-        //     borderRadius: BorderRadius.circular(5),
-        //     color: Theme.of(context).accentColor),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            GestureDetector(
-              child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      if (_period > 0) {
-                        _period--;
-                      }
-                    });
-                  },
-                  child: Icon(
-                    Icons.remove_circle_outline,
-                    color: Theme.of(context).primaryColor,
-                    size: 28,
-                  )),
-              onLongPressStart: (_) async {
-                isPressed = true;
-                do {
-                  setState(() {
-                    if (_period > 0) {
-                      _period--;
-                    }
-                  });// for testing
-                  await Future.delayed(Duration(milliseconds: 1));
-                } while (isPressed);
-              },
-              onLongPressEnd: (_) => setState(() => isPressed = false),
-            ),
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 3),
-              padding: EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(3),
-                  color: Theme.of(context).colorScheme.surface),
-              child: Text(
-                '$_period',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 16),
               ),
-            ),
-            GestureDetector(
-              child:
-              InkWell(
-                  onTap: () {
-                    setState(() {
-                      if (_period < maxVal) {
-                        _period++;
-                      }
-                    });
-                  },
-                  child: Icon(
-                    Icons.add_circle_outline,
-                    color: Theme.of(context).primaryColor,
-                    size: 28,
-                  )),
-              onLongPressStart: (_) async {
-                isPressed = true;
-                do {
-                  setState(() {
-                    if (_period < maxVal) {
-                      _period++;
-                    }
-                  });
-                  await Future.delayed(Duration(milliseconds: 1));
-                } while (isPressed);
-              },
-              onLongPressEnd: (_) => setState(() => isPressed = false),
-            ),
-          ],
-        ),
-      ),
-      SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          activeTrackColor: Theme.of(context).primaryColor,
-          inactiveTrackColor: Theme.of(context).primaryColor.withOpacity(0.3),
-          trackShape: RoundedRectSliderTrackShape(),
-          trackHeight: 4.0,
-          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 10.0),
-          thumbColor: Theme.of(context).primaryColor,
-          overlayColor: Theme.of(context).primaryColor.withOpacity(0.2),
-          overlayShape: RoundSliderOverlayShape(overlayRadius: 24.0),
-          valueIndicatorShape: PaddleSliderValueIndicatorShape(),
-          valueIndicatorColor: Theme.of(context).primaryColor,
-          valueIndicatorTextStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-        ),
-        child: Slider(
-            value: _period.toDouble(),
-            min: 0.0,
-            max: maxVal.toDouble(),
-            divisions: maxVal,
-            label: '$_period',
-            onChanged: (double value) {
-              setState(() {
-                _period = value.round();
-              });
-            }),
-      ),
-      GestureDetector(
-        onTap: () {
-          debugPrint('=== BEN DEDIM BUTONU TIKLANDI ===');
-          if (_period <= 0) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Lütfen bahis miktarı seçin!'), duration: Duration(seconds: 2)),
             );
-            return;
-          }
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              backgroundColor: Theme.of(context).cardColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                'Bahsi onayla',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18),
-              ),
-              content: Text(
-                '$_period token ile bahis yapmak istediğinize emin misiniz?',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9)),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('İptal', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
+          }).toList(),
+        ),
+        SizedBox(height: 24),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (_period <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Lütfen bahis miktarı seçin!'), duration: Duration(seconds: 2)),
+                );
+                return;
+              }
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text('Bahsi onayla', style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
+                  content: Text(
+                    '$_period token ile bahis yapmak istediğinize emin misiniz?',
+                    style: TextStyle(color: Color(0xFF616161)),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('İptal', style: TextStyle(color: Color(0xFF757575))),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _send();
+                      },
+                      child: Text('Onayla', style: TextStyle(color: greenPrimary, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
                 ),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _send();
-                  },
-                  child: Text('Onayla'),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: greenPrimary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Bahsi Onayla',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
-              ],
-            ),
-          );
-        },
-        child: Container(
-          width: fullWidth(context) * 0.5,
-          padding: EdgeInsets.symmetric(vertical: 12),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
-            color: Theme.of(context).primaryColor,
-            boxShadow: MockupDesign.cardShadow,
-          ),
-          child: Text(
-            'ben dedim',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onPrimary,
+              ),
             ),
           ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }

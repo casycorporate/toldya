@@ -1,5 +1,5 @@
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/model/userPegModel.dart';
 
 class FeedModel {
   String? key;
