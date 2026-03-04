@@ -39,17 +39,31 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? MockupDesign.textPrimary : theme.colorScheme.onSurface;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: BackButton(),
-        title: customTitleText('Liderlik Tablosu'),
+        leading: BackButton(color: titleColor),
+        title: Text(
+          'Liderlik Tablosu',
+          style: TextStyle(
+            color: titleColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: theme.scaffoldBackgroundColor,
-        iconTheme: IconThemeData(color: theme.colorScheme.primary),
+        elevation: 0,
+        iconTheme: IconThemeData(color: titleColor),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
+          labelColor: AppNeon.green,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
+          indicatorColor: AppNeon.green,
+          indicatorWeight: 3,
+          labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           tabs: [
             Tab(
               child: Row(
@@ -165,71 +179,108 @@ class _LeaderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 32,
-            alignment: Alignment.center,
-            child: Text(
-              '$rank',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: rank <= 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-              ),
-            ),
+    final theme = Theme.of(context);
+    final scoreColor = isPredictor ? AppNeon.green : AppNeon.orange;
+    final displayName = user.displayName ?? user.userName ?? '';
+    final handle = user.userName ?? '';
+    final handleText = handle.startsWith('@') ? handle : '@$handle';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/ProfilePage/${user.userId ?? ''}',
+          );
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 12),
+          margin: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 4),
+          decoration: BoxDecoration(
+            color: MockupDesign.card.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            border: Border.all(color: MockupDesign.cardBorder.withOpacity(0.5), width: 1),
           ),
-          SizedBox(width: 8),
-          customProfileImage(context, user.profilePic, userId: user.userId, height: 48),
-        ],
-      ),
-      title: Row(
-        children: [
-          customText(
-            user.displayName ?? user.userName ?? '',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          if (user.isVerified ?? false) ...[
-            SizedBox(width: 4),
-            Icon(Icons.verified, size: 16, color: HexColor('#1DA1F2')),
-          ],
-        ],
-      ),
-      subtitle: customText('@${user.userName ?? ''}', style: userNameStyle),
-      trailing: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: (isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'))
-              .withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isPredictor ? Icons.lightbulb_outline : Icons.emoji_events,
-              size: 18,
-              color: isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'),
-            ),
-            SizedBox(width: 6),
-            Text(
-              '$score',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 28,
+                child: Text(
+                  '$rank',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: rank <= 3 ? scoreColor : theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: customProfileImage(context, user.profilePic, userId: user.userId, height: 44),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        color: MockupDesign.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      handleText,
+                      style: TextStyle(
+                        color: MockupDesign.textSecondary,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: scoreColor.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scoreColor.withOpacity(0.4), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isPredictor ? Icons.lightbulb_outline : Icons.emoji_events,
+                      size: 16,
+                      color: scoreColor,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '$score',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: scoreColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/ProfilePage/${user.userId ?? ''}',
-        );
-      },
     );
   }
 }

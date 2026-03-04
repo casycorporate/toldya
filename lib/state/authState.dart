@@ -33,6 +33,8 @@ class AuthState extends AppState {
   dabase.Query? _profileQuery;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
+  /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
+  String? _pendingProfileRequestId;
 
   UserModel? get userModel => _userModel;
 
@@ -46,6 +48,29 @@ class AuthState extends AppState {
 
   void removeLastUser() {
     _profileUserModelList?.removeLast();
+  }
+
+  /// Başka bir kullanıcının profil sayfası kapanırken çağrılır. Sadece listede son kullanıcı bu profileId ise kaldırılır (async race önlenir).
+  void profilePageClosing(String? profileId) {
+    _pendingProfileRequestId = null;
+    if (profileId == null || profileId.isEmpty) return;
+    if (_profileUserModelList != null &&
+        _profileUserModelList!.isNotEmpty &&
+        _profileUserModelList!.last.userId == profileId) {
+      _profileUserModelList!.removeLast();
+    }
+    notifyListeners();
+  }
+
+  /// "Kendi profilim" sekmesi görünürken profileUserModel başkasıysa (örn. alt bardan dönüldü), listeyi giriş yapan kullanıcıya çevirir.
+  void ensureProfileIsCurrentUser() {
+    if (_userModel == null) return;
+    if (_profileUserModelList == null ||
+        _profileUserModelList!.isEmpty ||
+        _profileUserModelList!.last.userId != userId) {
+      _profileUserModelList = [_userModel!];
+      notifyListeners();
+    }
   }
 
   /// Logout from device
@@ -457,11 +482,15 @@ class AuthState extends AppState {
       }
 
       userProfileId = userProfileId ?? user?.uid ?? '';
+      _pendingProfileRequestId = userProfileId;
+      final requestedId = userProfileId;
+
       kDatabase
           .child("profile")
           .child(userProfileId!)
           .once()
           .then((snapshot) {
+        if (requestedId != _pendingProfileRequestId) return;
         if (snapshot.snapshot.value != null) {
           var map = snapshot.snapshot.value;
           if (map != null) {
@@ -474,15 +503,12 @@ class AuthState extends AppState {
                 reloadUser();
               }
               updateFCMToken();
-              // if (_userModel.fcmToken != null) {
-              //   updateFCMToken();
-              // }
             }
-
             logEvent('get_profile');
           }
         }
         loading = false;
+        notifyListeners();
       });
     } catch (error) {
       loading = false;

@@ -32,6 +32,12 @@ String _xpProgressLabel(int xp) {
   return '$xp (Usta)';
 }
 
+String _rankTitleForXp(int xp) {
+  if (xp < AppIcon.xpCaylakMax) return 'Çaylak';
+  if (xp < AppIcon.xpUstaMin) return 'Tahminci';
+  return 'Usta';
+}
+
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.profileId}) : super(key: key);
 
@@ -75,7 +81,10 @@ class _ProfilePageState extends State<ProfilePage>
       iconTheme: IconThemeData(color: Colors.white),
       leading: IconButton(
         icon: Icon(Icons.arrow_back_rounded),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () {
+          Provider.of<AuthState>(context, listen: false).profilePageClosing(widget.profileId);
+          Navigator.of(context).pop();
+        },
       ),
       actions: <Widget>[
         IconButton(
@@ -130,9 +139,7 @@ class _ProfilePageState extends State<ProfilePage>
   /// Maintain minimum user's profile in profile page list
   Future<bool> _onWillPop() async {
     final state = Provider.of<AuthState>(context, listen: false);
-
-    /// It will remove last user's profile from profileUserModelList
-    state.removeLastUser();
+    state.profilePageClosing(widget.profileId);
     return true;
   }
 
@@ -157,6 +164,13 @@ class _ProfilePageState extends State<ProfilePage>
   build(BuildContext context) {
     var state = Provider.of<FeedState>(context);
     var authstate = Provider.of<AuthState>(context);
+    if (widget.profileId == null && authstate.profileUserModel?.userId != authstate.userId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Provider.of<AuthState>(context, listen: false).ensureProfileIsCurrentUser();
+        }
+      });
+    }
     final feedlist = state.feedlist ?? <FeedModel>[];
     String id = widget.profileId ?? authstate.userId ?? '';
     final profileUserId = authstate.profileUserModel?.userId ?? '';
@@ -178,13 +192,34 @@ class _ProfilePageState extends State<ProfilePage>
           child: NestedScrollView(
           // controller: _scrollController,
           headerSliverBuilder: (BuildContext context, bool boxIsScrolled) {
+            final profileMatchesPage = authstate.profileUserModel == null
+                ? false
+                : (widget.profileId == null ||
+                    authstate.profileUserModel!.userId == widget.profileId);
+            final showHeader = !authstate.isbusy &&
+                !isBlackList() &&
+                authstate.profileUserModel != null &&
+                profileMatchesPage;
+            final waitingForProfile =
+                widget.profileId != null && !profileMatchesPage;
             return <Widget>[
               getAppbar(),
               authstate.isbusy || isBlackList()
                   ? _emptyBox()
                   : SliverToBoxAdapter(
-                      child: authstate.isbusy || authstate.profileUserModel == null
-                          ? SizedBox.shrink()
+                      child: !showHeader
+                          ? waitingForProfile
+                              ? Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 48),
+                                  child: Center(
+                                    child: CustomScreenLoader(
+                                      height: 60,
+                                      width: 60,
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                  ),
+                                )
+                              : SizedBox.shrink()
                           : _ProfileHeader(
                               user: authstate.profileUserModel!,
                               isMyProfile: isMyProfile,
@@ -215,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage>
               SliverToBoxAdapter(
                 child: Container(
                   color: MockupDesign.background,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: TabBar(
                     controller: _tabController,
                     indicator: UnderlineTabIndicator(
@@ -290,44 +325,88 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context) {
         final handle = user.userName ?? user.displayName ?? '';
         final displayHandle = handle.startsWith('@') ? handle : '@$handle';
+        final xp = user.xp ?? 0;
+        final hasXp = user.xp != null;
+        Color rankBg;
+        Color rankBorder;
+        if (xp < AppIcon.xpCaylakMax) {
+          rankBg = Colors.white.withOpacity(0.03);
+          rankBorder = Colors.white.withOpacity(0.12);
+        } else if (xp < AppIcon.xpUstaMin) {
+          rankBg = AppNeon.green.withOpacity(0.18);
+          rankBorder = AppNeon.green.withOpacity(0.6);
+        } else {
+          rankBg = Colors.amber.withOpacity(0.20);
+          rankBorder = Colors.amber.withOpacity(0.7);
+        }
         return Container(
           color: MockupDesign.background,
-          padding: EdgeInsets.fromLTRB(24, 16, 24, 0),
+          padding: EdgeInsets.fromLTRB(24, 12, 24, 0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
                 onTap: onAvatarTap,
                 child: CircleAvatar(
-                  radius: 48,
+                  radius: 44,
                   backgroundColor: Colors.grey.shade800,
                   child: ClipOval(
                     child: customProfileImage(
                       context,
                       user.profilePic,
                       userId: user.userId,
-                      height: 96,
+                      height: 88,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 14),
+              SizedBox(height: 10),
               Text(
                 user.displayName ?? '',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 2),
               Text(
                 displayHandle.isEmpty ? '@kullanıcı' : displayHandle,
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
-              SizedBox(height: 14),
+              if (hasXp) ...[
+                SizedBox(height: 6),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: rankBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: rankBorder, width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.military_tech,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        _rankTitleForXp(xp),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              SizedBox(height: 10),
               Center(
                 child: Material(
                   color: Colors.white.withOpacity(0.06),
@@ -359,7 +438,7 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 14),
               _WalletCapsule(
                 user: user,
                 isMyProfile: isMyProfile,
@@ -367,10 +446,175 @@ class _ProfilePageState extends State<ProfilePage>
                 onClaimDailyBonus: onClaimDailyBonus,
                 onTokenManagement: onTokenManagement,
               ),
+              _ProfileStatsSection(context, user: user, isMyProfile: isMyProfile),
             ],
           ),
         );
       },
+    );
+  }
+
+  /// Rütbe ilerlemesi, Bahisçi/Tahminci kartları, Seviye ve Liderlik CTA (profil ağacında görünsün diye burada)
+  Widget _ProfileStatsSection(BuildContext context, {required UserModel user, required bool isMyProfile}) {
+    final theme = Theme.of(context);
+    final xp = user.xp ?? 0;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 14, 24, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isMyProfile && user.xp != null) ...[
+            Text(
+              'Rütbe ilerlemesi',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+            SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _xpProgress(xp),
+                      minHeight: 8,
+                      backgroundColor: theme.colorScheme.onSurface.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppNeon.green),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  _xpProgressLabel(xp),
+                  style: TextStyle(fontSize: 11, color: AppNeon.green),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text(
+              xp < AppIcon.xpCaylakMax
+                  ? '${AppIcon.xpCaylakMax} XP\'de Tahminci olursun'
+                  : xp < AppIcon.xpUstaMin
+                      ? '${AppIcon.xpUstaMin} XP\'de Usta olursun'
+                      : 'Maksimum rütbedesin',
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: _profileStatCard(
+                  context: context,
+                  icon: Icons.emoji_events,
+                  iconColor: theme.primaryColor,
+                  title: 'Bahisçi',
+                  value: user.rank ?? 0,
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: _profileStatCard(
+                  context: context,
+                  icon: Icons.lightbulb_outline,
+                  iconColor: AppNeon.green,
+                  title: 'Tahminci',
+                  value: user.predictorScore ?? 0,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
+              SizedBox(width: 10),
+              Text(
+                'Seviye ${user.getLevel().trim()}',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          if (isMyProfile) ...[
+            SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
+                icon: Icon(Icons.leaderboard_outlined, size: 18, color: AppNeon.green),
+                label: Text(
+                  'Liderlik tablosunda gör',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppNeon.green),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  foregroundColor: AppNeon.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _profileStatCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required int value,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: iconColor),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            '$value',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -385,7 +629,7 @@ class _ProfilePageState extends State<ProfilePage>
     return Center(
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 16),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(20),
@@ -398,7 +642,7 @@ class _ProfilePageState extends State<ProfilePage>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.monetization_on_rounded, size: 24, color: Color(0xFFFFD700)),
+                    Icon(Icons.monetization_on_rounded, size: 22, color: Color(0xFFFFD700)),
                     SizedBox(width: 10),
                     Text(
                       'Bakiye: ${user.pegCount ?? 0} Token',
@@ -417,7 +661,7 @@ class _ProfilePageState extends State<ProfilePage>
               ],
             ),
             if (isMyProfile && canClaimDailyBonus) ...[
-              Divider(height: 24, color: Colors.white10),
+              Divider(height: 18, color: Colors.white10),
               InkWell(
                 onTap: onClaimDailyBonus,
                 borderRadius: BorderRadius.circular(8),
@@ -442,7 +686,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
             if (isMyProfile) ...[
-              Divider(height: 24, color: Colors.white10),
+              Divider(height: 18, color: Colors.white10),
               InkWell(
                 onTap: onTokenManagement,
                 borderRadius: BorderRadius.circular(8),
@@ -929,8 +1173,59 @@ class UserNameRowWidget extends StatelessWidget {
     );
   }
 
+  Widget _statCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required int value,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: iconColor),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            '$value',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final xp = user.xp ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -1019,7 +1314,7 @@ class UserNameRowWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'XP',
+                      'Rütbe ilerlemesi',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -1039,10 +1334,22 @@ class UserNameRowWidget extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: _xpProgress(user.xp ?? 0),
+                    value: _xpProgress(xp),
                     minHeight: 8,
                     backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  xp < AppIcon.xpCaylakMax
+                      ? '${AppIcon.xpCaylakMax} XP’de Tahminci olursun'
+                      : xp < AppIcon.xpUstaMin
+                          ? '${AppIcon.xpUstaMin} XP’de Usta olursun'
+                          : 'Maksimum rütbedesin',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -1053,15 +1360,25 @@ class UserNameRowWidget extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             children: <Widget>[
-              Icon(Icons.emoji_events, size: 20, color: Theme.of(context).primaryColor),
-              SizedBox(width: 8),
-              customText('Bahisçi: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
-              customText('${user.rank ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
-              SizedBox(width: 20),
-              Icon(Icons.lightbulb_outline, size: 20, color: AppNeon.green),
-              SizedBox(width: 8),
-              customText('Tahminci: ', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8))),
-              customText('${user.predictorScore ?? 0}', style: TextStyle(fontWeight: FontWeight.bold, color: AppNeon.green)),
+              Expanded(
+                child: _statCard(
+                  context: context,
+                  icon: Icons.emoji_events,
+                  iconColor: Theme.of(context).primaryColor,
+                  title: 'Bahisçi',
+                  value: user.rank ?? 0,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: _statCard(
+                  context: context,
+                  icon: Icons.lightbulb_outline,
+                  iconColor: AppNeon.green,
+                  title: 'Tahminci',
+                  value: user.predictorScore ?? 0,
+                ),
+              ),
             ],
           ),
         ),
@@ -1069,15 +1386,48 @@ class UserNameRowWidget extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             children: <Widget>[
-              ratingBar(user.rank ?? 0, 5, context, itemSize: 20.0),
+              ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
               SizedBox(width: 10),
               customText(
-                user.getLevel(),
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+                'Seviye ${user.getLevel().trim()}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
         ),
+        if (isMyProfile)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
+                icon: Icon(
+                  Icons.leaderboard_outlined,
+                  size: 18,
+                  color: Theme.of(context).primaryColor,
+                ),
+                label: Text(
+                  'Liderlik tablosunda gör',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  foregroundColor: Theme.of(context).primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ),
+          ),
         Container(
           alignment: Alignment.center,
           child: Row(

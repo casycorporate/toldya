@@ -149,84 +149,92 @@ class NotificationTile extends StatelessWidget {
   static const double _avatarSize = 32.0;
   static const double _overlap = 10.0; // ~30% overlap
   static const double _avatarBorderWidth = 1.0;
-  static const double _heartBadgeSize = 18.0; // rozet için ayrılan alan
+  static const double _heartBadgeSize = 18.0;
 
   Widget _buildOverlappingAvatars(
     BuildContext context,
     List<UserPegModel> list,
   ) {
-    var displayList = List<UserPegModel>.from(list);
-    final noOfUser = displayList.length;
     final state = Provider.of<NotificationState>(context);
-    if (displayList.length > 5) displayList = displayList.take(5).toList();
+    if (list.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    final avatarWidgets = displayList.asMap().entries.map((entry) {
-      final i = entry.key;
-      final userId = entry.value.userId;
-      return Transform.translate(
-        offset: Offset(i * (_avatarSize - _overlap), 0),
-        child: _userAvatar(
-          context,
-          userId,
-          state,
-          (name) {},
-          borderColor: Theme.of(context).scaffoldBackgroundColor,
-        ),
-      );
-    }).toList();
+    // Maksimum gösterilecek avatar sayısı (geri kalanı +N şeklinde)
+    const maxVisible = 4;
+    final totalUserCount = list.length;
+    final visibleUsers = List<UserPegModel>.from(list.take(maxVisible));
+    final extraCount = totalUserCount - visibleUsers.length;
 
-    // Genişlik: avatarlar + kalp rozeti (overflow olmaması için)
-    final contentWidth = (displayList.length * (_avatarSize - _overlap)) + _overlap;
-    final extraForBadge = displayList.isNotEmpty ? _heartBadgeSize : 0.0;
-    final extraForCount = noOfUser > 5 ? 20.0 : 0.0;
-    final totalWidth = contentWidth + extraForBadge + extraForCount;
+    // Stack genişliği: avatarlar + opsiyonel "+N" balonu için alan
+    final avatarTrackWidth =
+        _avatarSize + (visibleUsers.length - 1) * (_avatarSize - _overlap);
+    final extraBubbleWidth = extraCount > 0 ? 26.0 : 0.0;
+    final totalWidth = avatarTrackWidth + extraBubbleWidth;
 
     return SizedBox(
       width: totalWidth,
-      height: _avatarSize + 14,
+      height: _avatarSize + 10,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...avatarWidgets,
-              if (noOfUser > 5)
-                Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Text(
-                    '+${noOfUser - 5}',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          // Kalp rozeti: son avatarın sağ alt köşesine binen mini rozet
-          if (displayList.isNotEmpty)
+          for (var i = 0; i < visibleUsers.length; i++)
             Positioned(
-              right: extraForBadge + extraForCount,
-              bottom: 0,
+              left: i * (_avatarSize - _overlap),
+              top: 0,
+              child: _userAvatar(
+                context,
+                visibleUsers[i].userId,
+                state,
+                (name) {},
+                borderColor: Theme.of(context).scaffoldBackgroundColor,
+              ),
+            ),
+          if (extraCount > 0)
+            Positioned(
+              left: avatarTrackWidth - _overlap + 4,
+              top: (_avatarSize - 22) / 2,
               child: Container(
-                padding: EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: Colors.white.withOpacity(0.06),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.08),
-                    width: 0.5,
-                  ),
                 ),
-                child: Icon(
-                  Icons.favorite,
-                  size: 12,
-                  color: ToldyaColor.ceriseRed,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$extraCount',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
+          // Kalp rozeti: son avatarın sağ alt köşesine binen mini rozet
+          Positioned(
+            left: (visibleUsers.length - 1) * (_avatarSize - _overlap) +
+                _avatarSize -
+                (_heartBadgeSize * 0.65),
+            bottom: -2,
+            child: Container(
+              width: _heartBadgeSize,
+              height: _heartBadgeSize,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.08),
+                  width: 0.5,
+                ),
+              ),
+              child: Icon(
+                Icons.favorite,
+                size: 11,
+                color: ToldyaColor.ceriseRed,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -285,13 +293,30 @@ class NotificationTile extends StatelessWidget {
         state.getpostDetailFromDatabase(model.key ?? '', model: model);
         Navigator.of(context).pushNamed('/FeedPostDetail/${model.key ?? ''}');
       },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.35),
+              offset: const Offset(0, 10),
+              blurRadius: 24,
+              spreadRadius: -8,
+            ),
+          ],
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildOverlappingAvatars(context, list),
-            SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,10 +327,11 @@ class NotificationTile extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     description,
                     maxLines: 2,
@@ -313,14 +339,8 @@ class NotificationTile extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.grey.shade400,
                       fontSize: 13,
-                      fontWeight: FontWeight.w400,
+                      height: 1.4,
                     ),
-                  ),
-                  SizedBox(height: 12),
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Colors.white.withOpacity(0.05),
                   ),
                 ],
               ),

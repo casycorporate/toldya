@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/utility.dart';
@@ -32,6 +31,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _dob = TextEditingController();
     dob = '';
     var state = Provider.of<AuthState>(context, listen: false);
+    _image = state.userModel?.profilePic ?? '';
     _name.text = state.userModel?.displayName ?? '';
     _bio.text = state.userModel?.bio ?? '';
     _location.text = state.userModel?.location ?? '';
@@ -49,33 +49,60 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _body() {
     var authstate = Provider.of<AuthState>(context, listen: false);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Container(
-          height: 180,
-          child: Stack(
-            children: <Widget>[
-              _bannerImage(authstate),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: _userImage(authstate),
-              ),
-            ],
+    final theme = Theme.of(context);
+    return Container(
+      color: MockupDesign.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            height: 200,
+            child: Stack(
+              children: <Widget>[
+                _bannerImage(authstate),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: _userImage(authstate),
+                ),
+              ],
+            ),
           ),
-        ),
-        _entry('Name', controller: _name),
-        _entry('Bio', controller: _bio, maxLine: 3),
-        _entry('Location', controller: _location),
-        InkWell(
-          onTap: showCalender,
-          child: _entry('Date of birth', isenable: false, controller: _dob),
-        )
-      ],
+          SizedBox(height: spacing16),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: MockupDesign.screenPadding,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: MockupDesign.card,
+                borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+                border: Border.all(color: MockupDesign.cardBorder),
+                boxShadow: MockupDesign.cardShadow,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _entry('İsim', controller: _name),
+                  _entry('Biyografi', controller: _bio, maxLine: 3),
+                  _entry('Konum', controller: _location),
+                  InkWell(
+                    onTap: showCalender,
+                    child: _entry('Doğum tarihi', isenable: false, controller: _dob),
+                  ),
+                  SizedBox(height: spacing8),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: spacing16),
+        ],
+      ),
     );
   }
 
   Widget _userImage(AuthState authstate) {
+    final effectiveProfilePic =
+        _image.isNotEmpty ? _image : authstate.userModel?.profilePic;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 0),
       height: 90,
@@ -88,14 +115,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         alignment: Alignment.center,
         children: [
           ClipOval(
-            child: _image.isNotEmpty
-                ? Image.file(File(_image), fit: BoxFit.cover, width: 80, height: 80)
-                : customProfileImage(
-                    context,
-                    authstate.userModel?.profilePic,
-                    userId: authstate.userModel?.userId,
-                    height: 80,
-                  ),
+            child: customProfileImage(
+              context,
+              effectiveProfilePic,
+              userId: authstate.userModel?.userId,
+              height: 80,
+            ),
           ),
           Container(
             decoration: BoxDecoration(
@@ -104,12 +129,76 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             child: Center(
               child: IconButton(
-                onPressed: uploadImage,
+                onPressed: _showAvatarPicker,
                 icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onSurface),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAvatarPicker() {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Profil fotoğrafı seç',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Uygulama avatarları',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: DefaultProfilePics.assets.map((asset) {
+                  final isSelected = _image == asset;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _image = asset);
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? AppNeon.cyan : Colors.transparent,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        backgroundImage: AssetImage(asset),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -209,18 +298,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  uploadBanner();
-                },
-                icon: Icon(Icons.photo_library_outlined, size: 20),
-                label: Text('Galeri / hazır görseller'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.primary,
-                ),
-              ),
             ],
           ),
         ),
@@ -312,24 +389,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (dob != null) {
       model.dob = dob;
     }
-    state.updateUserProfile(model,_scaffoldKey, image: _image, bannerImage: _banner);
+    final imageParam = _image.isNotEmpty ? _image : null;
+    final bannerParam = _banner.isNotEmpty ? _banner : null;
+    state.updateUserProfile(model,_scaffoldKey, image: imageParam, bannerImage: bannerParam);
     Navigator.of(context).pop();
-  }
-
-  void uploadImage() {
-    openImagePicker(context, (file) {
-      setState(() {
-        _image = file;
-      });
-    },0);
-  }
-
-  void uploadBanner() {
-    openImagePicker(context, (file) {
-      setState(() {
-        _banner = file;
-      });
-    },1);
   }
 
   @override
@@ -341,7 +404,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        title: customTitleText('Profile Edit'),
+        title: customTitleText('Profili Düzenle'),
         actions: <Widget>[
           InkWell(
             onTap: _submitButton,
