@@ -3,6 +3,7 @@ import 'package:toldya/state/authState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -182,7 +183,7 @@ class _ToldyaBody extends StatelessWidget {
         "toldya/${model.key}",
         socialMetaTagParameters: SocialMetaTagParameters(
             description: model.description ??
-                "${model.user?.displayName ?? ''} Toldya uygulamasında bir toldya paylaştı.",
+                AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
             title: "Toldya",
             imageUrl: Uri.parse(
                 "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
@@ -289,6 +290,15 @@ class _ToldyaBody extends StatelessWidget {
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
+                        if ((model.user?.currentStreak ?? 0) >= 3)
+                          Padding(
+                            padding: EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.local_fire_department,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
                         SizedBox(width: 6),
                         _CountdownChip(endDate: model.endDate),
                       ],

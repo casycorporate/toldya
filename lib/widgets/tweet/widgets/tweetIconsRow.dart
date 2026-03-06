@@ -12,6 +12,7 @@ import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/page/common/usersListPage.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -95,7 +96,7 @@ class ToldyaIconsRow extends StatelessWidget {
               Expanded(
                 child: _voteChip(
                   context,
-                  label: 'Evet',
+                  label: AppLocalizations.of(context)!.yes,
                   count: k_m_b_generator(sumOfVote(model.likeList ?? [])),
                   icon: Icons.thumb_up_rounded,
                   color: evetColor,
@@ -106,7 +107,7 @@ class ToldyaIconsRow extends StatelessWidget {
               Expanded(
                 child: _voteChip(
                   context,
-                  label: 'Hayır',
+                  label: AppLocalizations.of(context)!.no,
                   count: isTweetDetail ? '' : k_m_b_generator(sumOfVote(model.unlikeList ?? [])),
                   icon: Icons.thumb_down_rounded,
                   color: hayirColor,
@@ -124,7 +125,7 @@ class ToldyaIconsRow extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          closed ? 'Kapandığı için seçim yapılamaz' : 'Kapak sayısı yetersiz olduğu için seçim yapılamaz',
+          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficientForVote,
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white),
         ),
@@ -137,7 +138,7 @@ class ToldyaIconsRow extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          AppLocalizations.of(context)!.betOnOneSideOnly,
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white),
         ),
@@ -270,9 +271,9 @@ class ToldyaIconsRow extends StatelessWidget {
             customText(getPostTime2(model.createdAt ?? ''), style: textStyle14),
             SizedBox(width: 5),
             Platform.isIOS
-                ? customText('for ios',
+                ? customText(AppLocalizations.of(context)!.forIos,
                     style: TextStyle(color: Theme.of(context).primaryColor))
-                : customText('for Android',
+                : customText(AppLocalizations.of(context)!.forAndroid,
                     style: TextStyle(color: Theme.of(context).primaryColor))
           ],
         ),
@@ -327,7 +328,7 @@ class ToldyaIconsRow extends StatelessWidget {
                     onTap: () {
                       onLikeTextPressed(context, model.unlikeList ?? []);
                     },
-                    child: customText('demedim',
+                    child: customText(AppLocalizations.of(context)!.iSayNo,
                         style: subtitleStyle.copyWith(
                             color: ToldyaColor.cerulean)),
                   ),
@@ -358,11 +359,10 @@ class ToldyaIconsRow extends StatelessWidget {
     Navigator.of(context).push(
       CustomRoute<bool>(
         builder: (BuildContext context) => UsersListPage(
-          pageTitle: "Seçim yapanlar",
+          pageTitle: AppLocalizations.of(context)!.votersList,
           userIdsList: list.map((userId) => userId.userId).toList(),
-          emptyScreenText: "Bu gönderiye henüz seçim yapılmadı",
-          emptyScreenSubTileText:
-              "Bir kullanıcı bu gönderi için seçim yaptığında kullanıcı listesi burada gösterilecektir.",
+          emptyScreenText: AppLocalizations.of(context)!.noVotesYet,
+          emptyScreenSubTileText: AppLocalizations.of(context)!.voteListEmptySubtitle,
         ),
       ),
     );

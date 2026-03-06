@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
@@ -29,7 +30,6 @@ class _SearchPageState extends State<SearchPage> {
   int _selectedCategoryIndex = 0;
   final List<String> _recentSearches = [];
 
-  static const List<String> _categoryLabels = ['🔥 Trendler', '⚽ Spor', '📈 Ekonomi', '🎭 Eğlence'];
   static const List<String> _categoryTopicValues = ['Akış', 'Spor', 'Ekonomi', 'Eğlence'];
 
   @override
@@ -128,7 +128,7 @@ class _SearchPageState extends State<SearchPage> {
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
-            hintText: 'Ara...',
+            hintText: AppLocalizations.of(context)!.searchHint,
             hintStyle: TextStyle(color: Colors.white54, fontSize: 16),
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             prefixIcon: Icon(
@@ -178,7 +178,7 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, 20, MockupDesign.screenPadding, 12),
             child: Text(
-              'Trend Tahminler',
+              AppLocalizations.of(context)!.trendPredictions,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -191,7 +191,7 @@ class _SearchPageState extends State<SearchPage> {
               padding: EdgeInsets.all(24),
               child: Center(
                 child: Text(
-                  'Bu kategoride tahmin yok',
+                  AppLocalizations.of(context)!.noPredictionsInCategory,
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                 ),
               ),
@@ -207,11 +207,13 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildCategoryChips(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final categoryLabels = [l10n.categoryFlow, l10n.categorySports, l10n.categoryEconomy, l10n.categoryEntertainment];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding),
       child: Row(
-        children: List.generate(_categoryLabels.length, (i) {
+        children: List.generate(categoryLabels.length, (i) {
           final selected = _selectedCategoryIndex == i;
           return Padding(
             padding: EdgeInsets.only(right: 10),
@@ -228,7 +230,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
                 child: Text(
-                  _categoryLabels[i],
+                  categoryLabels[i],
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -269,7 +271,7 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, 8, MockupDesign.screenPadding, 8),
             child: Text(
-              'Son Aramalar',
+              AppLocalizations.of(context)!.recentSearches,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -293,7 +295,7 @@ class _SearchPageState extends State<SearchPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, 16, MockupDesign.screenPadding, 8),
           child: Text(
-            'Canlı Öneriler',
+            AppLocalizations.of(context)!.liveSuggestions,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -305,7 +307,7 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: EdgeInsets.all(24),
             child: Text(
-              'Sonuç yok',
+              AppLocalizations.of(context)!.noResults,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
             ),
           )
@@ -349,8 +351,8 @@ class _SearchPageState extends State<SearchPage> {
               labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
               tabs: [
-                Tab(text: 'Tahminler'),
-                Tab(text: 'Kişiler'),
+                Tab(text: AppLocalizations.of(context)!.predictions),
+                Tab(text: AppLocalizations.of(context)!.people),
               ],
             ),
           ),
@@ -417,7 +419,7 @@ class _SuggestionUserTile extends StatelessWidget {
         ),
       ),
       title: Text(
-        displayHandle.isEmpty ? 'Kullanıcı' : displayHandle,
+        displayHandle.isEmpty ? AppLocalizations.of(context)!.user : displayHandle,
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
       ),
       subtitle: Text(
@@ -452,7 +454,7 @@ class _SuggestionPredictionTile extends StatelessWidget {
         child: Icon(Icons.analytics_outlined, color: AppNeon.green, size: 22),
       ),
       title: Text(
-        short.isEmpty ? 'Tahmin' : short,
+        short.isEmpty ? AppLocalizations.of(context)!.prediction : short,
         style: TextStyle(color: Colors.white, fontSize: 14),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -485,7 +487,7 @@ class _ResultsPredictionsTab extends StatelessWidget {
     if (list.isEmpty) {
       return Center(
         child: Text(
-          'Tahmin sonucu yok',
+          AppLocalizations.of(context)!.noPredictionResult,
           style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
         ),
       );
@@ -503,10 +505,17 @@ class _ResultsPredictionsTab extends StatelessWidget {
 }
 
 /// Sonuçlar: Kişiler sekmesi (Avatar + ad + Takip Et)
-class _ResultsPeopleTab extends StatelessWidget {
+class _ResultsPeopleTab extends StatefulWidget {
   final String query;
 
   const _ResultsPeopleTab({Key? key, required this.query}) : super(key: key);
+
+  @override
+  State<_ResultsPeopleTab> createState() => _ResultsPeopleTabState();
+}
+
+class _ResultsPeopleTabState extends State<_ResultsPeopleTab> {
+  final Set<String> _loadingUserIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -519,7 +528,7 @@ class _ResultsPeopleTab extends StatelessWidget {
     if (userList.isEmpty) {
       return Center(
         child: Text(
-          'Kişi sonucu yok',
+          AppLocalizations.of(context)!.noPersonResult,
           style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
         ),
       );
@@ -531,6 +540,7 @@ class _ResultsPeopleTab extends StatelessWidget {
       itemBuilder: (context, i) {
         final user = userList[i];
         final following = (user.followersList ?? []).contains(myId);
+        final isLoading = user.userId != null && _loadingUserIds.contains(user.userId);
         return Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Container(
@@ -567,7 +577,7 @@ class _ResultsPeopleTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.displayName ?? user.userName ?? 'Kullanıcı',
+                          user.displayName ?? user.userName ?? AppLocalizations.of(context)!.user,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -586,9 +596,35 @@ class _ResultsPeopleTab extends StatelessWidget {
                 ),
                 if (!isMe(user.userId))
                   OutlinedButton(
-                    onPressed: () {
-                      authState.followUser(removeFollower: following);
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final uid = user.userId ?? '';
+                            setState(() => _loadingUserIds.add(uid));
+                            try {
+                              authState.followUser(removeFollower: following);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      following ? AppLocalizations.of(context)!.unfollowSuccess : AppLocalizations.of(context)!.followSuccess,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (_) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(AppLocalizations.of(context)!.errorGeneric),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) setState(() => _loadingUserIds.remove(uid));
+                            }
+                          },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: following ? Colors.grey : AppNeon.green,
                       side: BorderSide(
@@ -596,10 +632,16 @@ class _ResultsPeopleTab extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       minimumSize: Size(0, 36),
                     ),
-                    child: Text(
-                      following ? 'Takip ediliyor' : 'Takip Et',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            following ? AppLocalizations.of(context)!.followingLabel : AppLocalizations.of(context)!.follow,
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
                   ),
               ],
             ),

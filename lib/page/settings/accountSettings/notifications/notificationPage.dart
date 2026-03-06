@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -16,37 +17,35 @@ class NotificationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Notifications',
+        title: AppLocalizations.of(context)!.notificationsTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         children: <Widget>[
-          HeaderWidget('Filters'),
+          HeaderWidget(AppLocalizations.of(context)!.filtersHeader),
           SettingRowWidget(
-            "Quality filter",
+            AppLocalizations.of(context)!.qualityFilterTitle,
             showCheckBox: true,
-            subtitle:
-                'Filter lower-quality from your notifications. This won\'t filter out notifications from people you follow or account you\'ve inteacted with recently.',
+            subtitle: AppLocalizations.of(context)!.qualityFilterSubtitle,
             // navigateTo: 'AccountSettingsPage',
           ),
           Divider(height: 0),
-          SettingRowWidget("Advanced filter"),
-          SettingRowWidget("Muted word"),
+          SettingRowWidget(AppLocalizations.of(context)!.advancedFilterTitle),
+          SettingRowWidget(AppLocalizations.of(context)!.mutedWordTitle),
           HeaderWidget(
-            'Preferences',
+            AppLocalizations.of(context)!.preferencesHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Unread notification count badge",
+            AppLocalizations.of(context)!.unreadBadgeTitle,
             showCheckBox: false,
-            subtitle:
-                'Display a badge with the number of notifications waiting for you inside the Fwitter app.',
+            subtitle: AppLocalizations.of(context)!.unreadBadgeSubtitle,
           ),
-          SettingRowWidget("Push notifications"),
-          SettingRowWidget("SMS notifications"),
+          SettingRowWidget(AppLocalizations.of(context)!.pushNotificationsTitle),
+          SettingRowWidget(AppLocalizations.of(context)!.smsNotificationsTitle),
           SettingRowWidget(
-            "Email notifications",
-            subtitle: 'Control when how often Fwitter sends emails to you.',
+            AppLocalizations.of(context)!.emailNotificationsTitle,
+            subtitle: AppLocalizations.of(context)!.emailNotificationsSubtitle,
           ),
         ],
       ),

@@ -373,31 +373,33 @@ class FeedState extends AppState {
   }
 
   /// create [New Tweet]
-  createToldya(FeedModel model) {
-    ///  Create toldya in [Firebase kDatabase]
+  Future<void> createToldya(FeedModel model) async {
     isBusy = true;
     notifyListeners();
     try {
-      kDatabase.child('toldya').push().set(model.toJson());
+      await kDatabase.child('toldya').push().set(model.toJson());
     } catch (error) {
       cprint(error, errorIn: 'createToldya');
+      rethrow;
+    } finally {
+      isBusy = false;
+      notifyListeners();
     }
-    isBusy = false;
-    notifyListeners();
   }
 
   ///  It will create tweet in [Firebase kDatabase] just like other normal tweet.
   ///  update retweet count for retweet model
-  createReToldya(FeedModel model) {
+  Future<void> createReToldya(FeedModel model) async {
     try {
-      createToldya(model);
+      await createToldya(model);
       final reply = _toldyaToReplyModel;
       if (reply != null) {
         reply.retoldyaCount = (reply.retoldyaCount ?? 0) + 1;
-        updateToldya(reply);
+        await updateToldya(reply);
       }
     } catch (error) {
       cprint(error, errorIn: 'createReToldya');
+      rethrow;
     }
   }
 
@@ -406,23 +408,20 @@ class FeedState extends AppState {
   /// [Delete tweet] in Firebase kDatabase
   /// Remove Tweet if present in home page Tweet list
   /// Remove Tweet if present in Tweet detail page or in comment
-  deleteToldya(String toldyaId, ToldyaType type, {String? parentkey}) {
+  Future<void> deleteToldya(String toldyaId, ToldyaType type, {String? parentkey}) async {
     try {
-      /// Delete tweet if it is in nested tweet detail page
-      kDatabase.child('toldya').child(toldyaId).remove().then((_) {
-        if (type == ToldyaType.Detail &&
-            _toldyaDetailModelList != null &&
-            _toldyaDetailModelList!.length > 0) {
-          _toldyaDetailModelList!.removeWhere((x) => x.key == toldyaId);
-          if (_toldyaDetailModelList!.isEmpty) {
-            _toldyaDetailModelList = null;
-          }
-
-          cprint('Toldya deleted from nested toldya detail page');
+      await kDatabase.child('toldya').child(toldyaId).remove();
+      if (type == ToldyaType.Detail &&
+          _toldyaDetailModelList != null &&
+          _toldyaDetailModelList!.length > 0) {
+        _toldyaDetailModelList!.removeWhere((x) => x.key == toldyaId);
+        if (_toldyaDetailModelList!.isEmpty) {
+          _toldyaDetailModelList = null;
         }
-      });
+      }
     } catch (error) {
       cprint(error, errorIn: 'deleteToldya');
+      rethrow;
     }
   }
 
@@ -465,8 +464,13 @@ class FeedState extends AppState {
   }
 
   /// [update] tweet
-  updateToldya(FeedModel model) async {
-    await kDatabase.child('toldya').child(model.key ?? '').set(model.toJson());
+  Future<void> updateToldya(FeedModel model) async {
+    try {
+      await kDatabase.child('toldya').child(model.key ?? '').set(model.toJson());
+    } catch (error) {
+      cprint(error, errorIn: 'updateToldya');
+      rethrow;
+    }
   }
 
   /// Pari-Mutuel: Kazananlara token dağıtımı
@@ -503,108 +507,17 @@ class FeedState extends AppState {
     await updateToldya(model);
   }
 
-  /// Add/Remove like on a Tweet
-  /// [postId] is tweet id, [userId] is user's id who like/unlike Tweet
-  addLikeToToldya(FeedModel model, String userId, int count) {
-    try {
-      // if (tweet.likeList != null &&
-      //     tweet.likeList.length > 0 &&
-      //     tweet.likeList.any((id) => id == userId)) {
-      //   // If user wants to undo/remove his like on tweet
-      //   tweet.likeList.removeWhere((id) => id == userId);
-      //   tweet.likeCount -= 1;
-      // } else {
-      //   // If user like Tweet
-      //   if (tweet.likeList == null) {
-      //     tweet.likeList = [];
-      //   }
-      //   tweet.likeList.add(userId);
-      //   tweet.likeCount += count;
-      // }
-
-      model.likeList ??= [];
-      final likeList = model.likeList!;
-      final idx = likeList.indexWhere((element) => element.userId == userId);
-      if (idx >= 0) {
-        final el = likeList[idx];
-        el.pegCount = (el.pegCount ?? 0) + count;
-      } else {
-        likeList.add(UserPegModel(userId: userId, pegCount: count));
-      }
-      kDatabase
-          .child('toldya')
-          .child(model.key ?? '')
-          .child('likeList')
-          .set(likeList.map((e) => e.toJson()).toList());
-      kDatabase
-          .child('toldya')
-          .child(model.key ?? '')
-          .child('likeCount')
-          .set(model.likeCount);
-
-      kDatabase.child('notification').child(model.userId ?? '').child(model.key ?? '').set({
-        'type': likeList.isEmpty
-            ? null
-            : NotificationType.Like.toString(),
-        'updatedAt': likeList.isEmpty
-            ? null
-            : DateTime.now().toUtc().toString(),
-      });
-    } catch (error) {
-      cprint(error, errorIn: 'addLikeToToldya');
-    }
+  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
+  /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm bahis placeBet ile.
+  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  void addLikeToToldya(FeedModel model, String userId, int count) {
+    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
   }
 
-  /// Add/Remove unlike on a Toldya
-  addunLikeToToldya(FeedModel model, String userId, int count) {
-    try {
-      // if (tweet.unlikeList != null &&
-      //     tweet.unlikeList.length > 0 &&
-      //     tweet.unlikeList.any((id) => id == userId)) {
-      //   // If user wants to undo/remove his like on tweet
-      //   tweet.unlikeList.removeWhere((id) => id == userId);
-      //   tweet.unlikeCount -= 1;
-      // } else {
-      //   // If user like Tweet
-      //   if (tweet.unlikeList == null) {
-      //     tweet.unlikeList = [];
-      //   }
-      //   tweet.unlikeList.add(userId);
-      //   tweet.unlikeCount += count;
-      // }
-
-      model.unlikeList ??= [];
-      final unlikeList = model.unlikeList!;
-      final idx = unlikeList.indexWhere((element) => element.userId == userId);
-      if (idx >= 0) {
-        final el = unlikeList[idx];
-        el.pegCount = (el.pegCount ?? 0) + count;
-      } else {
-        unlikeList.add(UserPegModel(userId: userId, pegCount: count));
-      }
-      model.unlikeCount = (model.unlikeCount ?? 0) + count;
-      kDatabase
-          .child('toldya')
-          .child(model.key ?? '')
-          .child('unlikeList')
-          .set(unlikeList.map((e) => e.toJson()).toList());
-      kDatabase
-          .child('toldya')
-          .child(model.key ?? '')
-          .child('unlikeCount')
-          .set(model.unlikeCount);
-
-      kDatabase.child('notification').child(model.userId ?? '').child(model.key ?? '').set({
-        'type': unlikeList.isEmpty
-            ? null
-            : NotificationType.UnLike.toString(),
-        'updatedAt': unlikeList.isEmpty
-            ? null
-            : DateTime.now().toUtc().toString(),
-      });
-    } catch (error) {
-      cprint(error, errorIn: 'addunLikeToToldya');
-    }
+  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
+  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  void addunLikeToToldya(FeedModel model, String userId, int count) {
+    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
   }
 
   /// Bahis işlemini backend (placeBet Callable) üzerinden yapar; limit ve bakiye kontrolü sunucuda.
@@ -733,6 +646,36 @@ class FeedState extends AppState {
     }
   }
 
+  /// Yorum oylama (Katılıyorum / Katılmıyorum). [postId] ana tahmin key, [replyToldyaId] yorum key, [vote] 1 veya -1.
+  Future<void> voteReply(String postId, String replyToldyaId, int vote) async {
+    if (vote != 1 && vote != -1) return;
+    try {
+      final result = await FirebaseFunctions.instance
+          .httpsCallable("voteReply")
+          .call<Map<dynamic, dynamic>>({"toldyaId": replyToldyaId, "vote": vote});
+      final data = result.data;
+      if (data == null || data["ok"] != true) return;
+      final upvoteCount = (data["upvoteCount"] as num?)?.toInt() ?? 0;
+      final downvoteCount = (data["downvoteCount"] as num?)?.toInt() ?? 0;
+      final upvoteUserIds = (data["upvoteUserIds"] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+      final downvoteUserIds = (data["downvoteUserIds"] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+      final list = toldyaReplyMap[postId];
+      if (list != null) {
+        final idx = list.indexWhere((x) => x.key == replyToldyaId);
+        if (idx >= 0) {
+          list[idx].upvoteCount = upvoteCount;
+          list[idx].downvoteCount = downvoteCount;
+          list[idx].upvoteUserIds = upvoteUserIds;
+          list[idx].downvoteUserIds = downvoteUserIds;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      cprint(e, errorIn: 'voteReply');
+      rethrow;
+    }
+  }
+
   void _updateLocalFeedModelAfterBet(String? toldyaKey, String userId, int amount, bool isLike) {
     if (toldyaKey == null || _feedlist == null) return;
     for (final f in _feedlist!) {
@@ -814,32 +757,35 @@ class FeedState extends AppState {
 
   /// Add [new comment tweet] to any tweet
   /// Comment is a Tweet itself
-  addcommentToPost(FeedModel replyToldya) {
+  Future<void> addcommentToPost(FeedModel replyToldya) async {
+    final toReply = _toldyaToReplyModel;
+    final feedlist = _feedlist;
+    if (toReply == null ||
+        toReply.key == null ||
+        feedlist == null ||
+        feedlist.isEmpty ||
+        !feedlist.any((x) => x.key == toReply.key)) {
+      return;
+    }
+    isBusy = true;
+    notifyListeners();
     try {
-      isBusy = true;
-      notifyListeners();
-      final toReply = _toldyaToReplyModel;
-      final feedlist = _feedlist;
-      if (toReply != null &&
-          toReply.key != null &&
-          feedlist != null &&
-          feedlist.isNotEmpty &&
-          feedlist.any((x) => x.key == toReply.key)) {
-        FeedModel parentToldya = feedlist.firstWhere((x) => x.key == toReply.key);
-        var json = replyToldya.toJson();
-        kDatabase.child('toldya').push().set(json).then((value) {
-          final lastKey = feedlist.isNotEmpty ? feedlist.last.key : null;
-          if (lastKey != null) {
-            (parentToldya.replyToldyaKeyList ??= []).add(lastKey);
-          }
-          updateToldya(parentToldya);
-        });
+      FeedModel parentToldya = feedlist.firstWhere((x) => x.key == toReply.key);
+      var json = replyToldya.toJson();
+      final replyRef = kDatabase.child('toldya').push();
+      await replyRef.set(json);
+      final newKey = replyRef.key;
+      if (newKey != null) {
+        (parentToldya.replyToldyaKeyList ??= []).add(newKey);
       }
+      await updateToldya(parentToldya);
     } catch (error) {
       cprint(error, errorIn: 'addcommentToPost');
+      rethrow;
+    } finally {
+      isBusy = false;
+      notifyListeners();
     }
-    isBusy = false;
-    notifyListeners();
   }
 
   /// Trigger when any tweet changes or update

@@ -93,33 +93,33 @@ class SearchState extends AppState {
       case SortUser.ByAlphabetically:
         list.sort((x, y) => (x.displayName ?? '').compareTo(y.displayName ?? ''));
         notifyListeners();
-        return "alphabetically";
+        return "alphabeticallySort";
 
       case SortUser.ByMaxFollower:
         list.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
         notifyListeners();
-        return "UserModel with max follower";
+        return "maxFollowerFirst";
 
       case SortUser.ByNewest:
         list.sort((x, y) =>
             DateTime.parse(y.createdAt ?? '').compareTo(DateTime.parse(x.createdAt ?? '')));
         notifyListeners();
-        return "Newest user first";
+        return "newestUserFirst";
 
       case SortUser.ByOldest:
         list.sort((x, y) =>
             DateTime.parse(x.createdAt ?? '').compareTo(DateTime.parse(y.createdAt ?? '')));
         notifyListeners();
-        return "Oldest user first";
+        return "oldestUserFirst";
 
       case SortUser.ByVerified:
         list.sort((x, y) =>
             (y.isVerified ?? false).toString().compareTo((x.isVerified ?? false).toString()));
         notifyListeners();
-        return "Verified user first";
+        return "verifiedUserFirst";
 
       default:
-        return "Unknown";
+        return "unknown";
     }
   }
 

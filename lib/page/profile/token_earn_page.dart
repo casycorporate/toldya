@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
@@ -21,7 +22,7 @@ class TokenEarnPage extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Token Kazan',
+          AppLocalizations.of(context)!.tokenEarnTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 18,
@@ -41,12 +42,12 @@ class TokenEarnPage extends StatelessWidget {
             _EarnCard(
               icon: Icons.play_circle_filled,
               iconColor: AppNeon.orange,
-              title: 'Reklam İzle',
-              subtitle: '50 Token ücretsiz',
-              buttonLabel: 'İzle',
+              title: AppLocalizations.of(context)!.watchAdTitle,
+              subtitle: AppLocalizations.of(context)!.tokenEarnFreeSubtitle('50'),
+              buttonLabel: AppLocalizations.of(context)!.watch,
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Reklam özelliği yakında eklenecek.')),
+                  SnackBar(content: Text(AppLocalizations.of(context)!.adsComingSoon)),
                 );
               },
             ),
@@ -55,18 +56,20 @@ class TokenEarnPage extends StatelessWidget {
             _EarnCard(
               icon: Icons.card_giftcard,
               iconColor: AppNeon.green,
-              title: 'Günlük Bonus',
+              title: AppLocalizations.of(context)!.dailyBonusTitle,
               subtitle: '+${AppIcon.dailyBonusAmount} Token',
-              buttonLabel: canClaimDaily ? 'Al' : 'Yarın tekrar dene',
+              buttonLabel: canClaimDaily
+                  ? AppLocalizations.of(context)!.claim
+                  : AppLocalizations.of(context)!.tryAgainTomorrow,
               onPressed: canClaimDaily
                   ? () async {
-                      final msg = await authState.claimDailyBonus();
+                      final msg = await authState.claimDailyBonus(context);
                       if (context.mounted) {
                         if (msg != null) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('+${AppIcon.dailyBonusAmount} token eklendi!')),
+                            SnackBar(content: Text(AppLocalizations.of(context)!.tokensAdded('${AppIcon.dailyBonusAmount}'))),
                           );
                         }
                       }
@@ -75,7 +78,7 @@ class TokenEarnPage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Token Paketleri',
+              AppLocalizations.of(context)!.tokenPacksTitle,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -92,14 +95,14 @@ class TokenEarnPage extends StatelessWidget {
             _TokenPackCard(
               amount: 500,
               price: '3,99 ₺',
-              badge: 'En popüler',
+              badge: AppLocalizations.of(context)!.mostPopular,
               onPressed: () => _showComingSoon(context),
             ),
             SizedBox(height: 8),
             _TokenPackCard(
               amount: 2000,
               price: '12,99 ₺',
-              badge: 'En iyi değer',
+              badge: AppLocalizations.of(context)!.bestValue,
               onPressed: () => _showComingSoon(context),
             ),
           ],
@@ -110,7 +113,7 @@ class TokenEarnPage extends StatelessWidget {
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Satın alma yakında eklenecek.')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.purchaseComingSoon)),
     );
   }
 }

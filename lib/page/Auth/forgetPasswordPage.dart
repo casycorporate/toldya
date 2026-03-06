@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
@@ -100,7 +101,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
               padding: EdgeInsets.only(left: 0, top: 10, bottom: 10),
               child: Icon(Icons.keyboard_arrow_left, color: theme.colorScheme.onSurface),
             ),
-            Text('Geri',
+            Text(AppLocalizations.of(context)!.back,
                 style: GoogleFonts.sawarabiMincho(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))
           ],
         ),
@@ -193,13 +194,13 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
   //   );
   // }
   void _submit(){
-    if(_emailController.text == null || _emailController.text.isEmpty){
-      customSnackBar(_scaffoldKey, 'E-posta alanı boş olamaz');
+    if(_emailController.text.isEmpty){
+      customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.emailEmpty);
       return;
     }
     var isValidEmail = validateEmal(_emailController.text, );
     if(!isValidEmail){
-       customSnackBar(_scaffoldKey, 'Lütfen geçerli bir e-posta adresi girin');
+       customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.validEmailRequired);
       return;
     }
 

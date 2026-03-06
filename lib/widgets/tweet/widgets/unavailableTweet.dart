@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/feedModel.dart';
@@ -36,7 +37,7 @@ class UnavailableToldya extends StatelessWidget {
                 backgroundColor: Colors.transparent,
               ),
             )
-          : Text('This Tweet is unavailable', style: userNameStyle),
+          : Text(AppLocalizations.of(context)!.thisTweetUnavailable, style: userNameStyle),
     );
   }
 }

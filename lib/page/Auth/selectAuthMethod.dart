@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/Auth/signup.dart';
@@ -49,7 +50,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ],
           ),
           child: Text(
-            'Giriş',
+            AppLocalizations.of(context)!.login,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -89,7 +90,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
           ),
           child: Text(
-            'Kayıt ol',
+            AppLocalizations.of(context)!.signUp,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -159,7 +160,7 @@ class _WelcomePageState extends State<WelcomePage> {
         ),
         SizedBox(height: 12),
         Text(
-          'Tahminlerini paylaş, demiş mi dememiş mi gör.',
+          AppLocalizations.of(context)!.tagline,
           textAlign: TextAlign.center,
           style: GoogleFonts.sawarabiMincho(
             fontSize: 15,

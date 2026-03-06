@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -16,14 +17,14 @@ class DirectMessagesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Direct Messages',
+        title: AppLocalizations.of(context)!.directMessagesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
           HeaderWidget(
-            'Direct Messages',
+            AppLocalizations.of(context)!.directMessagesTitle,
             secondHeader: true,
           ),
           SettingRowWidget(

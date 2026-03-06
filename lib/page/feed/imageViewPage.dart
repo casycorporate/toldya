@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
@@ -128,7 +129,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                               horizontal: 10,
                               vertical: 10,
                             ),
-                            hintText: 'Comment here..',
+                            hintText: AppLocalizations.of(context)!.commentHint,
                             hintStyle: TextStyle(
                               color: Colors.white,
                             ),
@@ -158,18 +159,13 @@ class _ImageViewPgeState extends State<ImageViewPge> {
           );
   }
 
-  void _submitButton() {
-    if (_textEditingController.text == null ||
-        _textEditingController.text.isEmpty) {
-      return;
-    }
-    if (_textEditingController.text.length > 280) {
+  void _submitButton() async {
+    if (_textEditingController.text.isEmpty || _textEditingController.text.length > 280) {
       return;
     }
     var state = Provider.of<FeedState>(context, listen: false);
     var authState = Provider.of<AuthState>(context, listen: false);
     var user = authState.userModel;
-    var profilePic = user?.profilePic ?? dummyProfilePic;
     var name = authState.userModel?.displayName ??
         ((authState.userModel?.email ?? '').split('@').isNotEmpty
             ? (authState.userModel?.email ?? '').split('@')[0]
@@ -198,11 +194,25 @@ class _ImageViewPgeState extends State<ImageViewPge> {
       userId: commentedUser.userId,
       parentkey: postId,
     );
-    state.addcommentToPost(reply);
-    FocusScope.of(context).requestFocus(_focusNode);
-    setState(() {
-      _textEditingController.text = '';
-    });
+    try {
+      await state.addcommentToPost(reply);
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_focusNode);
+        setState(() => _textEditingController.text = '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.commentAdded)),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.commentFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

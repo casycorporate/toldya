@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/page/Auth/selectAuthMethod.dart';
 import 'package:toldya/page/Auth/verifyEmail.dart';
 import 'package:toldya/page/common/splash.dart';
@@ -22,6 +23,7 @@ import 'package:toldya/page/settings/accountSettings/notifications/notificationP
 import 'package:toldya/page/settings/accountSettings/privacyAndSafety/directMessage/directMessage.dart';
 import 'package:toldya/page/settings/accountSettings/privacyAndSafety/privacyAndSafetyPage.dart';
 import 'package:toldya/page/settings/accountSettings/proxy/proxyPage.dart';
+import 'package:toldya/page/settings/languagePage.dart';
 import 'package:toldya/page/settings/settingsAndPrivacyPage.dart';
 import 'package:provider/provider.dart';
 import '../page/Auth/signin.dart';
@@ -108,7 +110,8 @@ class Routes{
       case "DataUsagePage":return CustomRoute<bool>(builder:(BuildContext context)=> DataUsagePage(),); 
       case "AccessibilityPage":return CustomRoute<bool>(builder:(BuildContext context)=> AccessibilityPage(),); 
       case "ProxyPage":return CustomRoute<bool>(builder:(BuildContext context)=> ProxyPage(),); 
-      case "AboutPage":return CustomRoute<bool>(builder:(BuildContext context)=> AboutPage(),); 
+      case "AboutPage":return CustomRoute<bool>(builder:(BuildContext context)=> AboutPage(),);
+      case "LanguagePage": return CustomRoute<bool>(builder:(BuildContext context)=> const LanguagePage(),); 
       case "ConversationInformation":return CustomRoute<bool>(builder:(BuildContext context)=> ConversationInformation(),); 
       case "FollowingListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowingListPage(),); 
       case "FollowerListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowerListPage(),); 
@@ -123,10 +126,10 @@ class Routes{
      final List<String> parts = (settings.name ?? '').split('/');
      final String featureName = parts.length > 1 ? parts[1] : 'Feature';
      return MaterialPageRoute(
-          builder: (_) => Scaffold(
+          builder: (context) => Scaffold(
                 appBar: AppBar(title: customTitleText(featureName),centerTitle: true,),
                 body: Center(
-                  child: Text('$featureName Coming soon..'),
+                  child: Text(AppLocalizations.of(context)!.featureComingSoon(featureName)),
                 ),
               ),
         );

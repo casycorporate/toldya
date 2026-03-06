@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
 import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
@@ -50,14 +51,14 @@ class AccessibilityPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 15),
-            child: TitleText('Data preference'),
+            child: TitleText(AppLocalizations.of(context)!.dataPreference),
           ),
           Divider(height: 0),
-          _row("Mobile data & Wi-Fi"),
+          _row(AppLocalizations.of(context)!.mobileDataWifi),
           Divider(height: 0),
-          _row("Wi-Fi only"),
+          _row(AppLocalizations.of(context)!.wifiOnly),
           Divider(height: 0),
-          _row("Never"),
+          _row(AppLocalizations.of(context)!.never),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class AccessibilityPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -111,23 +112,22 @@ class AccessibilityPage extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Accessibility',
+          AppLocalizations.of(context)!.accessibilityTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Screen Reader'),
+          HeaderWidget(AppLocalizations.of(context)!.screenReaderHeader),
           SettingRowWidget(
-            "Pronounce # as \"hashtag\"",
+            AppLocalizations.of(context)!.pronounceHashtagTitle,
             showCheckBox: true,
           ),
           Divider(height: 0),
-          HeaderWidget('Vision'),
+          HeaderWidget(AppLocalizations.of(context)!.visionHeader),
           SettingRowWidget(
-            "Compose image descriptions",
-            subtitle:
-                'Adds the ability to describe images for the visually impaired.',
+            AppLocalizations.of(context)!.composeImageDescriptionsTitle,
+            subtitle: AppLocalizations.of(context)!.composeImageDescriptionsSubtitle,
             vPadding: 15,
             showCheckBox: false,
             onPressed: () {
@@ -136,13 +136,12 @@ class AccessibilityPage extends StatelessWidget {
             showDivider: false,
           ),
           HeaderWidget(
-            'Motion',
+            AppLocalizations.of(context)!.motionHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Reduce Motion",
-            subtitle:
-                'Limit the amount of in-app animations, including live engagement counts.',
+            AppLocalizations.of(context)!.reduceMotionTitle,
+            subtitle: AppLocalizations.of(context)!.reduceMotionSubtitle,
             vPadding: 15,
             showCheckBox: false,
             onPressed: () {
@@ -150,8 +149,8 @@ class AccessibilityPage extends StatelessWidget {
             },
           ),
           SettingRowWidget(
-            "Video autoplay",
-            subtitle: 'Wi-Fi only ',
+            AppLocalizations.of(context)!.videoAutoplayTitle,
+            subtitle: AppLocalizations.of(context)!.wifiOnly,
             onPressed: () {
               openDarkModeSettings(context);
             },

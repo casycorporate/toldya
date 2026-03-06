@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -13,26 +14,27 @@ class SettingsAndPrivacyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
-        title: customTitleText(
-          'Settings and privacy',
-        ),
+        title: customTitleText(l10n.settingsAndPrivacy),
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(vertical: spacing8),
         children: <Widget>[
           HeaderWidget(user.userName ?? ''),
           SettingRowWidget(
-            "Account",
+            l10n.account,
             navigateTo: 'AccountSettingsPage',
           ),
           Divider(height: 0),
-          SettingRowWidget("Privacy and Policy",
+          SettingRowWidget(l10n.privacyAndPolicy,
               navigateTo: 'PrivacyAndSaftyPage'),
+          Divider(height: 0),
+          SettingRowWidget(l10n.language, navigateTo: 'LanguagePage'),
           // SettingRowWidget("Notification", navigateTo: 'NotificationPage'),
           // SettingRowWidget("Content prefrences",
           //     navigateTo: 'ContentPrefrencePage'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/state/authState.dart';
@@ -26,10 +27,10 @@ class GoogleLoginButton extends StatelessWidget {
     }).catchError((Object error, StackTrace stackTrace) {
       loader.hideLoader();
       cprint(error, errorIn: '_googleLogin');
-      String message = 'Google ile giriş yapılamadı.';
+      String message = AppLocalizations.of(context)!.googleSignInFailed;
       if (error is PlatformException) {
         if (error.code == 'sign_in_failed' && error.message?.contains('10') == true) {
-          message = 'Google girişi yapılandırılmamış. Firebase Console\'da uygulama SHA parmak izini ekleyin.';
+          message = AppLocalizations.of(context)!.googleSignInNotConfigured;
         } else if (error.message != null && error.message!.isNotEmpty) {
           message = error.message!;
         }
@@ -80,7 +81,7 @@ class GoogleLoginButton extends StatelessWidget {
             ),
             SizedBox(width: 12),
             Text(
-              'Google ile Bağlan',
+              AppLocalizations.of(context)!.googleSignInButton,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

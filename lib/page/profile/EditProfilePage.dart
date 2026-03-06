@@ -1,31 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class EditProfilePage extends StatefulWidget {
   EditProfilePage({Key? key}) : super(key: key);
   _EditProfilePageState createState() => _EditProfilePageState();
 }
 
+/// Kullanıcı adı: sadece harf, rakam, alt çizgi; 3–20 karakter; @ opsiyonel (kayıtta eklenir).
+const int _usernameMinLength = 3;
+const int _usernameMaxLength = 20;
+final RegExp _usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+
 class _EditProfilePageState extends State<EditProfilePage> {
   late String _image;
   late String _banner;
   late TextEditingController _name;
+  late TextEditingController _userName;
   late TextEditingController _bio;
   late TextEditingController _location;
   late TextEditingController _dob;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late String dob;
+  bool _isSaving = false;
   @override
   void initState() {
     super.initState();
     _image = '';
     _banner = '';
     _name = TextEditingController();
+    _userName = TextEditingController();
     _bio = TextEditingController();
     _location = TextEditingController();
     _dob = TextEditingController();
@@ -33,6 +43,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     var state = Provider.of<AuthState>(context, listen: false);
     _image = state.userModel?.profilePic ?? '';
     _name.text = state.userModel?.displayName ?? '';
+    final raw = state.userModel?.userName ?? '';
+    _userName.text = raw.startsWith('@') ? raw.substring(1) : raw;
     _bio.text = state.userModel?.bio ?? '';
     _location.text = state.userModel?.location ?? '';
     _dob.text = getdob(state.userModel?.dob ?? '');
@@ -41,6 +53,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void dispose() {
     _name.dispose();
+    _userName.dispose();
     _bio.dispose();
     _location.dispose();
     _dob.dispose();
@@ -82,12 +95,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _entry('İsim', controller: _name),
-                  _entry('Biyografi', controller: _bio, maxLine: 3),
-                  _entry('Konum', controller: _location),
+                  _entry(AppLocalizations.of(context)!.name, controller: _name),
+                  _entry(AppLocalizations.of(context)!.usernameLabel, controller: _userName, hint: AppLocalizations.of(context)!.exampleUsername),
+                  _entry(AppLocalizations.of(context)!.bio, controller: _bio, maxLine: 3),
+                  _entry(AppLocalizations.of(context)!.location, controller: _location),
                   InkWell(
                     onTap: showCalender,
-                    child: _entry('Doğum tarihi', isenable: false, controller: _dob),
+                    child: _entry(AppLocalizations.of(context)!.birthDate, isenable: false, controller: _dob),
                   ),
                   SizedBox(height: spacing8),
                 ],
@@ -155,7 +169,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Profil fotoğrafı seç',
+                AppLocalizations.of(context)!.selectProfilePhoto,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
@@ -250,7 +264,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Kapak fotoğrafı seç',
+                AppLocalizations.of(context)!.selectCoverPhoto,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
@@ -258,7 +272,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Uygulama kapakları',
+                AppLocalizations.of(context)!.appCovers,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -308,7 +322,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _entry(String title,
       {required TextEditingController controller,
       int maxLine = 1,
-      bool isenable = true}) {
+      bool isenable = true,
+      String? hint}) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       child: Column(
@@ -328,6 +343,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             decoration: InputDecoration(
               contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
+              hintText: hint,
               hintStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
@@ -353,17 +369,72 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  void _submitButton() {
+  /// Kullanıcı adını normalize eder: baştaki @ kaldırılır, sadece [a-zA-Z0-9_] kalır. Uygun değilse null.
+  String? _normalizeUsername(String raw) {
+    final s = raw.trim().replaceFirst(RegExp(r'^@+'), '').trim();
+    if (s.length < _usernameMinLength || s.length > _usernameMaxLength) return null;
+    if (!_usernameRegex.hasMatch(s)) return null;
+    return '@$s';
+  }
+
+  /// Firebase profile listesinde bu userName başka bir kullanıcıda var mı?
+  Future<bool> _isUsernameTaken(String normalizedUserName, String currentUserId) async {
+    final snapshot = await kDatabase.child('profile').get();
+    if (snapshot.value == null) return false;
+    final map = Map<dynamic, dynamic>.from(snapshot.value as Map);
+    final lower = normalizedUserName.toLowerCase();
+    for (final entry in map.entries) {
+      final uid = entry.key.toString();
+      if (uid == currentUserId) continue;
+      final data = entry.value;
+      if (data is! Map) continue;
+      final existing = data['userName']?.toString().trim();
+      if (existing != null && existing.toLowerCase() == lower) return true;
+    }
+    return false;
+  }
+
+  Future<void> _submitButton() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_name.text.length > 27) {
-      customSnackBar(_scaffoldKey, 'İsim uzunluğu 27 karakteri aşamaz');
+      customSnackBar(_scaffoldKey, l10n.nameTooLongProfile);
+      return;
+    }
+    final rawUserName = _userName.text.trim();
+    if (rawUserName.isEmpty) {
+      customSnackBar(_scaffoldKey, l10n.usernameRequired);
+      return;
+    }
+    final normalizedUserName = _normalizeUsername(rawUserName);
+    if (normalizedUserName == null) {
+      customSnackBar(
+        _scaffoldKey,
+        l10n.usernameRules(_usernameMinLength, _usernameMaxLength),
+      );
       return;
     }
     var state = Provider.of<AuthState>(context, listen: false);
     final um = state.userModel;
     if (um == null) return;
+    if (!mounted) return;
+    setState(() => _isSaving = true);
+    try {
+      final taken = await _isUsernameTaken(normalizedUserName, um.userId ?? '');
+      if (!mounted) return;
+      if (taken) {
+        setState(() => _isSaving = false);
+        customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.usernameTaken);
+        return;
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+      customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.errorCheckFailed);
+      return;
+    }
     var model = um.copyWith(
       key: um.userId,
       displayName: um.displayName,
+      userName: um.userName,
       bio: um.bio,
       contact: um.contact,
       dob: um.dob,
@@ -375,24 +446,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
       pegCount: um.pegCount,
       role: um.role,
       rank: um.rank,
-
     );
-    if (_name.text != null && _name.text.isNotEmpty) {
-      model.displayName = _name.text;
+    if (_name.text.trim().isNotEmpty) {
+      model.displayName = _name.text.trim();
     }
-    if (_bio.text != null && _bio.text.isNotEmpty) {
+    model.userName = normalizedUserName;
+    if (_bio.text.trim().isNotEmpty) {
       model.bio = _bio.text;
     }
-    if (_location.text != null && _location.text.isNotEmpty) {
+    if (_location.text.trim().isNotEmpty) {
       model.location = _location.text;
     }
-    if (dob != null) {
+    if (dob.isNotEmpty) {
       model.dob = dob;
     }
     final imageParam = _image.isNotEmpty ? _image : null;
     final bannerParam = _banner.isNotEmpty ? _banner : null;
-    state.updateUserProfile(model,_scaffoldKey, image: imageParam, bannerImage: bannerParam);
-    Navigator.of(context).pop();
+    try {
+      await state.updateUserProfile(model, _scaffoldKey, image: imageParam, bannerImage: bannerParam, successMessage: AppLocalizations.of(context)!.changesSaved);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+      customSnackBar(_scaffoldKey, l10n.errorSaveFailed);
+    }
   }
 
   @override
@@ -404,19 +480,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        title: customTitleText('Profili Düzenle'),
+        title: customTitleText(AppLocalizations.of(context)!.editProfile),
         actions: <Widget>[
           InkWell(
-            onTap: _submitButton,
+            onTap: _isSaving ? null : _submitButton,
             child: Center(
-              child: Text(
-                'Kaydet',
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: _isSaving
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                  : Text(
+                      AppLocalizations.of(context)!.save,
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
           SizedBox(width: 20),

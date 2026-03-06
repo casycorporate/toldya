@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/signup.dart';
@@ -71,7 +72,7 @@ class _SignInState extends State<SignIn> {
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 5),
                         alignment: Alignment.centerRight,
-                        child: _labelButton('Şifreyi unuttum?', onPressed: () {
+                        child: _labelButton(AppLocalizations.of(context)!.forgotPassword, onPressed: () {
                           Navigator.of(context).pushNamed('/ForgetPasswordPage');
                         }),
                         // child: Text('Forgot Password ?',
@@ -330,7 +331,7 @@ class _SignInState extends State<SignIn> {
     }
     loader.showLoader(context);
     var isValid = validateCredentials(
-        _scaffoldKey, _emailController.text, _passwordController.text);
+        context, _scaffoldKey, _emailController.text, _passwordController.text);
     if (isValid) {
       state
           .signIn(_emailController.text, _passwordController.text,

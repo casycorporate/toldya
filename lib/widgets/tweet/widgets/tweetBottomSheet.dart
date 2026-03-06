@@ -5,6 +5,7 @@ import 'package:toldya/state/searchState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -101,14 +102,14 @@ class ToldyaBottomSheet {
           ),
         ),
         _widgetBottomSheetRow(context, AppIcon.link,
-            text: 'Bağlantıyı kopyala', isEnable: true, onPressed: () async {
+            text: AppLocalizations.of(context)!.copyLink, isEnable: true, onPressed: () async {
               var uri = await Utility.createLinkToCopy(
                 context,
                 "toldya/${model.key}",
                 socialMetaTagParameters: SocialMetaTagParameters(
                     description: model.description ??
-                        "${model.user?.displayName ?? ''} bir gönderi paylaştı",
-                    title: "Gönderi",
+                        AppLocalizations.of(context)!.sharedPostDescription(model.user?.displayName ?? ''),
+                    title: AppLocalizations.of(context)!.postTitle,
                     imageUrl: Uri.parse(
                         "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
               );
@@ -116,9 +117,8 @@ class ToldyaBottomSheet {
               Navigator.pop(context);
               copyToClipBoard(
                   scaffoldKey: scaffoldKey,
-                  text:
-                  uri.toString(),
-                  message: "Panoya kopyalandı");
+                  text: uri.toString(),
+                  message: AppLocalizations.of(context)!.copiedToClipboard);
             }),
         // isMyToldya
         //     ? _widgetBottomSheetRow(
@@ -135,7 +135,7 @@ class ToldyaBottomSheet {
             ? _widgetBottomSheetRow(
           context,
           AppIcon.delete,
-          text: 'Sil',
+          text: AppLocalizations.of(context)!.delete,
           onPressed: () {
             _deleteToldya(
               context,
@@ -153,31 +153,31 @@ class ToldyaBottomSheet {
             : _widgetBottomSheetRow(
           context,
           AppIcon.mute,
-          text: '${model.user?.displayName ?? ''} sessize al',
+          text: AppLocalizations.of(context)!.muteUser(model.user?.displayName ?? ''),
         ),
         _widgetBottomSheetRow(
           context,
           AppIcon.mute,
-          text: 'Bu görüşmeyi sessize al',
+          text: AppLocalizations.of(context)!.muteConversation,
         ),
         _widgetBottomSheetRow(
           context,
           AppIcon.viewHidden,
-          text: 'Gizli yanıtları görüntüle',
+          text: AppLocalizations.of(context)!.viewHiddenReplies,
         ),
         isMyToldya
             ? Container()
             : _widgetBottomSheetRow(
           context,
           AppIcon.block,
-          text: '${model.user?.displayName ?? ''} engelle',
+          text: AppLocalizations.of(context)!.blockUser(model.user?.displayName ?? ''),
         ),
         isMyToldya
             ? Container()
             : _widgetBottomSheetRow(
           context,
           AppIcon.report,
-          text: 'Rapor et',
+          text: AppLocalizations.of(context)!.report,
         ),
         SizedBox(height: 20),
       ],
@@ -204,27 +204,26 @@ class ToldyaBottomSheet {
           ),
         ),
         _widgetBottomSheetRow(context, AppIcon.link,
-            text: 'Bağlantıyı kopyala', isEnable: true, onPressed: () async {
+            text: AppLocalizations.of(context)!.copyLink, isEnable: true, onPressed: () async {
               var uri = await Utility.createLinkToCopy(
                 context,
                 "toldya/${model.key ?? ''}",
                 socialMetaTagParameters: SocialMetaTagParameters(
                     description: model.description ??
-                        "${model.user?.displayName ?? ''} bir gönderi paylaştı.",
-                    title: "Gönderi",
+                        AppLocalizations.of(context)!.sharedPostDescription(model.user?.displayName ?? ''),
+                    title: AppLocalizations.of(context)!.postTitle,
                     imageUrl: Uri.parse(
                         "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
               );
               Navigator.pop(context);
               copyToClipBoard(
                   scaffoldKey: scaffoldKey,
-                  text:
-                  uri.toString(),
-                  message: "Panoya kopyalandı");
+                  text: uri.toString(),
+                  message: AppLocalizations.of(context)!.copiedToClipboard);
             }),
         isAdmin
             ? _widgetBottomSheetRow(context, AppIcon.thumbpinFill,
-            text: 'onaya gönder', isEnable: true, onPressed: () {
+            text: AppLocalizations.of(context)!.sendForApproval, isEnable: true, onPressed: () {
               _sendApproval(context, model, Statu.statusPending,
                   ConfirmWinner.None, scaffoldKey);
             })
@@ -250,7 +249,7 @@ class ToldyaBottomSheet {
             ? _widgetBottomSheetRow(
           context,
           AppIcon.delete,
-          text: 'Sil',
+          text: AppLocalizations.of(context)!.delete,
           onPressed: () {
             _deleteToldya(
               context,
@@ -281,8 +280,8 @@ class ToldyaBottomSheet {
             ? Container()
             : _widgetBottomSheetRow(context, AppIcon.block,
             text: isInBlackList
-                ? '${model.user?.displayName ?? ''} engeli kaldır'
-                : '${model.user?.displayName ?? ''} engelle',
+                ? AppLocalizations.of(context)!.unblockUser(model.user?.displayName ?? '')
+                : AppLocalizations.of(context)!.blockUser(model.user?.displayName ?? ''),
             isEnable: true, onPressed: () {
               _addBlackList(
                 context,
@@ -294,20 +293,20 @@ class ToldyaBottomSheet {
         isMyToldya
             ? Container()
             : _widgetBottomSheetRow(context, AppIcon.report,
-            text: isReported ? 'şikayeti geri al' : 'Rapor et',
+            text: isReported ? AppLocalizations.of(context)!.withdrawReport : AppLocalizations.of(context)!.report,
             onPressed: () {
               _addReportList(context, model, Statu.statusPending,
                   ConfirmWinner.None, scaffoldKey);
             }, isEnable: true),
         _shouldShowDispute(model, isMyToldya, isAdmin)
             ? _widgetBottomSheetRow(context, Icons.gavel_rounded,
-            text: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? 'İtiraz ettiniz' : 'İtiraz et',
+            text: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? AppLocalizations.of(context)!.disputed : AppLocalizations.of(context)!.dispute,
             onPressed: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? null : () {
               _addDispute(context, model, scaffoldKey);
             }, isEnable: !_hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId))
             : Container(),
         isAdmin
-            ? _widgetBottomSheetRow(context, Icons.check_box, text: 'onayla',
+            ? _widgetBottomSheetRow(context, Icons.check_box, text: AppLocalizations.of(context)!.approve,
             onPressed: () {
               showDialog<void>(
                   context: context,
@@ -316,13 +315,13 @@ class ToldyaBottomSheet {
                     return AlertDialog(
                       actions: [
                         TextButton(
-                          child: Text("İptal"),
+                          child: Text(AppLocalizations.of(context)!.cancel),
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
                         ),
                         TextButton(
-                          child: Text("Onayla"),
+                          child: Text(AppLocalizations.of(context)!.confirm),
                           onPressed: () {
                             Navigator.of(context).pop();
                             _sendApproval(context, model, Statu.statusOk,
@@ -369,7 +368,7 @@ class ToldyaBottomSheet {
             _sendApproval(context, model, Statu.statusDenied,
                 ConfirmWinner.None, scaffoldKey);
           },
-          text: 'reddet',
+          text: AppLocalizations.of(context)!.reject,
         )
             : Container(),
         SizedBox(height: 20),
@@ -377,8 +376,8 @@ class ToldyaBottomSheet {
     );
   }
 
-  Widget continueButton = TextButton(
-    child: Text("Continue"),
+  Widget continueButton(BuildContext context) => TextButton(
+    child: Text(AppLocalizations.of(context)!.continueAction),
     onPressed: () {},
   );
 
@@ -511,7 +510,7 @@ class ToldyaBottomSheet {
     final userId = authState.userId ?? '';
     if (model.disputeUserIds?.contains(userId) == true) return;
     state.addDisputeToToldya(model, userId);
-    customSnackBar(scaffoldKey, 'İtirazınız kaydedildi');
+    customSnackBar(scaffoldKey, AppLocalizations.of(context)!.disputeRecorded);
     Navigator.of(context).pop();
   }
 
@@ -520,24 +519,49 @@ class ToldyaBottomSheet {
   }
 
   void _deleteToldya(BuildContext context, ToldyaType type, String toldyaId,
-      {String? parentkey}) {
+      {String? parentkey}) async {
     var state = Provider.of<FeedState>(context, listen: false);
-    state.deleteToldya(toldyaId, type, parentkey: parentkey);
-    // CLose bottom sheet
     Navigator.of(context).pop();
-    if (type == ToldyaType.Detail) {
-      // Close Tweet detail page
-      Navigator.of(context).pop();
-      // Remove last tweet from tweet detail stack page
-      state.removeLastToldyaDetail(toldyaId);
+    try {
+      await state.deleteToldya(toldyaId, type, parentkey: parentkey);
+      if (type == ToldyaType.Detail && context.mounted) {
+        Navigator.of(context).pop();
+        state.removeLastToldyaDetail(toldyaId);
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.predictionDeleted)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorDeleteFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   void _addBlackList(BuildContext context, ToldyaType type, String userId,
       {String? parentkey}) {
-    var state = Provider.of<AuthState>(context, listen: false);
-    state.addBlackList(userId);
-    Navigator.of(context).pop();
+    var authState = Provider.of<AuthState>(context, listen: false);
+    try {
+      authState.addBlackList(userId);
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.userBlocked)),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.errorGeneric),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void openRetoldyabottomSheet(int commentFlag, BuildContext context,
@@ -594,7 +618,7 @@ class ToldyaBottomSheet {
           ),
           SizedBox(height: 20),
           Text(
-            model.description ?? 'Tahmin',
+            model.description ?? AppLocalizations.of(context)!.prediction,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -618,7 +642,7 @@ class ToldyaBottomSheet {
                   ),
                   child: Column(
                     children: [
-                      Text('Evet', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                      Text(AppLocalizations.of(context)!.yes, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
                       Text('$evetPercent%', style: TextStyle(fontSize: 14, color: isEvet ? Color(0xFF2E7D32) : Color(0xFF757575))),
                     ],
                   ),
@@ -638,7 +662,7 @@ class ToldyaBottomSheet {
                   ),
                   child: Column(
                     children: [
-                      Text('Hayır', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                      Text(AppLocalizations.of(context)!.no, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
                       Text('$hayirPercent%', style: TextStyle(fontSize: 14, color: !isEvet ? Color(0xFFC62828) : Color(0xFF757575))),
                     ],
                   ),
@@ -672,7 +696,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
   //List<Widget> _children;
   int _period = 0;
   int maxVal = 0;
-  bool isPressed=false;
+  bool isPressed = false;
+  bool _isPlacingBet = false;
 
   @override
   void initState() {
@@ -698,7 +723,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Lütfen bahis miktarı seçin!'),
+              content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount),
               duration: Duration(seconds: 3),
             ),
           );
@@ -711,7 +736,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Maksimum bahis: $maxVal token'),
+              content: Text(AppLocalizations.of(context)!.maxBetTokens('$maxVal')),
               duration: Duration(seconds: 3),
             ),
           );
@@ -726,7 +751,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+                AppLocalizations.of(context)!.betOnOneSideOnly,
               ),
               duration: Duration(seconds: 4),
               backgroundColor: Colors.orange.shade800,
@@ -735,6 +760,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         }
         return;
       }
+
+      if (!mounted) return;
+      setState(() => _isPlacingBet = true);
 
       try {
         debugPrint('[BAHIS] placeBet çağrılıyor...');
@@ -746,7 +774,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           widget.commentFlag,
         );
         debugPrint('[BAHIS] placeBet başarılı!');
-        
+
         state.setToldyaToReply = widget.model;
         debugPrint('[BAHIS] Bildirim gönderiliyor...');
         authState.getuserDetail(widget.model.userId ?? '').then((user) {
@@ -760,9 +788,11 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                 });
           }
         });
-        
+
         if (context.mounted) {
-          debugPrint('[BAHIS] Bottom sheet kapatılıyor...');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
+          );
           Navigator.pop(context);
         }
       } on PlatformException catch (e) {
@@ -773,9 +803,10 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         debugPrint('[BAHIS HATASI] details: ${e.details}');
         debugPrint('[BAHIS HATASI] stacktrace: ${e.stacktrace}');
         if (context.mounted) {
+          setState(() => _isPlacingBet = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Google Play Services hatası: ${e.message ?? e.code ?? "Bilinmeyen hata"}'),
+              content: Text(AppLocalizations.of(context)!.gmsError(e.message ?? e.code ?? AppLocalizations.of(context)!.unknownError)),
               duration: Duration(seconds: 6),
               backgroundColor: Colors.red,
             ),
@@ -788,21 +819,20 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         debugPrint('[BAHIS HATASI] message: ${e.message}');
         debugPrint('[BAHIS HATASI] details: ${e.details}');
         if (context.mounted) {
-          String errorMessage = 'Bahis gönderilemedi.';
-          
-          // Hata koduna göre daha anlamlı mesajlar
+          final l10n = AppLocalizations.of(context)!;
+          String errorMessage = l10n.betErrorGeneric;
           if (e.code == 'internal' || e.code == 'INTERNAL') {
-            errorMessage = 'Google Play Services hatası. Lütfen cihazınızı yeniden başlatın veya Google Play Services\'i güncelleyin.';
+            errorMessage = l10n.gmsUpdateMessage;
           } else if (e.code == 'unauthenticated') {
-            errorMessage = 'Giriş yapmanız gerekiyor.';
+            errorMessage = l10n.loginRequired;
           } else if (e.code == 'deadline-exceeded') {
-            errorMessage = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+            errorMessage = l10n.betTimeout;
           } else if (e.message != null && e.message!.isNotEmpty) {
             errorMessage = e.message!;
           } else if (e.code.isNotEmpty) {
-            errorMessage = 'Hata: ${e.code}';
+            errorMessage = l10n.errorWithMessage(e.code);
           }
-          
+          setState(() => _isPlacingBet = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
@@ -812,18 +842,18 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           );
         }
       } catch (e, stackTrace) {
-        // Tüm hataları konsola yazdır – Android Studio'da Run/Debug çıktısında görürsün
         debugPrint('[BAHIS HATASI] Genel Exception');
         debugPrint('[BAHIS HATASI] Type: ${e.runtimeType}');
         debugPrint('[BAHIS HATASI] Message: $e');
         debugPrint('[BAHIS HATASI] Stack trace: $stackTrace');
         if (context.mounted) {
+          setState(() => _isPlacingBet = false);
           final msg = e.toString().length > 120
               ? '${e.toString().substring(0, 120)}...'
               : e.toString();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Hata: $msg'),
+              content: Text(AppLocalizations.of(context)!.errorWithMessage(msg)),
               duration: Duration(seconds: 6),
               backgroundColor: Colors.red,
             ),
@@ -910,56 +940,64 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
-              if (_period <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Lütfen bahis miktarı seçin!'), duration: Duration(seconds: 2)),
-                );
-                return;
-              }
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: Text('Bahsi onayla', style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
-                  content: Text(
-                    '$_period token ile bahis yapmak istediğinize emin misiniz?',
-                    style: TextStyle(color: Color(0xFF616161)),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text('İptal', style: TextStyle(color: Color(0xFF757575))),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _send();
-                      },
-                      child: Text('Onayla', style: TextStyle(color: greenPrimary, fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onTap: _isPlacingBet
+                ? null
+                : () {
+                    if (_period <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount), duration: Duration(seconds: 2)),
+                      );
+                      return;
+                    }
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Text(AppLocalizations.of(context)!.confirmBet, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
+                        content: Text(
+                          AppLocalizations.of(context)!.confirmBetMessage('$_period'),
+                          style: TextStyle(color: Color(0xFF616161)),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Color(0xFF757575))),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _send();
+                            },
+                            child: Text(AppLocalizations.of(context)!.confirm, style: TextStyle(color: greenPrimary, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 16),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: greenPrimary,
+                color: _isPlacingBet ? Colors.grey : greenPrimary,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                'Bahsi Onayla',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              child: _isPlacingBet
+                  ? SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(
+                      'Bahsi Onayla',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),

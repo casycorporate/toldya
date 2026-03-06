@@ -14,6 +14,8 @@ import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/widgets/reply_vote_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -38,8 +40,15 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
     return Toldya(
       model: model,
       type: ToldyaType.Reply,
-      trailing: ToldyaBottomSheet().toldyaOptionIcon(context,
-          scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ReplyVoteButtons(postId: postId, model: model),
+          SizedBox(width: 4),
+          ToldyaBottomSheet().toldyaOptionIcon(context,
+              scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
+        ],
+      ),
     );
   }
 
@@ -61,10 +70,13 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back_rounded),
             color: Colors.white,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
+              Navigator.of(context).pop();
+            },
           ),
           title: Text(
-            'Tahmin Detayı',
+            AppLocalizations.of(context)!.predictionDetail,
             style: TextStyle(
               color: Colors.grey.shade400,
               fontSize: 14,
@@ -106,7 +118,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, spacing24, MockupDesign.screenPadding, spacing8),
                       child: Text(
-                        'Yorumlar',
+                        AppLocalizations.of(context)!.comments,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -125,7 +137,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                                 padding: EdgeInsets.all(24),
                                 child: Center(
                                   child: Text(
-                                    'Henüz yorum yok. İlk yorumu sen yap.',
+                                    AppLocalizations.of(context)!.noCommentsYet,
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                       fontSize: 14,
@@ -134,8 +146,16 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                                 ),
                               ),
                             ]
-                          : (state.toldyaReplyMap[postId] ?? [])
-                              .map<Widget>((x) => Padding(
+                          : (() {
+                              final list = (state.toldyaReplyMap[postId] ?? <FeedModel>[])
+                                  .cast<FeedModel>()
+                                  .toList();
+                              list.sort((a, b) {
+                                final scoreA = (a.upvoteCount ?? 0) - (a.downvoteCount ?? 0);
+                                final scoreB = (b.upvoteCount ?? 0) - (b.downvoteCount ?? 0);
+                                return scoreB.compareTo(scoreA);
+                              });
+                              return list.map<Widget>((x) => Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -153,7 +173,8 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                                       ),
                                     ),
                                   ))
-                              .toList(),
+                                  .toList();
+                            })(),
                     ),
                   ),
                   SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -387,7 +408,7 @@ class _PredictionDetailBody extends StatelessWidget {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
-            closed ? 'Kapandığı için seçim yapılamaz' : 'Token yetersiz',
+            closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
             style: TextStyle(color: Colors.white),
           ),
           duration: Duration(seconds: 2),
@@ -402,7 +423,7 @@ class _PredictionDetailBody extends StatelessWidget {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
-            'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+            AppLocalizations.of(context)!.betOnOneSideOnly,
             style: TextStyle(color: Colors.white),
           ),
           duration: Duration(seconds: 4),
@@ -448,13 +469,13 @@ class _RecentBetsList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Henüz bahis yok.',
+              AppLocalizations.of(context)!.noBetsYet,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 4),
             Text(
-              'Yukarıdaki "Evet ile bahis yap" veya "Hayır ile bahis yap" butonuna tıklayarak bahis yapabilirsiniz.',
+              AppLocalizations.of(context)!.noBetsYetHint,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               textAlign: TextAlign.center,
             ),

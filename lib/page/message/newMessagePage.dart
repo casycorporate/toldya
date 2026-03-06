@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
@@ -75,7 +76,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
           isBackButton: true,
           isbootomLine: true,
           title: customTitleText(
-            'New Message',
+            AppLocalizations.of(context)!.newMessageTitle,
           ),
         ),
         body: Consumer<SearchState>(
@@ -91,7 +92,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
                     fontSize: 18,
                   ),
                   decoration: InputDecoration(
-                    hintText: "Kişi veya grup ara",
+                    hintText: AppLocalizations.of(context)!.searchPeopleOrGroupsHint,
                     hintStyle: TextStyle(
                       fontSize: 18,
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),

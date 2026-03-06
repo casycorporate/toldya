@@ -8,6 +8,7 @@ import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:intl/intl.dart';
@@ -323,22 +324,23 @@ String getUserName({
   return userName;
 }
 
-bool validateCredentials(
+bool validateCredentials(BuildContext context,
     GlobalKey<ScaffoldState> _scaffoldKey, String email, String password) {
-  if (email == null || email.isEmpty) {
-    customSnackBar(_scaffoldKey, 'Lütfen e-posta adresini girin');
+  final l10n = AppLocalizations.of(context)!;
+  if (email.isEmpty) {
+    customSnackBar(_scaffoldKey, l10n.pleaseEnterEmail);
     return false;
-  } else if (password == null || password.isEmpty) {
-    customSnackBar(_scaffoldKey, 'Lütfen şifrenizi giriniz');
+  } else if (password.isEmpty) {
+    customSnackBar(_scaffoldKey, l10n.pleaseEnterPassword);
     return false;
   } else if (password.length < 8) {
-    customSnackBar(_scaffoldKey, 'Şifre en az 8 karakter uzunluğunda olmalı');
+    customSnackBar(_scaffoldKey, l10n.passwordMinLength);
     return false;
   }
 
   var status = validateEmal(email);
   if (!status) {
-    customSnackBar(_scaffoldKey, 'Lütfen geçerli bir e-posta adresi girin');
+    customSnackBar(_scaffoldKey, l10n.validEmailRequired);
     return false;
   }
   return true;

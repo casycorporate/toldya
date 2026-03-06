@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
@@ -39,6 +40,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
 
   File? _image;
   late TextEditingController _textEditingController;
+  /// Meydan okuma: seçilen tek kullanıcı (1v1)
+  UserModel? _challengeeUser;
 
   @override
   void dispose() {
@@ -94,74 +97,57 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     var state = Provider.of<FeedState>(context, listen: false);
     kScreenloader.showLoader(context);
 
-    FeedModel toldyaModel = createToldyaModel();
+    try {
+      FeedModel toldyaModel = createToldyaModel();
 
-    /// If tweet contain image
-    /// First image is uploaded on firebase storage
-    /// After sucessfull image upload to firebase storage it returns image path
-    /// Add this image path to tweet model and save to firebase database
-    if (_image != null) {
-      final imageFile = _image!;
-      await state.uploadFile(imageFile).then((imagePath) {
-        if (imagePath != null) {
-          toldyaModel.imagePath = imagePath;
+      if (_image != null) {
+        final imagePath = await state.uploadFile(_image!);
+        if (imagePath != null) toldyaModel.imagePath = imagePath;
+      }
 
-          /// If type of toldya is new toldya
-          if (widget.isToldya) {
-            state.createToldya(toldyaModel);
-          }
-
-          /// If type of toldya is retoldya
-          else if (widget.isRetoldya) {
-            state.createReToldya(toldyaModel);
-          }
-
-          /// If type of toldya is new comment
-          else {
-            state.addcommentToPost(toldyaModel);
-          }
-        }
-      });
-    }
-
-    /// If toldya did not contain image
-    else {
       if (widget.isToldya) {
-        state.createToldya(toldyaModel);
+        await state.createToldya(toldyaModel);
+      } else if (widget.isRetoldya) {
+        await state.createReToldya(toldyaModel);
+      } else {
+        await state.addcommentToPost(toldyaModel);
       }
-      else if (widget.isRetoldya) {
-        state.createReToldya(toldyaModel);
-      }
-      else {
-        state.addcommentToPost(toldyaModel);
-      }
-    }
 
-    /// Checks for username in tweet description
-    /// If foud sends notification to all tagged user
-    /// If no user found or not compost tweet screen is closed and redirect back to home page.
-    await Provider.of<ComposeToldyaState>(context, listen: false)
-        .sendNotification(
-            toldyaModel, Provider.of<SearchState>(context, listen: false))
-        .then((_) {
-      /// Hide running loader on screen
+      await Provider.of<ComposeToldyaState>(context, listen: false)
+          .sendNotification(
+              toldyaModel, Provider.of<SearchState>(context, listen: false));
+
+      if (!mounted) return;
       kScreenloader.hideLoader();
-
-      /// Yeni tahmin gönderisinde: inceleme alındı mesajı
-      if (widget.isToldya && mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      if (widget.isToldya) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Gönderiniz incelemeye alındı. Onaylandığında akışta görünecektir.',
-            ),
+            content: Text(l10n.postUnderReview),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
+      } else if (widget.isRetoldya) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.shared)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.commentAdded)),
+        );
       }
-
-      /// Navigate back to home page
       Navigator.pop(context);
-    });
+    } catch (_) {
+      if (mounted) {
+        kScreenloader.hideLoader();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorTryAgain),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// Return Tweet model which is either a new Tweet , retweet model or comment model
@@ -208,7 +194,124 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 ? model.key
                 : null,
         userId: myUser.userId);
+    if (widget.isToldya && _challengeeUser?.userId != null) {
+      reply.challengeeUserId = _challengeeUser!.userId;
+    }
     return reply;
+  }
+
+  Widget _buildChallengeeRow() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            AppLocalizations.of(context)!.challengeLabel,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+          if (_challengeeUser != null) ...[
+            Text(
+              '@${_challengeeUser!.userName ?? ''}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() => _challengeeUser = null),
+              child: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurface),
+            ),
+          ] else
+            TextButton.icon(
+              onPressed: _openChallengeePicker,
+              icon: Icon(Icons.person_add, size: 18),
+              label: Text(AppLocalizations.of(context)!.selectUser),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _openChallengeePicker() {
+    final searchState = Provider.of<SearchState>(context, listen: false);
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final myId = authState.userId;
+    final followingIds = authState.profileUserModel?.followingList ?? [];
+    if (searchState.userlist == null) {
+      searchState.getDataFromDatabase();
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      builder: (ctx) => SafeArea(
+        child: Consumer<SearchState>(
+          builder: (ctx, searchState, _) {
+            // Sadece takip edilenler: AuthState.followingList + getuserDetail
+            final list = searchState
+                .getuserDetail(followingIds)
+                .where((u) => u.userId != null && u.userId != myId)
+                .toList();
+            final isLoading = searchState.isBusy && searchState.userlist == null;
+            if (isLoading) {
+              return Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    AppLocalizations.of(context)!.challengePickTitle,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (list.isEmpty)
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      followingIds.isEmpty
+                          ? AppLocalizations.of(context)!.followingListEmpty
+                          : AppLocalizations.of(context)!.followingListLoadingOrEmpty,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: list.length,
+                      itemBuilder: (ctx, i) {
+                        final u = list[i];
+                        return ListTile(
+                          leading: customProfileImage(context, u.profilePic,
+                              userId: u.userId, height: 40),
+                          title: Text(u.displayName ?? ''),
+                          subtitle: Text('@${u.userName ?? ''}'),
+                          onTap: () {
+                            setState(() => _challengeeUser = u);
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -235,9 +338,16 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
           children: <Widget>[
             SingleChildScrollView(
               controller: scrollcontroller,
-              child: widget.isRetoldya
-                  ? _ComposeRetoldya(this)
-                  : _ComposeToldya(this),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isToldya) _buildChallengeeRow(),
+                  widget.isRetoldya
+                      ? _ComposeRetoldya(this)
+                      : _ComposeToldya(this),
+                ],
+              ),
             ),
             // Align(
             //   alignment: Alignment.bottomCenter,

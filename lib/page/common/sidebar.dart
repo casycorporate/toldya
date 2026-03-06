@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
@@ -33,7 +34,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
             padding: EdgeInsets.symmetric(vertical: 24, horizontal: _headerPaddingH),
             child: Center(
               child: Text(
-                'Devam etmek için giriş yapın',
+                AppLocalizations.of(context)!.signInToContinue,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -360,13 +361,13 @@ class _SidebarMenuState extends State<SidebarMenu> {
                                 color: Colors.white.withOpacity(0.08),
                               ),
                               _menuListRowButton(
-                                'Profil',
+                                AppLocalizations.of(context)!.profile,
                                 icon: Icons.person_outline,
                                 isEnable: true,
                                 onPressed: () => _navigateTo('ProfilePage'),
                               ),
                               _menuListRowButton(
-                                'Ayarlar',
+                                AppLocalizations.of(context)!.settings,
                                 icon: Icons.settings_outlined,
                                 isEnable: true,
                                 onPressed: () => _navigateTo('SettingsAndPrivacyPage'),
@@ -377,7 +378,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                                 color: Colors.white.withOpacity(0.08),
                               ),
                               _menuListRowButton(
-                                'Çıkış',
+                                AppLocalizations.of(context)!.logout,
                                 icon: Icons.logout_rounded,
                                 onPressed: _logOut,
                                 isEnable: true,

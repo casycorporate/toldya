@@ -243,6 +243,7 @@ class NotificationService {
 
     switch (type) {
       case 'prediction_result':
+      case 'challenge':
         if (id.isNotEmpty) {
           navigator.pushNamed('/FeedPostDetail/$id');
         }

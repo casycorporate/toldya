@@ -1,6 +1,7 @@
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/utility.dart';
@@ -26,16 +27,22 @@ double _xpProgress(int xp) {
   return 1.0;
 }
 
-String _xpProgressLabel(int xp) {
-  if (xp < AppIcon.xpCaylakMax) return '$xp / ${AppIcon.xpCaylakMax}';
-  if (xp < AppIcon.xpUstaMin) return '$xp / ${AppIcon.xpUstaMin}';
-  return '$xp (Usta)';
+String _xpProgressLabel(BuildContext context, int xp) {
+  final l10n = AppLocalizations.of(context)!;
+  if (xp < AppIcon.xpCaylakMax) {
+    return l10n.xpProgressLabel(xp, AppIcon.xpCaylakMax);
+  }
+  if (xp < AppIcon.xpUstaMin) {
+    return l10n.xpProgressLabel(xp, AppIcon.xpUstaMin);
+  }
+  return l10n.xpProgressMaxLabel(xp);
 }
 
-String _rankTitleForXp(int xp) {
-  if (xp < AppIcon.xpCaylakMax) return 'Çaylak';
-  if (xp < AppIcon.xpUstaMin) return 'Tahminci';
-  return 'Usta';
+String _rankTitleForXp(BuildContext context, int xp) {
+  final l10n = AppLocalizations.of(context)!;
+  if (xp < AppIcon.xpCaylakMax) return l10n.rankRookie;
+  if (xp < AppIcon.xpUstaMin) return l10n.rankPredictor;
+  return l10n.rankMaster;
 }
 
 class ProfilePage extends StatefulWidget {
@@ -51,6 +58,7 @@ class _ProfilePageState extends State<ProfilePage>
   bool isMyProfile = false;
   int pageIndex = 0;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isFollowingAction = false;
 
   @override
   void initState() {
@@ -154,8 +162,8 @@ class _ProfilePageState extends State<ProfilePage>
       context,
       "profile/${user.userId ?? ''}",
       socialMetaTagParameters: SocialMetaTagParameters(
-          description: user.bio ?? "Checkout ${user.displayName}'s profile",
-          title: "${user.displayName ?? ''} is on witter app",
+          description: user.bio ?? AppLocalizations.of(context)!.profileShareDescription(user.displayName ?? ''),
+          title: AppLocalizations.of(context)!.profileShareTitle(user.displayName ?? ''),
           imageUrl: Uri.parse(user.profilePic ?? '')),
     );
   }
@@ -202,13 +210,16 @@ class _ProfilePageState extends State<ProfilePage>
                 profileMatchesPage;
             final waitingForProfile =
                 widget.profileId != null && !profileMatchesPage;
+            final ownProfileWaiting = widget.profileId == null &&
+                authstate.profileUserModel == null &&
+                !authstate.isbusy;
             return <Widget>[
               getAppbar(),
               authstate.isbusy || isBlackList()
                   ? _emptyBox()
                   : SliverToBoxAdapter(
                       child: !showHeader
-                          ? waitingForProfile
+                          ? (waitingForProfile || ownProfileWaiting)
                               ? Padding(
                                   padding: EdgeInsets.symmetric(vertical: 48),
                                   child: Center(
@@ -225,7 +236,7 @@ class _ProfilePageState extends State<ProfilePage>
                               isMyProfile: isMyProfile,
                               canClaimDailyBonus: isMyProfile && authstate.canClaimDailyBonus,
                               onClaimDailyBonus: () async {
-                                final msg = await authstate.claimDailyBonus();
+                                final msg = await authstate.claimDailyBonus(context);
                                 if (context.mounted) {
                                   if (msg != null) {
                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -233,14 +244,38 @@ class _ProfilePageState extends State<ProfilePage>
                                   authstate.getProfileUser(userProfileId: widget.profileId);
                                 }
                               },
-                              onEditOrFollow: () {
+                              onEditOrFollow: () async {
                                 if (isBlackList()) return;
                                 if (isMyProfile) {
                                   Navigator.pushNamed(context, '/EditProfile');
-                                } else {
+                                  return;
+                                }
+                                setState(() => _isFollowingAction = true);
+                                try {
                                   authstate.followUser(removeFollower: isFollower());
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          isFollower() ? AppLocalizations.of(context)!.unfollowSuccess : AppLocalizations.of(context)!.followSuccess,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (_) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(AppLocalizations.of(context)!.errorGeneric),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) setState(() => _isFollowingAction = false);
                                 }
                               },
+                              isFollowLoading: _isFollowingAction,
                               isFollower: isFollower(),
                               isBlackList: isBlackList(),
                               onAvatarTap: () => Navigator.pushNamed(context, '/ProfileImageView'),
@@ -262,8 +297,8 @@ class _ProfilePageState extends State<ProfilePage>
                     labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                     unselectedLabelStyle: TextStyle(fontSize: 15),
                     tabs: <Widget>[
-                      Tab(text: 'Bahislerim'),
-                      Tab(text: 'Oy verdiklerim'),
+                      Tab(text: AppLocalizations.of(context)!.myBetsTab),
+                      Tab(text: AppLocalizations.of(context)!.myVotesTab),
                     ],
                   ),
                 ),
@@ -316,6 +351,7 @@ class _ProfilePageState extends State<ProfilePage>
     required bool canClaimDailyBonus,
     required VoidCallback onClaimDailyBonus,
     required VoidCallback onEditOrFollow,
+    bool isFollowLoading = false,
     required bool isFollower,
     required bool isBlackList,
     required VoidCallback onAvatarTap,
@@ -361,19 +397,31 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
               SizedBox(height: 10),
-              Text(
-                user.displayName ?? '',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      user.displayName ?? '',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if ((user.currentStreak ?? 0) >= 3) ...[
+                    SizedBox(width: 6),
+                    Icon(Icons.local_fire_department, size: 22, color: Colors.orange),
+                  ],
+                ],
               ),
               SizedBox(height: 2),
               Text(
-                displayHandle.isEmpty ? '@kullanıcı' : displayHandle,
+                displayHandle.isEmpty ? AppLocalizations.of(context)!.defaultUserHandle : displayHandle,
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
               if (hasXp) ...[
@@ -395,7 +443,7 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                       SizedBox(width: 6),
                       Text(
-                        _rankTitleForXp(xp),
+                        _rankTitleForXp(context, xp),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -412,7 +460,7 @@ class _ProfilePageState extends State<ProfilePage>
                   color: Colors.white.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(20),
                   child: InkWell(
-                    onTap: onEditOrFollow,
+                    onTap: isFollowLoading ? null : onEditOrFollow,
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -420,14 +468,23 @@ class _ProfilePageState extends State<ProfilePage>
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.grey.shade600, width: 1),
                       ),
-                      child: Text(
+                      child: isFollowLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
                         isMyProfile
-                            ? 'Profili Düzenle'
+                            ? AppLocalizations.of(context)!.editProfile
                             : isBlackList
-                                ? 'engellendin'
+                                ? AppLocalizations.of(context)!.youAreBlocked
                                 : isFollower
-                                    ? 'Takip ediliyor'
-                                    : 'Takip et',
+                                    ? AppLocalizations.of(context)!.followingLabel
+                                    : AppLocalizations.of(context)!.follow,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -466,7 +523,7 @@ class _ProfilePageState extends State<ProfilePage>
         children: [
           if (isMyProfile && user.xp != null) ...[
             Text(
-              'Rütbe ilerlemesi',
+              AppLocalizations.of(context)!.rankProgressTitle,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -490,7 +547,7 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
                 SizedBox(width: 10),
                 Text(
-                  _xpProgressLabel(xp),
+                  _xpProgressLabel(context, xp),
                   style: TextStyle(fontSize: 11, color: AppNeon.green),
                 ),
               ],
@@ -498,10 +555,10 @@ class _ProfilePageState extends State<ProfilePage>
             SizedBox(height: 4),
             Text(
               xp < AppIcon.xpCaylakMax
-                  ? '${AppIcon.xpCaylakMax} XP\'de Tahminci olursun'
+                  ? AppLocalizations.of(context)!.xpHintToBecomePredictor(AppIcon.xpCaylakMax)
                   : xp < AppIcon.xpUstaMin
-                      ? '${AppIcon.xpUstaMin} XP\'de Usta olursun'
-                      : 'Maksimum rütbedesin',
+                      ? AppLocalizations.of(context)!.xpHintToBecomeMaster(AppIcon.xpUstaMin)
+                      : AppLocalizations.of(context)!.xpHintMaxRank,
               style: TextStyle(
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -516,7 +573,7 @@ class _ProfilePageState extends State<ProfilePage>
                   context: context,
                   icon: Icons.emoji_events,
                   iconColor: theme.primaryColor,
-                  title: 'Bahisçi',
+                  title: AppLocalizations.of(context)!.bettors,
                   value: user.rank ?? 0,
                 ),
               ),
@@ -526,7 +583,7 @@ class _ProfilePageState extends State<ProfilePage>
                   context: context,
                   icon: Icons.lightbulb_outline,
                   iconColor: AppNeon.green,
-                  title: 'Tahminci',
+                  title: AppLocalizations.of(context)!.rankPredictor,
                   value: user.predictorScore ?? 0,
                 ),
               ),
@@ -537,9 +594,9 @@ class _ProfilePageState extends State<ProfilePage>
             children: [
               ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
               SizedBox(width: 10),
-              Text(
-                'Seviye ${user.getLevel().trim()}',
-                style: TextStyle(
+                Text(
+                  AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
+                  style: TextStyle(
                   color: theme.colorScheme.onSurface.withOpacity(0.8),
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -555,7 +612,7 @@ class _ProfilePageState extends State<ProfilePage>
                 onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
                 icon: Icon(Icons.leaderboard_outlined, size: 18, color: AppNeon.green),
                 label: Text(
-                  'Liderlik tablosunda gör',
+                  AppLocalizations.of(context)!.seeLeaderboard,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppNeon.green),
                 ),
                 style: TextButton.styleFrom(
@@ -645,7 +702,7 @@ class _ProfilePageState extends State<ProfilePage>
                     Icon(Icons.monetization_on_rounded, size: 22, color: Color(0xFFFFD700)),
                     SizedBox(width: 10),
                     Text(
-                      'Bakiye: ${user.pegCount ?? 0} Token',
+                      AppLocalizations.of(context)!.balanceToken(user.pegCount ?? 0),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -655,7 +712,7 @@ class _ProfilePageState extends State<ProfilePage>
                   ],
                 ),
                 Text(
-                  '${user.getFollower()} Takipçi',
+                  '${user.getFollower()} ${AppLocalizations.of(context)!.follower}',
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ],
@@ -673,7 +730,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Icon(Icons.card_giftcard, size: 20, color: AppNeon.green),
                       SizedBox(width: 8),
                       Text(
-                        'Günlük bonusu al (+${AppIcon.dailyBonusAmount} token)',
+                        AppLocalizations.of(context)!.dailyBonusClaim(AppIcon.dailyBonusAmount),
                         style: TextStyle(
                           color: AppNeon.green,
                           fontWeight: FontWeight.w600,
@@ -698,7 +755,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Icon(Icons.settings_ethernet, size: 18, color: Colors.grey.shade400),
                       SizedBox(width: 8),
                       Text(
-                        'Token Yönetimi',
+                        AppLocalizations.of(context)!.tokenManagement,
                         style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                       ),
                     ],
@@ -739,29 +796,31 @@ class _ProfilePageState extends State<ProfilePage>
     required bool isMyProfile,
     required String profileUserName,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     if (!isreply && statusFilter != null && isMyProfile) {
       switch (statusFilter) {
         case 0:
-          return 'Aktif tahminin yok';
+          return l10n.emptyActivePredictions;
         case 1:
-          return 'Bekleyen tahminin yok';
+          return l10n.emptyPendingPredictions;
         case 2:
-          return 'Tamamlanan tahminin yok';
+          return l10n.emptyCompletedPredictions;
         case 3:
-          return 'Reddedilen tahminin yok';
+          return l10n.emptyRejectedPredictions;
         case 4:
-          return 'Kilitli tahminin yok';
+          return l10n.emptyLockedPredictions;
       }
     }
     if (isMyProfile) {
-      return 'Hiç ${isreply ? 'oy vermedin' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}';
+      return isreply ? l10n.emptyMyNoVotes : (isMedia ? l10n.emptyMyNoMedia : l10n.emptyMyNoPosts);
     }
-    return '$profileUserName hiç ${isreply ? 'oy vermedi' : isMedia ? 'gönderi veya medya yok' : 'gönderi yok'}';
+    return isreply ? l10n.emptyOtherNoVotes(profileUserName) : (isMedia ? l10n.emptyOtherNoMedia(profileUserName) : l10n.emptyOtherNoPosts(profileUserName));
   }
 
   /// 3. Filtre chip'leri: seçili = yeşil metin + hafif yeşil arka plan, diğerleri gri; altında kısa yeşil pill
   Widget _bahislerimFilterChips(BuildContext context) {
-    const labels = ['Aktif', 'Bekleyen', 'Tamamlanan', 'Reddedilen', 'Kilitli'];
+    final l10n = AppLocalizations.of(context)!;
+    final labels = [l10n.filterActive, l10n.filterPending, l10n.filterCompleted, l10n.filterRejected, l10n.filterLocked];
     return Container(
       color: MockupDesign.background,
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -896,7 +955,7 @@ class _ProfilePageState extends State<ProfilePage>
                     profileUserName: authstate.profileUserModel?.userName ?? '',
                   ),
                   subTitle:
-                      isMyProfile ? 'Şimdi ekle' : 'burada gösterilecekler',
+                      isMyProfile ? AppLocalizations.of(context)!.addNow : AppLocalizations.of(context)!.willShowHere,
                 ),
               )
 
@@ -946,7 +1005,7 @@ class _ProfilePredictionCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          closed ? 'Kapandığı için seçim yapılamaz' : 'Token yetersiz',
+          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 2),
@@ -958,7 +1017,7 @@ class _ProfilePredictionCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          AppLocalizations.of(context)!.betOnOneSideOnly,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 4),
@@ -982,7 +1041,7 @@ class _ProfilePredictionCard extends StatelessWidget {
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
     final closed = isBettingClosed(model.statu, model.endDate);
-    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
+    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     const cardColor = Color(0xFF2C2C2E);
 
     return Material(
@@ -1087,7 +1146,7 @@ class _ProfilePredictionCard extends StatelessWidget {
                               Icon(Icons.trending_up_rounded, size: 20, color: Colors.white),
                               SizedBox(width: 6),
                               Text(
-                                'Evet ${total > 0 ? (percent * 100).round() : 50}',
+                                AppLocalizations.of(context)!.yesPercent(total > 0 ? (percent * 100).round() : 50),
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
                               ),
                             ],
@@ -1113,7 +1172,7 @@ class _ProfilePredictionCard extends StatelessWidget {
                               Icon(Icons.trending_down_rounded, size: 20, color: Colors.white),
                               SizedBox(width: 6),
                               Text(
-                                'Hayır ${total > 0 ? ((1 - percent) * 100).round() : 50}',
+                                AppLocalizations.of(context)!.noPercent(total > 0 ? ((1 - percent) * 100).round() : 50),
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
                               ),
                             ],
@@ -1142,11 +1201,11 @@ class UserNameRowWidget extends StatelessWidget {
   final bool isMyProfile;
   final UserModel user;
 
-  String getBio(String bio) {
+  String getBio(BuildContext context, String bio) {
     if (isMyProfile) {
       return bio;
-    } else if (bio == "Biyografiyi güncellemek için profili düzenle") {
-      return "Biyografi yok";
+    } else if (bio == AppLocalizations.of(context)!.editBioHint) {
+      return AppLocalizations.of(context)!.noBio;
     } else {
       return bio;
     }
@@ -1244,6 +1303,10 @@ class UserNameRowWidget extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if ((user.currentStreak ?? 0) >= 3) ...[
+                SizedBox(width: 4),
+                Icon(Icons.local_fire_department, size: 18, color: Colors.orange),
+              ],
               SizedBox(
                 width: 3,
               ),
@@ -1294,7 +1357,7 @@ class UserNameRowWidget extends StatelessWidget {
                 ),
                 SizedBox(width: 4),
                 Text(
-                  'Token',
+                  AppLocalizations.of(context)!.tokenLabel,
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
@@ -1314,7 +1377,7 @@ class UserNameRowWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Rütbe ilerlemesi',
+                      AppLocalizations.of(context)!.rankProgressTitle,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -1322,7 +1385,7 @@ class UserNameRowWidget extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _xpProgressLabel(user.xp ?? 0),
+                      _xpProgressLabel(context, user.xp ?? 0),
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).primaryColor,
@@ -1341,12 +1404,12 @@ class UserNameRowWidget extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4),
-                Text(
-                  xp < AppIcon.xpCaylakMax
-                      ? '${AppIcon.xpCaylakMax} XP’de Tahminci olursun'
-                      : xp < AppIcon.xpUstaMin
-                          ? '${AppIcon.xpUstaMin} XP’de Usta olursun'
-                          : 'Maksimum rütbedesin',
+                  Text(
+                    xp < AppIcon.xpCaylakMax
+                        ? AppLocalizations.of(context)!.xpHintToBecomePredictor(AppIcon.xpCaylakMax)
+                        : xp < AppIcon.xpUstaMin
+                            ? AppLocalizations.of(context)!.xpHintToBecomeMaster(AppIcon.xpUstaMin)
+                            : AppLocalizations.of(context)!.xpHintMaxRank,
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -1365,7 +1428,7 @@ class UserNameRowWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.emoji_events,
                   iconColor: Theme.of(context).primaryColor,
-                  title: 'Bahisçi',
+                  title: AppLocalizations.of(context)!.bettors,
                   value: user.rank ?? 0,
                 ),
               ),
@@ -1375,7 +1438,7 @@ class UserNameRowWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.lightbulb_outline,
                   iconColor: AppNeon.green,
-                  title: 'Tahminci',
+                  title: AppLocalizations.of(context)!.rankPredictor,
                   value: user.predictorScore ?? 0,
                 ),
               ),
@@ -1389,7 +1452,7 @@ class UserNameRowWidget extends StatelessWidget {
               ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
               SizedBox(width: 10),
               customText(
-                'Seviye ${user.getLevel().trim()}',
+                AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                   fontWeight: FontWeight.w600,
@@ -1411,7 +1474,7 @@ class UserNameRowWidget extends StatelessWidget {
                   color: Theme.of(context).primaryColor,
                 ),
                 label: Text(
-                  'Liderlik tablosunda gör',
+                  AppLocalizations.of(context)!.seeLeaderboard,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -1436,10 +1499,10 @@ class UserNameRowWidget extends StatelessWidget {
                 width: 10,
                 height: 30,
               ),
-              _tappbleText(context, '${user.getFollower()}', ' Takipçiler',
+              _tappbleText(context, '${user.getFollower()}', ' ${AppLocalizations.of(context)!.followers}',
                   'FollowerListPage'),
               SizedBox(width: 40),
-              _tappbleText(context, '${user.getFollowing()}', ' takipler',
+              _tappbleText(context, '${user.getFollowing()}', ' ${AppLocalizations.of(context)!.followingCountLabel}',
                   'FollowingListPage'),
             ],
           ),
@@ -1456,8 +1519,8 @@ class Choice {
   final String title;
 }
 
-const List<Choice> choices = const <Choice>[
-  const Choice(title: 'Paylaş', icon: Icons.directions_car),
+List<Choice> _shareChoices(BuildContext context) => [
+  Choice(title: AppLocalizations.of(context)!.share, icon: Icons.directions_car),
   // const Choice(title: 'Draft', icon: Icons.directions_bike),
   // const Choice(title: 'View Lists', icon: Icons.directions_boat),
   // const Choice(title: 'View Moments', icon: Icons.directions_bus),

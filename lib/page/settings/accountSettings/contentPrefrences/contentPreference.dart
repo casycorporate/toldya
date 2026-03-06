@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -16,42 +17,41 @@ class ContentPrefrencePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Content preferences',
+        title: AppLocalizations.of(context)!.contentPreferencesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Explore'),
+          HeaderWidget(AppLocalizations.of(context)!.exploreHeader),
           SettingRowWidget(
-            "Liderlik Tablosu",
+            AppLocalizations.of(context)!.leaderboardTitle,
             navigateTo: 'LeaderboardPage',
           ),
           SettingRowWidget(
-            "Trends",
+            AppLocalizations.of(context)!.trendsTitle,
             navigateTo: 'TrendsPage',
           ),
           Divider(height: 0),
           SettingRowWidget(
-            "Search settings",
+            AppLocalizations.of(context)!.searchSettingsTitle,
             navigateTo: '',
           ),
           HeaderWidget(
-            'Languages',
+            AppLocalizations.of(context)!.languagesHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Recommendations",
+            AppLocalizations.of(context)!.recommendationsTitle,
             vPadding: 15,
-            subtitle:
-                "Select which language you want recommended Tweets, people, and trends to include",
+            subtitle: AppLocalizations.of(context)!.recommendationsSubtitle,
           ),
           HeaderWidget(
-            'Safety',
+            AppLocalizations.of(context)!.safetyHeader,
             secondHeader: true,
           ),
-          SettingRowWidget("Blocked accounts"),
-          SettingRowWidget("Muted accounts"),
+          SettingRowWidget(AppLocalizations.of(context)!.blockedAccountsTitle),
+          SettingRowWidget(AppLocalizations.of(context)!.mutedAccountsTitle),
         ],
       ),
     );

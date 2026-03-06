@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
@@ -51,19 +52,18 @@ class TrendsPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Sort user list'),
+            child: TitleText(AppLocalizations.of(context)!.sortUserList),
           ),
           Divider(height: 0),
-          _row(context, "Verified user first", SortUser.ByVerified),
+          _row(context, AppLocalizations.of(context)!.verifiedUserFirst, SortUser.ByVerified),
           Divider(height: 0),
-          _row(context, "alphabetically", SortUser.ByAlphabetically),
+          _row(context, AppLocalizations.of(context)!.alphabeticallySort, SortUser.ByAlphabetically),
           Divider(height: 0),
-          _row(context, "Newest user first", SortUser.ByNewest),
+          _row(context, AppLocalizations.of(context)!.newestUserFirst, SortUser.ByNewest),
           Divider(height: 0),
-          _row(context, "Oldest user first", SortUser.ByOldest),
+          _row(context, AppLocalizations.of(context)!.oldestUserFirst, SortUser.ByOldest),
           Divider(height: 0),
-          _row(context, "UserModelModel with max follower",
-              SortUser.ByMaxFollower),
+          _row(context, AppLocalizations.of(context)!.maxFollowerFirst, SortUser.ByMaxFollower),
         ],
       ),
     );
@@ -93,35 +93,44 @@ class TrendsPage extends StatelessWidget {
       final state = Provider.of<SearchState>(context, listen: false);
       sortBy = state.selectedFilter;
     });
+    final l10n = AppLocalizations.of(context)!;
+    final sortLabel = switch (sortBy) {
+      'verifiedUserFirst' => l10n.verifiedUserFirst,
+      'alphabeticallySort' => l10n.alphabeticallySort,
+      'newestUserFirst' => l10n.newestUserFirst,
+      'oldestUserFirst' => l10n.oldestUserFirst,
+      'maxFollowerFirst' => l10n.maxFollowerFirst,
+      _ => '',
+    };
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Trend',
+          AppLocalizations.of(context)!.trendsTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
           SettingRowWidget(
-            "Arama Filtresi",
-            subtitle: sortBy,
+            AppLocalizations.of(context)!.searchFilterTitle,
+            subtitle: sortLabel,
             onPressed: () {
               openUserSortSettings(context);
             },
             showDivider: false,
           ),
           SettingRowWidget(
-            "Trends location",
+            AppLocalizations.of(context)!.trendsLocationTitle,
             navigateTo: null,
-            subtitle: 'New York',
+            subtitle: AppLocalizations.of(context)!.trendsLocationSubtitle,
             showDivider: false,
           ),
           SettingRowWidget(
             '',
             subtitle:
-                'Trendler sekmenizde hangi konumun görüneceğini seçerek belirli bir konumda nelerin trend olduğunu görebilirsiniz.',
+                AppLocalizations.of(context)!.trendsLocationHint,
                 // 'You can see what\'s trending in a specfic location by selecting which location appears in your Trending tab.',
             navigateTo: null,
             showDivider: false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
 import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
@@ -50,14 +51,14 @@ class DisplayAndSoundPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark Mode'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeTitle),
           ),
           Divider(height: 0),
-          _row("On"),
+          _row(AppLocalizations.of(context)!.on),
           Divider(height: 0),
-          _row("Off"),
+          _row(AppLocalizations.of(context)!.off),
           Divider(height: 0),
-          _row("Automatic at sunset"),
+          _row(AppLocalizations.of(context)!.automaticAtSunset),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class DisplayAndSoundPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -111,58 +112,57 @@ class DisplayAndSoundPage extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Display and Sound',
+          AppLocalizations.of(context)!.displayAndSoundTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Media'),
+          HeaderWidget(AppLocalizations.of(context)!.mediaHeader),
           SettingRowWidget(
-            "Media Previews",
+            AppLocalizations.of(context)!.mediaPreviewsTitle,
             showCheckBox: false,
           ),
           Divider(height: 0),
-          HeaderWidget('Display'),
+          HeaderWidget(AppLocalizations.of(context)!.displayHeader),
           SettingRowWidget(
-            "Dark Mode",
-            subtitle: 'Off',
+            AppLocalizations.of(context)!.darkModeTitle,
+            subtitle: AppLocalizations.of(context)!.off,
             onPressed: () {
               openDarkModeSettings(context);
             },
             showDivider: false,
           ),
           SettingRowWidget(
-            "Dark Mode appearance",
-            subtitle: 'Dim',
+            AppLocalizations.of(context)!.darkModeAppearance,
+            subtitle: AppLocalizations.of(context)!.dim,
             onPressed: () {
               openDarkModeAppearanceSettings(context);
             },
             showDivider: false,
           ),
           SettingRowWidget(
-            "Emoji",
-            subtitle:
-                'Use the Fwitter set instead of your device\'s default set',
+            AppLocalizations.of(context)!.emojiTitle,
+            subtitle: AppLocalizations.of(context)!.emojiSubtitle,
             showDivider: false,
             showCheckBox: false,
           ),
           HeaderWidget(
-            'Sound',
+            AppLocalizations.of(context)!.soundHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Sound effects",
+            AppLocalizations.of(context)!.soundEffectsTitle,
             // vPadding: 15,
             showCheckBox: false,
           ),
           HeaderWidget(
-            'Web browser',
+            AppLocalizations.of(context)!.webBrowserHeader,
             secondHeader: false,
           ),
           SettingRowWidget(
-            "Use in-app browser",
-            subtitle: 'Open external links with Fwitter browser',
+            AppLocalizations.of(context)!.useInAppBrowserTitle,
+            subtitle: AppLocalizations.of(context)!.useInAppBrowserSubtitle,
             showCheckBox: false,
           ),
         ],

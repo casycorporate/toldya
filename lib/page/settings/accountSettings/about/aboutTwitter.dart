@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
@@ -18,7 +19,7 @@ class AboutPage extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Toldya Hakkında',
+          AppLocalizations.of(context)!.aboutToldya,
         ),
       ),
       body: ListView(
@@ -34,32 +35,32 @@ class AboutPage extends StatelessWidget {
             ),
           ),
           HeaderWidget(
-            'Help',
+            AppLocalizations.of(context)!.helpHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Help Centre",
+            AppLocalizations.of(context)!.helpCenterTitle,
             vPadding: 0,
             showDivider: false,
             onPressed: (){
               launchURL("https://github.com/casycorporate/toldya/issues");
             },
           ),
-          HeaderWidget('Legal'),
+          HeaderWidget(AppLocalizations.of(context)!.legal),
           SettingRowWidget(
-            "Terms of Service",
+            AppLocalizations.of(context)!.termsOfServiceTitle,
             showDivider: true,
           ),
           SettingRowWidget(
-            "Privacy policy",
+            AppLocalizations.of(context)!.privacyPolicyTitle,
             showDivider: true,
           ),
           SettingRowWidget(
-            "Cookie use",
+            AppLocalizations.of(context)!.cookieUseTitle,
             showDivider: true,
           ),
           SettingRowWidget(
-            "Legal notices",
+            AppLocalizations.of(context)!.legalNoticesTitle,
             showDivider: true,
             onPressed: () async {
               showLicensePage(
@@ -70,7 +71,7 @@ class AboutPage extends StatelessWidget {
               );
             },
           ),
-          HeaderWidget('Developer'),
+          HeaderWidget(AppLocalizations.of(context)!.developer),
           SettingRowWidget(
             "Github",
             showDivider: true,

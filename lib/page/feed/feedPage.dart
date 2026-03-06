@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -119,13 +120,24 @@ class _FeedPage extends State<FeedPage> {
           ),
         );
       }
-      final List<String> _tabs = topic.topicMap.values.toList();
+      final List<String> _tabValues = topic.topicMap.values.toList();
       List<FeedModel> list = [];
-      _tabs.insert(0, topic.gundem);
-      _tabs.insert(1, topic.favList);
-      _tabs.insert(2, topic.followList);
+      _tabValues.insert(0, topic.gundem);
+      _tabValues.insert(1, topic.favList);
+      _tabValues.insert(2, topic.followList);
+      final l10n = AppLocalizations.of(context)!;
+      final _tabLabels = _tabValues.map((String val) {
+        if (val == topic.gundem) return l10n.categoryFlow;
+        if (val == topic.favList) return l10n.categoryFavorite;
+        if (val == topic.followList) return l10n.categoryFollow;
+        if (val == 'sports') return l10n.categorySports;
+        if (val == 'economy') return l10n.categoryEconomy;
+        if (val == 'entertainment') return l10n.categoryEntertainment;
+        if (val == 'politics') return l10n.categoryPolitics;
+        return val;
+      }).toList();
       return DefaultTabController(
-      length: _tabs.length,
+      length: _tabValues.length,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: false,
@@ -151,7 +163,7 @@ class _FeedPage extends State<FeedPage> {
               style: TextStyle(color: Colors.white, fontSize: 15),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'Ara...',
+                hintText: AppLocalizations.of(context)!.searchHint,
                 hintStyle: TextStyle(color: Colors.grey),
                 prefixIcon: Icon(
                   Icons.search_rounded,
@@ -206,20 +218,29 @@ class _FeedPage extends State<FeedPage> {
               if (authstate.userModel?.role == Role.adminRole)
                 PopupMenuButton<Choice>(
                   onSelected: (d) {
-                    if (d.title == "bekleyen") {
-                      statu = Statu.statusPending;
-                    } else if (d.title == "onaylanan") {
-                      statu = Statu.statusOk;
-                    } else if (d.title == "reddedilen") {
-                      statu = Statu.statusDenied;
-                    } else if (d.title == "tamamlanan") {
-                      statu = Statu.statusComplete;
-                    } else if (d.title == "AI incelemesinde") {
-                      statu = Statu.statusPendingAiReview;
-                    } else if (d.title == "AI reddi") {
-                      statu = Statu.statusRejectedByAi;
-                    } else {
-                      statu = Statu.statusLive;
+                    switch (d.id) {
+                      case 'pending':
+                        statu = Statu.statusPending;
+                        break;
+                      case 'approved':
+                        statu = Statu.statusOk;
+                        break;
+                      case 'rejected':
+                        statu = Statu.statusDenied;
+                        break;
+                      case 'completed':
+                        statu = Statu.statusComplete;
+                        break;
+                      case 'pendingAi':
+                        statu = Statu.statusPendingAiReview;
+                        break;
+                      case 'rejectedAi':
+                        statu = Statu.statusRejectedByAi;
+                        break;
+                      case 'live':
+                      default:
+                        statu = Statu.statusLive;
+                        break;
                     }
                     setState(() {});
                   },
@@ -228,7 +249,7 @@ class _FeedPage extends State<FeedPage> {
                     return choices.map((Choice choice) {
                       return PopupMenuItem<Choice>(
                         value: choice,
-                        child: Text(choice.title),
+                        child: Text(choice.label(context)),
                       );
                     }).toList();
                   },
@@ -276,14 +297,14 @@ class _FeedPage extends State<FeedPage> {
                 ),
                 isScrollable: true,
                 labelPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-                tabs: _tabs.map((String name) => Tab(text: name)).toList(),
+                tabs: _tabLabels.map((String label) => Tab(text: label)).toList(),
               ),
             ),
             preferredSize: Size.fromHeight(48.0),
           ),
         ),
         body: TabBarView(
-          children: _tabs.map((String name) {
+          children: _tabValues.map((String name) {
             return Consumer<FeedState>(builder: (context, state, child) {
               final topicVal = (name == topic.gundem || name == topic.favList || name == topic.followList)
                   ? name
@@ -365,19 +386,41 @@ class _FeedPage extends State<FeedPage> {
 }
 
 class Choice {
-  const Choice({required this.title, required this.icon});
+  const Choice({required this.id, required this.icon});
 
+  final String id;
   final IconData icon;
-  final String title;
+
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (id) {
+      case 'live':
+        return l10n.adminFilterLive;
+      case 'pending':
+        return l10n.adminFilterPending;
+      case 'approved':
+        return l10n.adminFilterApproved;
+      case 'rejected':
+        return l10n.adminFilterRejected;
+      case 'completed':
+        return l10n.adminFilterCompleted;
+      case 'pendingAi':
+        return l10n.adminFilterPendingAiReview;
+      case 'rejectedAi':
+        return l10n.adminFilterRejectedByAi;
+      default:
+        return id;
+    }
+  }
 }
 
-const List<Choice> choices = const <Choice>[
-  const Choice(title: 'devam eden', icon: Icons.directions_bike),
-  const Choice(title: 'bekleyen', icon: Icons.directions_bike),
-  const Choice(title: 'onaylanan', icon: Icons.directions_boat),
-  const Choice(title: 'reddedilen', icon: Icons.directions_bus),
-  const Choice(title: 'tamamlanan', icon: Icons.directions_railway),
-  const Choice(title: 'AI incelemesinde', icon: Icons.pending_actions),
-  const Choice(title: 'AI reddi', icon: Icons.block),
+const List<Choice> choices = <Choice>[
+  Choice(id: 'live', icon: Icons.directions_bike),
+  Choice(id: 'pending', icon: Icons.directions_bike),
+  Choice(id: 'approved', icon: Icons.directions_boat),
+  Choice(id: 'rejected', icon: Icons.directions_bus),
+  Choice(id: 'completed', icon: Icons.directions_railway),
+  Choice(id: 'pendingAi', icon: Icons.pending_actions),
+  Choice(id: 'rejectedAi', icon: Icons.block),
 ];
 

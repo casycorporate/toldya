@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/appState.dart';
@@ -98,15 +99,15 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     Icons.person_outline,
   ];
 
-  final labels = <String>[
-    'Ana',
-    'Arama',
-    'Bildirim',
-    'Profil',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final labels = <String>[
+      l10n.bottomNavHome,
+      l10n.bottomNavSearch,
+      l10n.bottomNavNotifications,
+      l10n.bottomNavProfile,
+    ];
     var state = Provider.of<AppState>(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -131,11 +132,11 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navIcon(context, state, 0),
-              _navIcon(context, state, 1),
+              _navIcon(context, state, 0, labels),
+              _navIcon(context, state, 1, labels),
               const SizedBox(width: 56),
-              _navIcon(context, state, 2),
-              _navIcon(context, state, 3),
+              _navIcon(context, state, 2, labels),
+              _navIcon(context, state, 3, labels),
             ],
           ),
         ),
@@ -143,7 +144,7 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     );
   }
 
-  Widget _navIcon(BuildContext context, AppState state, int index) {
+  Widget _navIcon(BuildContext context, AppState state, int index, List<String> labels) {
     final isActive = state.pageIndex == index;
     final theme = Theme.of(context);
     final Color activeColor = Colors.white;

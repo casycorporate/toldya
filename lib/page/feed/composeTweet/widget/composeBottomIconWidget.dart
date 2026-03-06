@@ -83,7 +83,7 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
                         child: customText(
                             '${280 - tweet.length}',
                             style:
-                                TextStyle(color: Theme.of(context).errorColor)),
+                                TextStyle(color: Theme.of(context).colorScheme.error)),
                       )
                     : Stack(
                         alignment: Alignment.center,

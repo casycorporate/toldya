@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/widgets/toldya_logo.dart';
@@ -49,13 +50,13 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
               fit: BoxFit.contain,
             ),
             TitleText(
-              "Yeni Güncelleme mevcut",
+              AppLocalizations.of(context)!.newUpdateAvailable,
               fontSize: 25,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
             TitleText(
-              "Uygulamanın mevcut sürümü artık desteklenmiyor. Vermiş olabileceğimiz her türlü rahatsızlıktan dolayı özür dileriz",
+              AppLocalizations.of(context)!.unsupportedVersionMessage,
               fontSize: 14,
               color: AppColor.darkGrey,
               textAlign: TextAlign.center,
@@ -75,7 +76,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
                   launchURL(
                       "https://play.google.com/store/apps/details?id=com.casycorporate.casy");
                 },
-                child: TitleText('Şimdi Güncelle', color: Colors.white),
+                child: TitleText(AppLocalizations.of(context)!.updateNow, color: Colors.white),
               ),
             )
           ],

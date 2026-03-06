@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
 import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
@@ -50,14 +51,14 @@ class DataUsagePage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 15),
-            child: TitleText('Data preference'),
+            child: TitleText(AppLocalizations.of(context)!.dataPreference),
           ),
           Divider(height: 0),
-          _row("Mobile data & Wi-Fi"),
+          _row(AppLocalizations.of(context)!.mobileDataWifi),
           Divider(height: 0),
-          _row("Wi-Fi only"),
+          _row(AppLocalizations.of(context)!.wifiOnly),
           Divider(height: 0),
-          _row("Never"),
+          _row(AppLocalizations.of(context)!.never),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class DataUsagePage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -111,27 +112,27 @@ class DataUsagePage extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Data Usage',
+          AppLocalizations.of(context)!.dataUsageTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Data Saver'),
+          HeaderWidget(AppLocalizations.of(context)!.dataSaverHeader),
           SettingRowWidget(
-            "Data saver",
+            AppLocalizations.of(context)!.dataSaverTitle,
             showCheckBox: true,
             vPadding: 15,
             showDivider: false,
-            subtitle:
-                'When enabled, video won\'t autoplay and lower-quality images load. This automatically reduces your data usage for all Fwitter accounts on this device.',
+            subtitle: AppLocalizations.of(context)!.dataSaverSubtitle,
           ),
           Divider(height: 0),
-          HeaderWidget('Images'),
+          HeaderWidget(AppLocalizations.of(context)!.imagesHeader),
           SettingRowWidget(
-            "High quality images",
-            subtitle:
-                'Mobile data & Wi-Fi \n\nSelect when high quality images should load.',
+            AppLocalizations.of(context)!.highQualityImagesTitle,
+            subtitle: AppLocalizations.of(context)!.highQualityImagesSubtitle(
+              AppLocalizations.of(context)!.mobileDataWifi,
+            ),
             vPadding: 15,
             onPressed: () {
               openDarkModeSettings(context);
@@ -139,43 +140,44 @@ class DataUsagePage extends StatelessWidget {
             showDivider: false,
           ),
           HeaderWidget(
-            'Video',
+            AppLocalizations.of(context)!.videoHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "High-quality video",
-            subtitle:
-                'Wi-Fi only \n\nSelect when the highest quality available should play.',
+            AppLocalizations.of(context)!.highQualityVideoTitle,
+            subtitle: AppLocalizations.of(context)!.highQualityVideoSubtitle(
+              AppLocalizations.of(context)!.wifiOnly,
+            ),
             vPadding: 15,
             onPressed: () {
               openDarkModeSettings(context);
             },
           ),
           SettingRowWidget(
-            "Video autoplay",
-            subtitle:
-                'Wi-Fi only \n\nSelect when video should play automatically.',
+            AppLocalizations.of(context)!.videoAutoplayTitle,
+            subtitle: AppLocalizations.of(context)!.videoAutoplaySubtitle(
+              AppLocalizations.of(context)!.wifiOnly,
+            ),
             vPadding: 15,
             onPressed: () {
               openDarkModeSettings(context);
             },
           ),
           HeaderWidget(
-            'Data sync',
+            AppLocalizations.of(context)!.dataSyncHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Sync data",
+            AppLocalizations.of(context)!.syncDataTitle,
             showCheckBox: true,
           ),
           SettingRowWidget(
-            "Sync interval",
-            subtitle: 'Daily',
+            AppLocalizations.of(context)!.syncIntervalTitle,
+            subtitle: AppLocalizations.of(context)!.daily,
           ),
           SettingRowWidget(
             '',
-            subtitle:
-                'Allow Fwitter to sync data in the background to enhance your experience.',
+            subtitle: AppLocalizations.of(context)!.syncDataDescription,
             vPadding: 10,
           ),
         ],

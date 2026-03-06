@@ -185,6 +185,58 @@ exports.onBetCreated = functions.database
   });
 
 /**
+ * Yeni tahmin + meydan okuma: toldya/{toldyaId} onCreate.
+ * challengeeUserId varsa (ve ana tahmin ise, parentkey yok) challengee'ye bildirim yazıp FCM gönderir.
+ */
+exports.onToldyaCreated = functions.database
+  .ref("toldya/{toldyaId}")
+  .onCreate(async (snap, context) => {
+    const toldyaId = context.params.toldyaId;
+    const data = snap.val();
+    if (!data) return null;
+    if (data.parentkey) return null;
+    const challengeeUserId = data.challengeeUserId && String(data.challengeeUserId).trim();
+    if (!challengeeUserId) return null;
+    const creatorId = data.userId && String(data.userId).trim();
+    if (!creatorId || creatorId === challengeeUserId) return null;
+
+    try {
+      let challengerDisplayName = "Bir kullanıcı";
+      const profileSnap = await getDb().ref("profile").child(creatorId).once("value");
+      const profile = profileSnap.val();
+      if (profile) {
+        const name = profile.displayName || profile.userName || profile.name;
+        if (name) challengerDisplayName = String(name);
+      }
+
+      const notifTitle = "Meydan okudu!";
+      const notifBody = `${challengerDisplayName} sana meydan okudu!`;
+      const updates = {};
+      updates[`notification/${challengeeUserId}/${toldyaId}`] = {
+        type: "challenge",
+        challengerUserId: creatorId,
+        challengerDisplayName: challengerDisplayName,
+        toldyaId: toldyaId,
+        updatedAt: new Date().toISOString(),
+      };
+      await getDb().ref().update(updates);
+
+      const token = await getFcmToken(challengeeUserId);
+      if (token) {
+        await sendFcm(token, notifTitle, notifBody, {
+          type: "challenge",
+          id: toldyaId,
+        });
+        console.log("[onToldyaCreated] challenge sent to", challengeeUserId, "toldyaId=", toldyaId);
+      }
+      return null;
+    } catch (e) {
+      console.error("[onToldyaCreated] error", toldyaId, e.message || e);
+      return null;
+    }
+  });
+
+/**
  * Yeni takipçi: followers/{followedUserId}/{followerId} oluşturulduğunda
  * takip edilen kullanıcıya bildirim.
  * Tetikleyici: followers/{followedUserId}/{followerId} onCreate

@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -347,8 +348,8 @@ dynamic customAdvanceNetworkImage(String path) {
 void showAlert(BuildContext context,
     {required Function onPressedOk,
     required String title,
-    String okText = 'OK',
-    String cancelText = 'Cancel'}) async {
+    String? okText,
+    String? cancelText}) async {
   showDialog(
       context: context,
       builder: (context) {
@@ -363,11 +364,12 @@ void showAlert(BuildContext context,
 Widget customAlert(BuildContext context,
     {required Function onPressedOk,
     required String title,
-    String okText = 'OK',
-    String cancelText = 'Cancel'}) {
+    String? okText,
+    String? cancelText}) {
   final onSurface = Theme.of(context).colorScheme.onSurface;
+  final l10n = AppLocalizations.of(context)!;
   return AlertDialog(
-    title: Text('Alert',
+    title: Text(AppLocalizations.of(context)!.alert,
         style: TextStyle(
             fontSize: getDimention(context, 25),
             color: onSurface.withOpacity(0.8))),
@@ -379,7 +381,7 @@ Widget customAlert(BuildContext context,
         onPressed: () {
           Navigator.pop(context);
         },
-        child: Text(cancelText,
+        child: Text(cancelText ?? l10n.cancel,
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
       ),
       TextButton(
@@ -387,7 +389,7 @@ Widget customAlert(BuildContext context,
           Navigator.pop(context);
           onPressedOk();
         },
-        child: Text(okText, style: TextStyle(color: Theme.of(context).primaryColor)),
+        child: Text(okText ?? l10n.confirm, style: TextStyle(color: Theme.of(context).primaryColor)),
       )
     ],
   );

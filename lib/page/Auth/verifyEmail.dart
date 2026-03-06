@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/Auth/signin.dart';
 import 'package:toldya/state/authState.dart';
@@ -30,16 +31,16 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         children: (state.user?.emailVerified ?? false)
             ? <Widget>[
                 NotifyText(
-                  title: 'Your email address is verified',
-                  subTitle:
-                      'You have got your blue tick on your name. Cheers !!',
+                  title: AppLocalizations.of(context)!.emailVerifiedTitle,
+                  subTitle: AppLocalizations.of(context)!.emailVerifiedSubtitle,
                 ),
               ]
             : <Widget>[
                 NotifyText(
-                  title: 'Verify your email address',
-                  subTitle:
-                      'Send email verification email link to ${state.user?.email ?? ''} to verify address',
+                  title: AppLocalizations.of(context)!.verifyEmailTitle,
+                  subTitle: AppLocalizations.of(context)!.verifyEmailSubtitle(
+                    state.user?.email ?? '',
+                  ),
                 ),
                 SizedBox(
                   height: 30,
@@ -65,7 +66,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             onPressed: _submit,
             padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
             child: TitleText(
-              'Bağlantı Gönder',
+              AppLocalizations.of(context)!.sendLink,
               color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
@@ -101,7 +102,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           },
         ),
         title: customText(
-          'Email Verification',
+          AppLocalizations.of(context)!.emailVerificationTitle,
           context: context,
           style: TextStyle(fontSize: 20),
         ),

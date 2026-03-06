@@ -1,5 +1,6 @@
 import 'package:toldya/model/userPegModel.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/feedModel.dart';
@@ -60,7 +61,7 @@ class _NotificationPageState extends State<NotificationPage> {
               )
             : BackButton(color: Colors.white),
         title: Text(
-          'Bildirimler',
+          AppLocalizations.of(context)!.notificationsTitle,
           style: TextStyle(
             color: Colors.white,
             fontSize: 21,
@@ -123,8 +124,8 @@ class NotificationPageBody extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
         child: EmptyList(
-          'Henüz bir Bildirim yok',
-          subTitle: 'Yeni bildirim bulunduğunda burada görünürler.',
+          AppLocalizations.of(context)!.notificationsEmptyTitle,
+          subTitle: AppLocalizations.of(context)!.notificationsEmptySubtitle,
           // 'No Notification available yet',
           // subTitle: 'When new notifiction found, they\'ll show up here.',
         ),
@@ -323,7 +324,7 @@ class NotificationTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '$length kişi paylaşımınıza oy verdi',
+                    AppLocalizations.of(context)!.votedOnYourPost(length),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,

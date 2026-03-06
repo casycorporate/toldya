@@ -1,0 +1,71 @@
+---
+description: Toldya (Ben Demiştim) proje kuralları — bağlam, UI/UX, Firebase, tokenomics
+alwaysApply: true
+---
+
+# Toldya (Ben Demiştim) — Proje Kuralları
+
+## Proje bağlamı
+
+- **Uygulama:** Sosyal tahmin pazarı, pari-mutuel bahis, tokenomics, stash drip.
+- **Stack:** Flutter (Dart), Firebase (Realtime DB, Cloud Functions, Auth, Storage), OpenRouter (gpt-4o-mini / claude-3-haiku).
+- **State:** Provider (AuthState, FeedState, ComposeToldyaState, SearchState).
+- **Routing:** Mevcut route'lara uy: /CreateFeedPage/toldya, /FeedPostDetail/{postId}, /profile/{id}, /toldya/{id}. Deep link: profile ve toldya için uygun şekilde.
+- **Compose türleri:** New Toldya (isToldya:true), Retoldya (isRetoldya:true), Reply (parentKey != null).
+
+---
+
+## UI/UX
+
+- **Tema:** Koyu mod; arka plan #1A1F2E, vurgu #FF6B6B, yüksek kontrast.
+- **Boş durumlar:** Minimal, soluk ikon (opacity 0.2), net CTA (örn. "Henüz bir tahmin yok").
+- **Toldya metni:** 280 karakter sınırı; 260+ turuncu, 280 kırmızı (dinamik renk).
+- **Bottom sheet:** BorderRadius 28, glassmorphism (Share, Delete, Report).
+- **Bahis butonları:** Yes/No yüzdeleri gerçek zamanlı ve dinamik.
+- **Yeni ekranlar:** Scaffold + koyu palet; gerekirse HomePage BottomNavigationBar yapısına uyumlu.
+
+---
+
+## Firebase ve güvenlik
+
+- **Bahis:** Client tarafında tweet node'una doğrudan yazma YOK. Tüm bahis işlemi `placeBet` Callable Cloud Function üzerinden.
+- **Post statu:** 6 (AI incelemesi) → 0 (Yayında) → 5 (Kilitli) → 2 (Onaylanan/Ok) → 7 (AI reddi). AI moderasyon: runAiModeration (statu 6 → 0 veya 7).
+- **Bildirimler:** Cloud Functions (onBetCreated, onPredictionResolved, onFollowerCreated) FCM ile; token profile/{uid}/fcmToken.
+- **API key:** OpenRouter için Firebase Secret Manager (OPENROUTER_API_KEY); client'ta hardcode yok.
+- **Veri:** Firebase referansları temiz; FeedModel, UserModel gibi modellerle parse et. HTTP/Callable hatalarını kullanıcı dostu Snackbar ile göster (örn. INSUFFICIENT_BALANCE → "Yetersiz Bakiye").
+
+---
+
+## Tokenomics
+
+- **Cüzdan:** pegCount (harcanabilir), stashCount (kilitli). pegCount==0 ve stashCount>0 ise 24 saatte 200 token stash drip (runStashDrip).
+- **Kazanç:** runDistributeWinnings → %70 pegCount, %30 stashCount.
+- **Bahis limiti:** Rütbe çarpanı (Rookie 10%, Analyst 25%, Master 50%) × toplam harcanabilir bakiye. Havuz toplamı < 1000 ise max bahis 100 token.
+- **UI:** Bakiye ve limit güncellemelerinde her zaman güncel hesaplanan değerler (bakiye, xp, havuz) kullan; statik varsayım yapma.
+
+---
+
+## Otomasyon notları
+
+- **Bahis UI:** maxBet = rütbe limiti + bakiye + havuz eşiği (1000 altı havuz = 100 max).
+- **AI (Cloud Functions):** OpenRouter HTTP POST, system prompt'lar ve Secret Manager kullan.
+- **Yeni ekran:** Dark theme paleti, gerekirse HomePage alt sekme yapısına entegre et.
+---
+
+## Veri tutarlılığı, async ve kullanıcı bilgilendirmesi
+
+- **Veri tutarlılığı:** push() ile oluşturulan kaydın gerçek key'ini parent listelerine ekle; list.last.key kullanma. Yarım yazmayı önlemek için işlem bitene kadar tekrar tetiklemeyi engelle.
+- **Çift tetikleme:** Veritabanı yazan veya uzun süren işlemlerde ilgili butonu disable et (bahis, silme, takip, engelle, yorum/tahmin gönder, chat); işlem bitince tekrar aktif et.
+- **Async/hata:** Yazma/silme metotları Future dönsün, set/remove await edilsin; hataları rethrow et, isBusy işlem bitene kadar true kalsın.
+- **SnackBar:** Başarı ve hata için Türkçe SnackBar (ScaffoldMessenger); mesajlar anlaşılır olsun.
+- **Unique username:** Kullanıcı adı benzersiz olmalı; kayıt/güncelleme ve sunucu tarafında uniqueness zorunlu, çakışmada kullanıcıya net mesaj.
+---
+
+## Çok dilli destek (i18n)
+
+- **Yöntem:** Flutter resmi lokalizasyonu: `flutter gen-l10n` + ARB dosyaları. Metinler `lib/l10n/` altında: `app_tr.arb` (şablon), `app_en.arb`, `app_de.arb`. Üretilen sınıf: `lib/generated/l10n/app_localizations.dart` → `AppLocalizations`.
+- **Yeni metin:** Kullanıcıya görünen tüm sabit metinler (buton, SnackBar, başlık, placeholder, hata mesajı) ARB’e key olarak eklenmeli; widget’ta `AppLocalizations.of(context)!.keyAdi` ile kullanılmalı. Hardcoded Türkçe/İngilizce string yazılmamalı.
+- **Key isimlendirme:** Anlamlı, camelCase (örn. `followSuccess`, `errorGeneric`, `pleaseEnterEmail`). Placeholder varsa ARB’te `@key` ile `placeholders` tanımlanmalı (örn. `maxBetTokens(String maxVal)`).
+- **Yeni dil ekleme:** (1) `lib/l10n/app_xx.arb` oluştur (aynı key’ler, çeviri değerleri), (2) `flutter gen-l10n` çalıştır, (3) `lib/page/settings/languagePage.dart` içindeki `_options` listesine `LocaleOption('xx', 'Dil adı')` ekle. `supportedLocales` zaten `AppLocalizations.supportedLocales` kullandığı için ek kod gerekmez.
+- **Dil seçimi:** Kullanıcı dili `AppState.setLocale(Locale)` ile ayarlanır ve SharedPreferences’ta saklanır. Uygulama açılışında `_LocaleLoader` ile `AppState.loadLocale()` çağrılır. Yeni ekranlarda locale’e erişmek için `MaterialApp`/`localizationsDelegates`/`supportedLocales` yapısı değiştirilmemeli.
+- **Bağlam:** `AppLocalizations.of(context)!` kullanıldığında ilgili widget’ın `context`’i Localizations (MaterialApp) altında olmalı. Helper/utility’de mesaj göstermek için çağıran yerden `BuildContext` geçirilmeli ve mesaj metni ARB key’lerinden alınmalı.

@@ -39,6 +39,16 @@ class FeedModel {
   bool? distributionDone;
   /// AI moderasyon gerekçesi (onay veya red nedeni)
   String? aiModerationReason;
+  /// Meydan okuma: etiketlenen tek kullanıcı (1v1 düello)
+  String? challengeeUserId;
+  /// Yorum oylama: Katılıyorum sayısı (sadece reply için)
+  int? upvoteCount;
+  /// Yorum oylama: Katılmıyorum sayısı (sadece reply için)
+  int? downvoteCount;
+  /// Yorum oylama: Katılıyorum veren kullanıcı ID'leri
+  List<String>? upvoteUserIds;
+  /// Yorum oylama: Katılmıyorum veren kullanıcı ID'leri
+  List<String>? downvoteUserIds;
 
   FeedModel({this.key,
     this.description,
@@ -68,7 +78,11 @@ class FeedModel {
     this.collateralAmount,
     this.disputeUserIds,
     this.distributionDone,
-    this.aiModerationReason});
+    this.aiModerationReason,
+    this.upvoteCount,
+    this.downvoteCount,
+    this.upvoteUserIds,
+    this.downvoteUserIds});
 
   toJson() {
     return {
@@ -99,7 +113,12 @@ class FeedModel {
       "collateralAmount": collateralAmount,
       "disputeUserIds": disputeUserIds,
       "distributionDone": distributionDone ?? false,
-      "aiModerationReason": aiModerationReason
+      "aiModerationReason": aiModerationReason,
+      "challengeeUserId": challengeeUserId,
+      "upvoteCount": upvoteCount ?? 0,
+      "downvoteCount": downvoteCount ?? 0,
+      "upvoteUserIds": upvoteUserIds ?? [],
+      "downvoteUserIds": downvoteUserIds ?? []
     };
   }
 
@@ -134,6 +153,25 @@ class FeedModel {
     collateralAmount = map['collateralAmount'];
     distributionDone = map['distributionDone'] ?? false;
     aiModerationReason = map['aiModerationReason']?.toString();
+    challengeeUserId = map['challengeeUserId']?.toString();
+    upvoteCount = map['upvoteCount'] ?? 0;
+    downvoteCount = map['downvoteCount'] ?? 0;
+    if (map['upvoteUserIds'] != null) {
+      upvoteUserIds = <String>[];
+      for (final value in map['upvoteUserIds'] as Iterable) {
+        upvoteUserIds!.add(value.toString());
+      }
+    } else {
+      upvoteUserIds = [];
+    }
+    if (map['downvoteUserIds'] != null) {
+      downvoteUserIds = <String>[];
+      for (final value in map['downvoteUserIds'] as Iterable) {
+        downvoteUserIds!.add(value.toString());
+      }
+    } else {
+      downvoteUserIds = [];
+    }
     if (map['disputeUserIds'] != null) {
       disputeUserIds = <String>[];
       for (final value in map['disputeUserIds'] as Iterable) {

@@ -162,28 +162,27 @@ class ChatState extends AppState {
   }
 
   /// Send message to other user
-  void onMessageSubmitted(ChatMessage message,
-      {UserModel? myUser, UserModel? secondUser}) {
-    print(chatUser.userId);
+  Future<void> onMessageSubmitted(ChatMessage message,
+      {UserModel? myUser, UserModel? secondUser}) async {
     try {
-      // if (_messageList == null || _messageList.length < 1) {
-      kDatabase
+      await kDatabase
           .child('chatUsers')
           .child(message.senderId ?? '')
           .child(message.receiverId ?? '')
           .set(message.toJson());
 
-      kDatabase
+      await kDatabase
           .child('chatUsers')
           .child(chatUser.userId ?? '')
           .child(message.senderId ?? '')
           .set(message.toJson());
 
-      kDatabase.child('chats').child(_channelName ?? '').push().set(message.toJson());
+      await kDatabase.child('chats').child(_channelName ?? '').push().set(message.toJson());
       sendAndRetrieveMessage(message);
       logEvent('send_message');
     } catch (error) {
-      cprint(error);
+      cprint(error, errorIn: 'onMessageSubmitted');
+      rethrow;
     }
   }
 

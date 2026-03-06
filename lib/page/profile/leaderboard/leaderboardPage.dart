@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/league.dart';
 import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/searchState.dart';
 import 'package:toldya/widgets/customAppBar.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +27,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SearchState>(context, listen: false).getDataFromDatabase();
     });
@@ -46,7 +49,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       appBar: AppBar(
         leading: BackButton(color: titleColor),
         title: Text(
-          'Liderlik Tablosu',
+          AppLocalizations.of(context)!.leaderboardTitle,
           style: TextStyle(
             color: titleColor,
             fontWeight: FontWeight.w700,
@@ -71,7 +74,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 children: [
                   Icon(Icons.lightbulb_outline, size: 18),
                   SizedBox(width: 8),
-                  Text('Tahminciler'),
+                  Text(AppLocalizations.of(context)!.predictors),
                 ],
               ),
             ),
@@ -81,7 +84,17 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 children: [
                   Icon(Icons.emoji_events, size: 18),
                   SizedBox(width: 8),
-                  Text('Bahisçiler'),
+                  Text(AppLocalizations.of(context)!.bettors),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.groups, size: 18),
+                  SizedBox(width: 8),
+                  Text(AppLocalizations.of(context)!.weeklyLeague),
                 ],
               ),
             ),
@@ -104,6 +117,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             ..sort((a, b) => (b.predictorScore ?? 0).compareTo(a.predictorScore ?? 0));
           final topBettors = List<UserModel>.from(list)
             ..sort((a, b) => (b.rank ?? 0).compareTo(a.rank ?? 0));
+          final currentUserId = Provider.of<AuthState>(context, listen: false).userId;
 
           return TabBarView(
             controller: _tabController,
@@ -111,17 +125,82 @@ class _LeaderboardPageState extends State<LeaderboardPage>
               _LeaderList(
                 users: topPredictors.take(50).toList(),
                 scoreKey: 'predictor',
-                emptyText: 'Henüz tahminci skoru yok',
+                emptyText: AppLocalizations.of(context)!.noPredictorScoreYet,
               ),
               _LeaderList(
                 users: topBettors.take(50).toList(),
                 scoreKey: 'bettor',
-                emptyText: 'Henüz bahisçi skoru yok',
+                emptyText: AppLocalizations.of(context)!.noBettorScoreYet,
+              ),
+              _LeagueTab(
+                userlist: list,
+                currentUserId: currentUserId,
               ),
             ],
           );
         },
       ),
+    );
+  }
+}
+
+/// Haftalık Lig sekmesi: mevcut kullanıcının lig grubunu XP'ye göre listeler.
+class _LeagueTab extends StatelessWidget {
+  const _LeagueTab({
+    required this.userlist,
+    required this.currentUserId,
+  });
+
+  final List<UserModel> userlist;
+  final String currentUserId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<LeagueEntry>>(
+      future: fetchLeagueGroupForUser(currentUserId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CustomScreenLoader(
+              height: 80,
+              width: 80,
+              backgroundColor: Colors.transparent,
+            ),
+          );
+        }
+        final entries = snapshot.data ?? [];
+        if (entries.isEmpty) {
+          return Center(
+            child: NotifyText(
+              title: AppLocalizations.of(context)!.leagueNotCreatedYet,
+              subTitle: AppLocalizations.of(context)!.leagueWillAppearWhenAssigned,
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            UserModel user;
+            try {
+              user = userlist.firstWhere((u) => u.userId == entry.userId);
+            } catch (_) {
+              user = UserModel(
+                userId: entry.userId,
+                displayName: entry.userId,
+                userName: entry.userId,
+              );
+            }
+            return _LeaderTile(
+              user: user,
+              rank: index + 1,
+              score: entry.xpSnapshot,
+              isPredictor: false,
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -226,15 +305,30 @@ class _LeaderTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      displayName,
-                      style: TextStyle(
-                        color: MockupDesign.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayName,
+                            style: TextStyle(
+                              color: MockupDesign.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if ((user.currentStreak ?? 0) >= 3) ...[
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.local_fire_department,
+                            size: 16,
+                            color: Colors.orange,
+                          ),
+                        ],
+                      ],
                     ),
                     SizedBox(height: 2),
                     Text(

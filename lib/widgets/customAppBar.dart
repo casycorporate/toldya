@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +59,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               borderSide: BorderSide(width: 0, style: BorderStyle.none),
               borderRadius: BorderRadius.circular(radiusCard),
             ),
-            hintText: 'Arama..',
+            hintText: AppLocalizations.of(context)!.searchHintShort,
             hintStyle: TextStyle(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
               fontSize: 16,

@@ -26,6 +26,8 @@ class UserModel {
   int? rank;
   /// Tahminci skoru: Ne kadar tahmini başarıyla sonuçlandırdı
   int? predictorScore;
+  /// Ardışık kazanma serisi (3+ iken alev ikonu ve kazanç çarpanı)
+  int? currentStreak;
   int? role;
   String? fcmToken;
   List<String>? followersList;
@@ -59,6 +61,7 @@ class UserModel {
       this.lastDailyClaimAt,
       this.rank,
       this.predictorScore,
+      this.currentStreak,
       this.role});
 
   UserModel.fromJson(Map<dynamic, dynamic>? map) {
@@ -89,6 +92,7 @@ class UserModel {
     xp = map["xp"];
     lastDailyClaimAt = map["lastDailyClaimAt"];
     predictorScore = map['predictorScore'];
+    currentStreak = map['currentStreak'];
     role = map['role'];
     webSite = map['webSite'];
     fcmToken = map['fcmToken'];
@@ -147,6 +151,7 @@ class UserModel {
       'lastDailyClaimAt': lastDailyClaimAt,
       'rank': rank,
       'predictorScore': predictorScore ?? 0,
+      'currentStreak': currentStreak ?? 0,
       'role': role
     };
   }
@@ -206,6 +211,7 @@ class UserModel {
         blackList: blackList ?? this.blackList,
         rank: rank ?? this.rank,
         predictorScore: predictorScore ?? this.predictorScore,
+        currentStreak: currentStreak ?? this.currentStreak,
         role: role ?? this.role);
   }
 

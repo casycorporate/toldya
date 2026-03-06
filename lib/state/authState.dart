@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/utility.dart';
@@ -51,6 +52,7 @@ class AuthState extends AppState {
   }
 
   /// Başka bir kullanıcının profil sayfası kapanırken çağrılır. Sadece listede son kullanıcı bu profileId ise kaldırılır (async race önlenir).
+  /// Liste boş kalırsa kendi kullanıcıyı ekler; böylece ana ekranda profil sekmesi siyah kalmaz.
   void profilePageClosing(String? profileId) {
     _pendingProfileRequestId = null;
     if (profileId == null || profileId.isEmpty) return;
@@ -59,7 +61,11 @@ class AuthState extends AppState {
         _profileUserModelList!.last.userId == profileId) {
       _profileUserModelList!.removeLast();
     }
-    notifyListeners();
+    if (_profileUserModelList == null || _profileUserModelList!.isEmpty) {
+      ensureProfileIsCurrentUser();
+    } else {
+      notifyListeners();
+    }
   }
 
   /// "Kendi profilim" sekmesi görünürken profileUserModel başkasıysa (örn. alt bardan dönüldü), listeyi giriş yapan kullanıcıya çevirir.
@@ -251,7 +257,8 @@ class AuthState extends AppState {
   }
 
   /// Günlük bonusu alır (Callable). Başarıda bakiye ve lastDailyClaimAt güncellenir.
-  Future<String?> claimDailyBonus() async {
+  /// [context] is used for localized fallback message when server does not return one.
+  Future<String?> claimDailyBonus(BuildContext context) async {
     try {
       final result = await FirebaseFunctions.instance
           .httpsCallable("claimDailyBonus")
@@ -263,7 +270,7 @@ class AuthState extends AppState {
         _userModel!.lastDailyClaimAt = DateTime.now().toUtc().toIso8601String();
         notifyListeners();
       }
-      return data["message"] as String? ?? "Günlük bonus alındı.";
+      return data["message"] as String? ?? AppLocalizations.of(context)!.dailyBonusClaimed;
     } on FirebaseFunctionsException catch (e) {
       return e.message;
     } catch (_) {
@@ -335,10 +342,10 @@ class AuthState extends AppState {
     currentUser.sendEmailVerification().then((_) {
       logEvent('email_verifcation_sent',
           parameter: {_userModel?.displayName ?? '': currentUser!.email ?? ''});
-      customSnackBar(
-        scaffoldKey,
-        'An email verification link is send to your email.',
-      );
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.emailVerificationSent);
+      }
     }).catchError((error) {
       cprint((error as dynamic).message, errorIn: 'sendEmailVerification');
       logEvent('email_verifcation_block',
@@ -361,8 +368,10 @@ class AuthState extends AppState {
       {GlobalKey<ScaffoldState>? scaffoldKey}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email).then((value) {
-        if (scaffoldKey != null) customSnackBar(scaffoldKey,
-            'A reset password link is sent yo your mail.You can reset your password from there');
+        final ctx = scaffoldKey?.currentContext;
+        if (scaffoldKey != null && ctx != null) {
+          customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
+        }
         logEvent('forgot+password');
       }).catchError((error) {
         cprint((error as dynamic).message);
@@ -407,7 +416,10 @@ class AuthState extends AppState {
       }
 
       logEvent('update_user');
-      customSnackBar(scaffoldKey, 'Değişiklikler Kaydedildi');
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.changesSaved);
+      }
     } catch (error) {
       cprint(error, errorIn: 'updateUserProfile');
     }
@@ -415,7 +427,7 @@ class AuthState extends AppState {
 
   /// `Update user` profile
   Future<void> updateUserProfile(UserModel userModel,GlobalKey<ScaffoldState> scaffoldKey,
-      {String? image, String? bannerImage}) async {
+      {String? image, String? bannerImage, String? successMessage}) async {
     try {
       if (image == null && bannerImage == null) {
         createUser(userModel);
@@ -444,7 +456,10 @@ class AuthState extends AppState {
       }
 
       logEvent('update_user');
-      customSnackBar(scaffoldKey, 'Değişiklikler Kaydedildi');
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, successMessage ?? AppLocalizations.of(ctx)!.changesSaved);
+      }
     } catch (error) {
       cprint(error, errorIn: 'updateUserProfile');
     }

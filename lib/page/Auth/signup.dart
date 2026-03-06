@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -69,12 +70,12 @@ class _SignupState extends State<Signup> {
                   SizedBox(height: fullHeight(context) * .2),
                   _title(),
                   SizedBox(height: 50),
-                  _entryFeild('İsim', controller: _nameController),
-                  _entryFeild('E-mail giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.name, controller: _nameController),
+                  _entryFeild(AppLocalizations.of(context)!.enterEmail,
                       controller: _emailController, isEmail: true),
-                  _entryFeild('Şifre giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.enterPassword,
                       controller: _passwordController, isPassword: true),
-                  _entryFeild('Tekrar şifre giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.enterPasswordAgain,
                       controller: _confirmController, isPassword: true),
                   SizedBox(height: 20),
                   _submitButton(context),
@@ -139,7 +140,7 @@ class _SignupState extends State<Signup> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'Zaten bir hesabın var mı?',
+              AppLocalizations.of(context)!.alreadyHaveAccount,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -148,7 +149,7 @@ class _SignupState extends State<Signup> {
             ),
             SizedBox(width: 10),
             Text(
-              'Giriş Yap',
+              AppLocalizations.of(context)!.signIn,
               style: GoogleFonts.sawarabiMincho(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
@@ -198,7 +199,7 @@ class _SignupState extends State<Signup> {
               ),
             ),
             Text(
-              'Geri',
+              AppLocalizations.of(context)!.back,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -275,7 +276,7 @@ class _SignupState extends State<Signup> {
             ],
           ),
           child: Text(
-            'Hemen Kaydol',
+            AppLocalizations.of(context)!.signUpNow,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -307,22 +308,22 @@ class _SignupState extends State<Signup> {
   // }
 
   void _submitForm() {
+    final l10n = AppLocalizations.of(context)!;
     if (_nameController.text.isEmpty) {
-      customSnackBar(_scaffoldKey, 'Lütfen isim giriniz');
+      customSnackBar(_scaffoldKey, l10n.pleaseEnterName);
       return;
     }
     if (_nameController.text.length > 27) {
-      customSnackBar(_scaffoldKey, 'İsim uzunluğu 27 karakteri geçemez');
+      customSnackBar(_scaffoldKey, l10n.nameTooLong);
       return;
     }
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmController.text.isEmpty) {
-      customSnackBar(_scaffoldKey, 'Lütfen formu dikkatlice doldurunuz');
+      customSnackBar(_scaffoldKey, l10n.pleaseFillForm);
       return;
     } else if (_passwordController.text != _confirmController.text) {
-      customSnackBar(
-          _scaffoldKey, 'Parola ve doğrulama parolası eşleşmedi');
+      customSnackBar(_scaffoldKey, l10n.passwordMismatch);
       return;
     }
 

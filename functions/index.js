@@ -357,11 +357,87 @@ async function runLockPredictionsLogic() {
   return { locked: Object.keys(updates).length };
 }
 
+// --- Weekly Leagues (Haftalık Lig): XP'ye göre gruplar, haftalık snapshot ---
+const LEAGUE_GROUP_SIZE = 30;
+const LEAGUE_TIER_NAMES = ["Bronz", "Gümüş", "Altın"];
+
+/** ISO hafta kimliği (örn. "2025-W06") */
+function getISOWeekId(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getFullYear() + "-W" + String(weekNo).padStart(2, "0");
+}
+
+/**
+ * Tüm profilleri XP'ye göre sıralar, gruplara böler; leagues/weeks/{weekId}/groups ve profile'a leagueWeekId/leagueGroupId yazar.
+ * Mevcut leaderboard (rank, predictorScore) değiştirilmez.
+ */
+async function runLeagueAssignmentLogic() {
+  const db = getDb();
+  const profileRef = db.ref("profile");
+  const snapshot = await profileRef.once("value");
+  const profiles = snapshot.val();
+  if (!profiles || typeof profiles !== "object") {
+    return { weekId: null, groups: 0, usersAssigned: 0 };
+  }
+
+  const weekId = getISOWeekId(new Date());
+  const configRef = db.ref("leagues/config");
+  await configRef.set({
+    groupSize: LEAGUE_GROUP_SIZE,
+    tierNames: LEAGUE_TIER_NAMES,
+    currentWeekId: weekId,
+  });
+
+  const entries = [];
+  for (const [userId, p] of Object.entries(profiles)) {
+    if (!p || typeof p !== "object") continue;
+    const xp = typeof p.xp === "number" ? p.xp : (parseInt(p.xp, 10) || 0);
+    entries.push({ userId: String(userId), xp });
+  }
+  entries.sort((a, b) => b.xp - a.xp);
+
+  const groups = {};
+  const profileUpdates = {};
+  for (let i = 0; i < entries.length; i++) {
+    const groupId = Math.floor(i / LEAGUE_GROUP_SIZE);
+    const { userId, xp } = entries[i];
+    if (!groups[groupId]) groups[groupId] = {};
+    groups[groupId][userId] = xp;
+    profileUpdates[`profile/${userId}/leagueWeekId`] = weekId;
+    profileUpdates[`profile/${userId}/leagueGroupId`] = String(groupId);
+  }
+
+  const weekRef = db.ref(`leagues/weeks/${weekId}/groups`);
+  await weekRef.set(groups);
+  if (Object.keys(profileUpdates).length > 0) {
+    await db.ref().update(profileUpdates);
+  }
+  const groupCount = Object.keys(groups).length;
+  console.log(`[runLeagueAssignment] weekId=${weekId}, groups=${groupCount}, users=${entries.length}`);
+  return { weekId, groups: groupCount, usersAssigned: entries.length };
+}
+
+/** Manuel tetikleme: Haftalık lig ataması. */
+exports.runLeagueAssignment = functions.https.onRequest(async (req, res) => {
+  try {
+    const result = await runLeagueAssignmentLogic();
+    res.status(200).json({ ok: true, ...result });
+  } catch (e) {
+    console.error("runLeagueAssignment error", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Logic fonksiyonları script/manuel çalıştırma için export
 exports.runLockPredictionsLogic = runLockPredictionsLogic;
 exports.runOracleResolutionLogic = runOracleResolutionLogic;
 exports.runDistributeWinningsLogic = runDistributeWinningsLogic;
 exports.runStashDripLogic = runStashDripLogic;
+exports.runLeagueAssignmentLogic = runLeagueAssignmentLogic;
 
 /** TEST: Manuel – Bitiş tarihi geçen tahminleri kilitler. (Production'da schedule'a çevrilecek.) */
 exports.runLockPredictions = functions.https.onRequest(async (req, res) => {
@@ -502,6 +578,8 @@ const POOL_THRESHOLD = 1000;
 const MAX_BET_SMALL_POOL = 100;
 const DAILY_BONUS_AMOUNT = 500;
 const STASH_PAYOUT_RATIO = 0.3;  // Kazancin %30'u stash'e
+const STREAK_MIN = 3;           // 3+ ardışık galibiyette bonus
+const STREAK_MULTIPLIER = 1.2;  // Kazanç çarpanı (peg + stash)
 const DRIP_AMOUNT = 200;
 const DRIP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -555,12 +633,26 @@ async function runDistributeWinningsLogic() {
       const userSnap = await profileRef.child(el.userId || "").once("value");
       if (userSnap.val()) {
         const user = userSnap.val();
-        const toSpendable = Math.round(payout * (1 - STASH_PAYOUT_RATIO));
-        const toStash = payout - toSpendable;
+        const currentStreak = user.currentStreak != null ? user.currentStreak : 0;
+        const newStreak = currentStreak + 1;
+        const multiplier = newStreak >= STREAK_MIN ? STREAK_MULTIPLIER : 1.0;
+        const multipliedPayout = Math.round(payout * multiplier);
+        const toSpendable = Math.round(multipliedPayout * (1 - STASH_PAYOUT_RATIO));
+        const toStash = multipliedPayout - toSpendable;
         const newPeg = (user.pegCount || 0) + toSpendable;
         const newStash = (user.stashCount || 0) + toStash;
         profileUpdates[`profile/${el.userId}/pegCount`] = newPeg;
         profileUpdates[`profile/${el.userId}/stashCount`] = newStash;
+        profileUpdates[`profile/${el.userId}/currentStreak`] = newStreak;
+        profileUpdates[`profile/${el.userId}/lastStreakUpdatedAt`] = new Date().toISOString();
+      }
+    }
+    const losingList = feedResult === FEED_RESULT_LIKE ? (tweet.unlikeList || []) : (tweet.likeList || []);
+    for (const el of losingList) {
+      const uid = el && (el.userId != null ? el.userId : el);
+      if (uid) {
+        profileUpdates[`profile/${uid}/currentStreak`] = 0;
+        profileUpdates[`profile/${uid}/lastStreakUpdatedAt`] = new Date().toISOString();
       }
     }
     if (tweet.userId) {
@@ -716,6 +808,57 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     console.error("placeBet error:", err);
     throw new functions.https.HttpsError("internal", err.message || "Bahis işlenirken hata oluştu.");
   }
+});
+
+// --- Callable: voteReply – Yorum oylama (Katılıyorum / Katılmıyorum), sadece reply için ---
+exports.voteReply = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
+  }
+  const userId = safeString(context.auth.uid).trim() || context.auth.uid;
+  const rawToldyaId = data?.toldyaId;
+  const toldyaId = safeString(String(rawToldyaId || "")).trim() || rawToldyaId;
+  const vote = data?.vote;
+  if (!toldyaId || (vote !== 1 && vote !== -1)) {
+    throw new functions.https.HttpsError("invalid-argument", "Geçersiz toldyaId veya vote (1 veya -1).");
+  }
+
+  const snap = await getDb().ref(`toldya/${toldyaId}`).once("value");
+  const tweet = snap.val();
+  if (!tweet || !tweet.parentkey) {
+    throw new functions.https.HttpsError("failed-precondition", "Bu yalnızca yorum (reply) için kullanılır.");
+  }
+
+  const upvoteUserIds = Array.isArray(tweet.upvoteUserIds) ? [...tweet.upvoteUserIds] : [];
+  const downvoteUserIds = Array.isArray(tweet.downvoteUserIds) ? [...tweet.downvoteUserIds] : [];
+  let upvoteCount = typeof tweet.upvoteCount === "number" ? tweet.upvoteCount : 0;
+  let downvoteCount = typeof tweet.downvoteCount === "number" ? tweet.downvoteCount : 0;
+
+  if (upvoteUserIds.includes(userId)) {
+    upvoteUserIds.splice(upvoteUserIds.indexOf(userId), 1);
+    upvoteCount = Math.max(0, upvoteCount - 1);
+  }
+  if (downvoteUserIds.includes(userId)) {
+    downvoteUserIds.splice(downvoteUserIds.indexOf(userId), 1);
+    downvoteCount = Math.max(0, downvoteCount - 1);
+  }
+
+  if (vote === 1) {
+    upvoteUserIds.push(userId);
+    upvoteCount += 1;
+  } else {
+    downvoteUserIds.push(userId);
+    downvoteCount += 1;
+  }
+
+  await getDb().ref(`toldya/${toldyaId}`).update({
+    upvoteCount,
+    downvoteCount,
+    upvoteUserIds,
+    downvoteUserIds,
+  });
+
+  return { ok: true, upvoteCount, downvoteCount, upvoteUserIds, downvoteUserIds };
 });
 
 // --- Callable: claimDailyBonus – Günlük giriş bonusu ---
@@ -929,4 +1072,5 @@ exports.scheduledStashDrip = functions.pubsub
 const notifications = require("./notifications");
 exports.onPredictionResolved = notifications.onPredictionResolved;
 exports.onBetCreated = notifications.onBetCreated;
+exports.onToldyaCreated = notifications.onToldyaCreated;
 exports.onFollowerCreated = notifications.onFollowerCreated;

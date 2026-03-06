@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -16,15 +17,15 @@ class AccountSettingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Account',
+        title: AppLocalizations.of(context)!.accountTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(vertical: spacing8),
         children: <Widget>[
-          HeaderWidget('Login'),
+          HeaderWidget(AppLocalizations.of(context)!.loginHeader),
           SettingRowWidget(
-            "Username",
+            AppLocalizations.of(context)!.usernameLabel,
             subtitle: user.userName ?? '',
             // navigateTo: 'AccountSettingsPage',
           ),
@@ -34,7 +35,7 @@ class AccountSettingsPage extends StatelessWidget {
           //   subtitle: user?.contact,
           // ),
           SettingRowWidget(
-            "Email address",
+            AppLocalizations.of(context)!.emailAddressTitle,
             subtitle: user.email ?? '',
             // navigateTo: 'VerifyEmailPage',
           ),

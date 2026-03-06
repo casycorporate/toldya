@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/settings/widgets/headerWidget.dart';
@@ -16,102 +17,97 @@ class PrivacyAndSaftyPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Gizlilik ve güvenlik',
+        title: AppLocalizations.of(context)!.privacyAndSafetyTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Paylaşımlar'),
+          HeaderWidget(AppLocalizations.of(context)!.privacySharesHeader),
           SettingRowWidget(
-            "Paylaşımlarınızı koru",
-            subtitle:
-                'Paylaşımlarınızı yalnızca mevcut takipçileriniz ve ileride onay vereceğiniz kişiler görebilir.',
+            AppLocalizations.of(context)!.protectPostsTitle,
+            subtitle: AppLocalizations.of(context)!.protectPostsSubtitle,
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           SettingRowWidget(
-            "Fotoğraf etiketleme",
-            subtitle: 'Herkes sizi etiketleyebilir',
+            AppLocalizations.of(context)!.photoTaggingTitle,
+            subtitle: AppLocalizations.of(context)!.photoTaggingSubtitle,
           ),
           HeaderWidget(
-            'Canlı yayın',
+            AppLocalizations.of(context)!.liveVideoHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Canlı yayına bağlan",
-            subtitle:
-                'Açık olduğunda canlı yayın yapabilir ve yorum yapabilirsiniz; kapalı olduğunda diğerleri canlı yayın veya yorum yapamaz.',
+            AppLocalizations.of(context)!.connectToLiveVideoTitle,
+            subtitle: AppLocalizations.of(context)!.connectToLiveVideoSubtitle,
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           HeaderWidget(
-            'Keşfedilebilirlik ve kişiler',
+            AppLocalizations.of(context)!.discoverabilityHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Keşfedilebilirlik ve kişiler",
+            AppLocalizations.of(context)!.discoverabilityTitle,
             vPadding: 15,
             showDivider: false,
           ),
           SettingRowWidget(
             '',
-            subtitle:
-                'Bu verilerin sizi diğer kişilerle nasıl eşleştirmek için kullanıldığı hakkında daha fazla bilgi edinin.',
+            subtitle: AppLocalizations.of(context)!.discoverabilitySubtitle,
             vPadding: 15,
             showDivider: false,
           ),
           HeaderWidget(
-            'Güvenlik',
+            AppLocalizations.of(context)!.securityHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Hassas içerik barındırabilecek medyayı göster",
-            vPadding: 15,
-            showDivider: false,
-            visibleSwitch: true,
-          ),
-          SettingRowWidget(
-            "Paylaştığınız medyayı hassas içerik barındırabilir olarak işaretle",
+            AppLocalizations.of(context)!.showSensitiveMediaTitle,
             vPadding: 15,
             showDivider: false,
             visibleSwitch: true,
           ),
           SettingRowWidget(
-            "Engellenen hesaplar",
+            AppLocalizations.of(context)!.markSensitiveMediaTitle,
+            vPadding: 15,
+            showDivider: false,
+            visibleSwitch: true,
+          ),
+          SettingRowWidget(
+            AppLocalizations.of(context)!.blockedAccountsTitle,
             showDivider: false,
           ),
           SettingRowWidget(
-            "Sessize alınan hesaplar",
+            AppLocalizations.of(context)!.mutedAccountsTitle,
             showDivider: false,
           ),
           SettingRowWidget(
-            "Sessize alınan kelimeler",
+            AppLocalizations.of(context)!.mutedWordsTitle,
             showDivider: false,
           ),
           HeaderWidget(
-            'Konum',
+            AppLocalizations.of(context)!.locationHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Tam konum",
-            subtitle:
-                'Kapalı \n\n\nAçık olduğunda Toldya, cihazınızın tam konumunu (GPS bilgisi gibi) toplar, saklar ve kullanır. Bu sayede Toldya deneyiminizi iyileştirir; örneğin daha yerel içerik, reklam ve öneriler sunar.',
+            AppLocalizations.of(context)!.preciseLocationTitle,
+            subtitle: AppLocalizations.of(context)!.preciseLocationSubtitle,
           ),
           HeaderWidget(
-            'Kişiselleştirme ve veri',
+            AppLocalizations.of(context)!.personalizationHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Kişiselleştirme ve veri",
-            subtitle: "Tümüne izin ver",
+            AppLocalizations.of(context)!.personalizationTitle,
+            subtitle: AppLocalizations.of(context)!.allowAllSubtitle,
           ),
           SettingRowWidget(
-            "Toldya verilerinizi görüntüle",
-            subtitle:
-                "Profil bilgilerinizi ve hesabınızla ilişkili verileri inceleyin ve düzenleyin.",
+            AppLocalizations.of(context)!.viewYourDataTitle,
+            subtitle: AppLocalizations.of(context)!.viewYourDataSubtitle,
           ),
         ],
       ),

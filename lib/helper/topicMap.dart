@@ -1,13 +1,14 @@
 
 class topic{
-  static final String gundem="Akış";
-  static final String followList="Takip";
-  static final String favList="Favori";
-  static final Map<String, String> topicMap = {
-    'spor': 'Spor',
-    'eco': 'Ekonomi',
-    'fun': 'Eğlence',
-    'politic': 'Siyaset'
+  // Internal keys for topics – these are NOT user-facing strings.
+  static const String gundem = 'flow';
+  static const String followList = 'follow';
+  static const String favList = 'favorite';
+  static const Map<String, String> topicMap = {
+    'spor': 'sports',
+    'eco': 'economy',
+    'fun': 'entertainment',
+    'politic': 'politics'
   };
   static String getKeyFromVal(String val){
     try {
