@@ -379,14 +379,14 @@ Widget customAlert(BuildContext context,
     actions: <Widget>[
       TextButton(
         onPressed: () {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
         },
         child: Text(cancelText ?? l10n.cancel,
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
       ),
       TextButton(
         onPressed: () {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           onPressedOk();
         },
         child: Text(okText ?? l10n.confirm, style: TextStyle(color: Theme.of(context).primaryColor)),
@@ -615,7 +615,7 @@ openImagePickerUseCameraAndGallery(
         child: Column(
           children: <Widget>[
             Text(
-              'Bir resim seçin',
+              AppLocalizations.of(context)!.selectImage,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
@@ -627,7 +627,7 @@ openImagePickerUseCameraAndGallery(
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
                     child: Text(
-                      'Kamerayı Kullan',
+                      AppLocalizations.of(context)!.useCameraLabel,
                       style:
                           TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                     ),
@@ -646,7 +646,7 @@ openImagePickerUseCameraAndGallery(
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
                     child: Text(
-                      'Galeriyi Kullan',
+                      AppLocalizations.of(context)!.useGalleryLabel,
                       style:
                           TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                     ),
@@ -691,7 +691,7 @@ openImagePicker(BuildContext context, Function onImageSelected,int type) {
         child: Column(
           children: <Widget>[
             Text(
-              'Bir resim seçin',
+              AppLocalizations.of(context)!.selectImage,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Expanded(
@@ -723,6 +723,6 @@ openImagePicker(BuildContext context, Function onImageSelected,int type) {
 getImage(BuildContext context, ImageSource source, Function onImageSelected) {
   ImagePicker().pickImage(source: source, imageQuality: 50).then((XFile? file) {
     if (file != null) onImageSelected(File(file.path));
-    Navigator.pop(context);
+    if (context.mounted && Navigator.canPop(context)) Navigator.pop(context);
   });
 }

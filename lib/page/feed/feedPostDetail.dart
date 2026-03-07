@@ -57,10 +57,12 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
     var state = Provider.of<FeedState>(context);
     final model = (state.toldyaDetailModel?.length ?? 0) > 0 ? state.toldyaDetailModel!.last : null;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
         Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
-        return true;
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
       },
       child: Scaffold(
         key: scaffoldKey,
@@ -72,7 +74,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
             color: Colors.white,
             onPressed: () {
               Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
-              Navigator.of(context).pop();
+              if (Navigator.canPop(context)) Navigator.of(context).pop();
             },
           ),
           title: Text(
@@ -215,10 +217,10 @@ class _PredictionDetailBody extends StatelessWidget {
     final balance = authState.userModel?.pegCount ?? 0;
     final xp = authState.userModel?.xp ?? 0;
     final maxBet = [balance, Tokenomics.maxBetByRank(balance, xp), Tokenomics.maxBetByPool(total)].reduce((a, b) => a < b ? a : b);
-    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
+    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
     final userName = model.user?.userName ?? model.user?.displayName ?? '';
-    final displayHandle = userName.isNotEmpty ? (userName.startsWith('@') ? userName : '@$userName') : '@kullanıcı';
+    final displayHandle = userName.isNotEmpty ? (userName.startsWith('@') ? userName : '@$userName') : AppLocalizations.of(context)!.userHandlePlaceholder;
     final percentNo = 1.0 - percent;
 
     return Padding(
@@ -278,7 +280,7 @@ class _PredictionDetailBody extends StatelessWidget {
                 ),
               ),
               Text(
-                kapanisText.isNotEmpty ? 'Kapanış: $kapanisText' : '',
+                kapanisText.isNotEmpty ? AppLocalizations.of(context)!.closingAt(kapanisText) : '',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
                 textAlign: TextAlign.end,
               ),
@@ -290,7 +292,7 @@ class _PredictionDetailBody extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'YES ${(percent * 100).round()}%',
+                '${AppLocalizations.of(context)!.yes} ${(percent * 100).round()}%',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -298,7 +300,7 @@ class _PredictionDetailBody extends StatelessWidget {
                 ),
               ),
               Text(
-                'NO ${(percentNo * 100).round()}%',
+                '${AppLocalizations.of(context)!.no} ${(percentNo * 100).round()}%',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -322,7 +324,7 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Maksimum bahis: $maxBet token',
+            AppLocalizations.of(context)!.maxBetTokens(maxBet.toString()),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           ),
           SizedBox(height: 16),
@@ -340,7 +342,7 @@ class _PredictionDetailBody extends StatelessWidget {
                       height: 56,
                       alignment: Alignment.center,
                       child: Text(
-                        'Evet ile bahis yap',
+                        AppLocalizations.of(context)!.betYesLabel,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -363,7 +365,7 @@ class _PredictionDetailBody extends StatelessWidget {
                       height: 56,
                       alignment: Alignment.center,
                       child: Text(
-                        'Hayır ile bahis yap',
+                        AppLocalizations.of(context)!.betNoLabel,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -379,7 +381,7 @@ class _PredictionDetailBody extends StatelessWidget {
           SizedBox(height: 24),
           // 5. Son Bahisler başlığı
           Text(
-            'Son Bahisler',
+            AppLocalizations.of(context)!.recentBetsTitle,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           SizedBox(height: 12),
@@ -501,7 +503,7 @@ class _RecentBetsList extends StatelessWidget {
             builder: (context, AsyncSnapshot snapshot) {
               final user = snapshot.data;
               final name = user?.displayName ?? user?.userName ?? e.userId;
-              final displayName = name.length > 1 ? name : 'Kullanıcı';
+              final displayName = name.length > 1 ? name : AppLocalizations.of(context)!.user;
               final tokenColor = e.isYes ? AppNeon.green : AppNeon.red;
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),

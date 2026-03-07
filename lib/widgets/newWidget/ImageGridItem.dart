@@ -134,7 +134,7 @@ class _ImageGridItemState extends State<ImageGridItem> {
           ),
         ),
         onTap: () {widget.onImageSelected(imageFile.toString());
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) Navigator.pop(context);
         }
     );
   }

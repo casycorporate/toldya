@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
@@ -32,8 +33,10 @@ class AuthState extends AppState {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
   dabase.Query? _profileQuery;
+  dabase.DatabaseReference? _mutedPostIdsRef;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
+  List<String> _mutedPostIds = [];
   /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
   String? _pendingProfileRequestId;
 
@@ -51,17 +54,29 @@ class AuthState extends AppState {
     _profileUserModelList?.removeLast();
   }
 
-  /// Başka bir kullanıcının profil sayfası kapanırken çağrılır. Sadece listede son kullanıcı bu profileId ise kaldırılır (async race önlenir).
-  /// Liste boş kalırsa kendi kullanıcıyı ekler; böylece ana ekranda profil sekmesi siyah kalmaz.
+  /// Profil sayfası kapanırken çağrılır (AppBar geri veya sistem geri). Listede son kullanıcı bu sayfaya aitse kaldırılır (async race önlenir).
+  /// profileId null/boş = "kendi profilim" sayfası kapanıyor; dolu = başka kullanıcı profil sayfası. Liste boş kalırsa ensureProfileIsCurrentUser() ile ana ekran siyah kalmaz.
+  /// State-holding screens: back (AppBar or system) should run this cleanup once, then Navigator.pop.
   void profilePageClosing(String? profileId) {
+    debugPrint('[Profile] profilePageClosing profileId=$profileId listLength=${_profileUserModelList?.length} lastUserId=${_profileUserModelList?.isNotEmpty == true ? _profileUserModelList!.last.userId : null}');
     _pendingProfileRequestId = null;
-    if (profileId == null || profileId.isEmpty) return;
-    if (_profileUserModelList != null &&
-        _profileUserModelList!.isNotEmpty &&
-        _profileUserModelList!.last.userId == profileId) {
-      _profileUserModelList!.removeLast();
+    final bool isMyProfile = profileId == null || profileId.isEmpty;
+    if (_profileUserModelList != null && _profileUserModelList!.isNotEmpty) {
+      final String? lastUserId = _profileUserModelList!.last.userId;
+      final bool removeLast = isMyProfile
+          ? (lastUserId == _userModel?.userId)
+          : (lastUserId == profileId);
+      if (removeLast) {
+        _profileUserModelList!.removeLast();
+      }
     }
     if (_profileUserModelList == null || _profileUserModelList!.isEmpty) {
+      debugPrint('[Profile] list empty after close, calling ensureProfileIsCurrentUser _userModel=${_userModel != null}');
+      ensureProfileIsCurrentUser();
+    } else if (isMyProfile &&
+        _userModel != null &&
+        _profileUserModelList!.last.userId != _userModel!.userId) {
+      // "Kendi profilim" kapatıldı; geri dönünce Profil sekmesi kendi kullanıcıyı göstermeli.
       ensureProfileIsCurrentUser();
     } else {
       notifyListeners();
@@ -70,6 +85,7 @@ class AuthState extends AppState {
 
   /// "Kendi profilim" sekmesi görünürken profileUserModel başkasıysa (örn. alt bardan dönüldü), listeyi giriş yapan kullanıcıya çevirir.
   void ensureProfileIsCurrentUser() {
+    debugPrint('[Profile] ensureProfileIsCurrentUser _userModel=${_userModel != null} userId=${_userModel?.userId}');
     if (_userModel == null) return;
     if (_profileUserModelList == null ||
         _profileUserModelList!.isEmpty ||
@@ -106,10 +122,43 @@ class AuthState extends AppState {
       if (_profileQuery == null && user != null) {
         _profileQuery = kDatabase.child("profile").child(user!.uid);
         _profileQuery!.onValue.listen(_onProfileChanged);
+        _mutedPostIdsRef = kDatabase.child("profile").child(user!.uid).child("mutedPostIds");
+        _mutedPostIdsRef!.onValue.listen((event) {
+          if (event.snapshot.value != null) {
+            final list = event.snapshot.value;
+            if (list is List) {
+              _mutedPostIds = list.map((e) => e.toString()).toList();
+            } else {
+              _mutedPostIds = [];
+            }
+          } else {
+            _mutedPostIds = [];
+          }
+          notifyListeners();
+        });
       }
     } catch (error) {
       cprint(error, errorIn: 'databaseInit');
     }
+  }
+
+  bool isPostMuted(String postId) {
+    if (postId.isEmpty) return false;
+    return _mutedPostIds.contains(postId);
+  }
+
+  Future<void> addMutedPostId(String postId) async {
+    if (postId.isEmpty || _mutedPostIds.contains(postId)) return;
+    _mutedPostIds = List.from(_mutedPostIds)..add(postId);
+    await _mutedPostIdsRef?.set(_mutedPostIds);
+    notifyListeners();
+  }
+
+  Future<void> removeMutedPostId(String postId) async {
+    if (postId.isEmpty) return;
+    _mutedPostIds = List.from(_mutedPostIds)..remove(postId);
+    await _mutedPostIdsRef?.set(_mutedPostIds);
+    notifyListeners();
   }
 
   /// Verify user's credentials for login
@@ -596,6 +645,41 @@ class AuthState extends AppState {
     }
   }
 
+
+  /// Follow or unfollow a user by userId (e.g. from bottom sheet). Does not use profileUserModel.
+  Future<void> followUserByUserId(String targetUserId, {bool removeFollower = false}) async {
+    final currentUser = userModel;
+    if (currentUser == null || targetUserId.isEmpty) return;
+    final targetUser = await getuserDetail(targetUserId);
+    if (targetUser == null) return;
+    try {
+      if (removeFollower) {
+        targetUser.followersList?.remove(currentUser.userId);
+        currentUser.followingList?.remove(targetUserId);
+      } else {
+        targetUser.followersList ??= [];
+        targetUser.followersList!.add(currentUser.userId ?? '');
+        currentUser.followingList ??= [];
+        currentUser.followingList!.add(targetUserId);
+      }
+      targetUser.followers = targetUser.followersList?.length ?? 0;
+      currentUser.following = currentUser.followingList?.length ?? 0;
+      await kDatabase
+          .child('profile')
+          .child(targetUserId)
+          .child('followerList')
+          .set(targetUser.followersList);
+      await kDatabase
+          .child('profile')
+          .child(currentUser.userId ?? '')
+          .child('followingList')
+          .set(currentUser.followingList);
+      notifyListeners();
+    } catch (error) {
+      cprint(error, errorIn: 'followUserByUserId');
+      rethrow;
+    }
+  }
 
   /// Follow / Unfollow user
   ///

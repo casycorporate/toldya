@@ -26,6 +26,8 @@ class FeedModel {
   List<String>? replyToldyaKeyList;
   UserModel? user;
   List<String>? reportList;
+  /// Report reasons by userId (e.g. "spam", "harassment") for moderation
+  Map<String, String>? reportReasons;
   List<String>? favList;
   /// Kanıt kaynağı (Oracle): Bahsin neye göre sonuçlanacağı
   String? oracleSource;
@@ -64,6 +66,7 @@ class FeedModel {
     this.likeList,
     this.tags,
     this.reportList,
+    this.reportReasons,
     this.favList,
     this.user,
     this.topic,
@@ -99,6 +102,7 @@ class FeedModel {
       "unlikeList": unlikeList?.map((e) => e.toJson()).toList() ?? [],
       "tags": tags,
       "reportList": reportList,
+      "reportReasons": reportReasons,
       "favList": favList,
       "topic": topic,
       "replyToldyaKeyList": replyToldyaKeyList,
@@ -198,6 +202,13 @@ class FeedModel {
       }
     } else {
       reportList = [];
+    }
+    if (map['reportReasons'] != null && map['reportReasons'] is Map) {
+      reportReasons = Map<String, String>.from(
+        (map['reportReasons'] as Map).map((k, v) => MapEntry(k.toString(), v.toString())),
+      );
+    } else {
+      reportReasons = null;
     }
     //favList
     if (map['favList'] != null) {

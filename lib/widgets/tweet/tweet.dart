@@ -184,7 +184,7 @@ class _ToldyaBody extends StatelessWidget {
         socialMetaTagParameters: SocialMetaTagParameters(
             description: model.description ??
                 AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
-            title: "Toldya",
+            title: AppLocalizations.of(context)!.appTitle,
             imageUrl: Uri.parse(
                 "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
       );
@@ -475,8 +475,8 @@ class _ToldyaDetailBody extends StatelessWidget {
         "toldya/${model.key}",
         socialMetaTagParameters: SocialMetaTagParameters(
             description: model.description ??
-                "${model.user?.displayName ?? ''} Toldya uygulamasında bir toldya paylaştı.",
-            title: "Toldya",
+                AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
+            title: AppLocalizations.of(context)!.appTitle,
             imageUrl: Uri.parse(
                 "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
       );

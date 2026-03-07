@@ -143,7 +143,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: AppColor.primary,
                   icon: Icon(Icons.close),
                   onPressed: () {
-                    Navigator.pop(context);
+                    if (Navigator.canPop(context)) Navigator.pop(context);
                   },
                 )
               : _getUserAvatar(context),

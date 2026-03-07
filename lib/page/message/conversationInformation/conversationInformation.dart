@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
@@ -79,15 +80,15 @@ class ConversationInformation extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Conversation information',
+          AppLocalizations.of(context)!.conversationInformationTitle,
         ),
       ),
       body: ListView(
         children: <Widget>[
           _header(context, user),
-          HeaderWidget('Notifications'),
+          HeaderWidget(AppLocalizations.of(context)!.notificationsTitle),
           SettingRowWidget(
-            "Mute conversation",
+            AppLocalizations.of(context)!.muteConversation,
             visibleSwitch: true,
           ),
           Container(
@@ -95,14 +96,20 @@ class ConversationInformation extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
           ),
           SettingRowWidget(
-            "Block ${user.userName}",
+            AppLocalizations.of(context)!.blockUser(user.userName ?? ''),
             textColor: ToldyaColor.dodgetBlue,
             showDivider: false,
           ),
-          SettingRowWidget("Report ${user.userName}",
-              textColor: ToldyaColor.dodgetBlue, showDivider: false),
-          SettingRowWidget("Delete conversation",
-              textColor: ToldyaColor.ceriseRed, showDivider: false),
+          SettingRowWidget(
+            AppLocalizations.of(context)!.reportUser(user.userName ?? ''),
+            textColor: ToldyaColor.dodgetBlue,
+            showDivider: false,
+          ),
+          SettingRowWidget(
+            AppLocalizations.of(context)!.deleteConversationTitle,
+            textColor: ToldyaColor.ceriseRed,
+            showDivider: false,
+          ),
         ],
       ),
     );

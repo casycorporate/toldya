@@ -37,7 +37,7 @@ class LanguagePage extends StatelessWidget {
                       : null,
                   onTap: () async {
                     await appState.setLocale(Locale(opt.code));
-                    if (context.mounted) Navigator.of(context).pop();
+                    if (context.mounted && Navigator.canPop(context)) Navigator.of(context).pop();
                   },
                 ))
             .toList(),

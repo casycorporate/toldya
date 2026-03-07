@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -36,6 +38,7 @@ class _HomePageState extends State<HomePage> {
   final refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
   int pageIndex = 0;
   late StreamSubscription<PushNotificationModel> pushNotificationSubscription;
+  bool _pendingExit = false;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -198,7 +201,7 @@ class _HomePageState extends State<HomePage> {
         return NotificationPage(scaffoldKey: _scaffoldKey);
         break;
       case 3:
-        return ProfilePage();
+        return ProfilePage(isTabContent: true, parentScaffoldKey: _scaffoldKey);
         break;
       default:
         return FeedPage(scaffoldKey: _scaffoldKey);
@@ -242,16 +245,38 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final bool showFab = MediaQuery.of(context).viewInsets.bottom==0.0;
-    return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: true,
-      key: _scaffoldKey,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: showFab ? _floatingActionButton(context) : null,
-      bottomNavigationBar: BottomMenubar(),
-      drawer: SidebarMenu(),
-      body: _body(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        final appState = Provider.of<AppState>(context, listen: false);
+        if (appState.pageIndex != 0) {
+          appState.setpageIndex = 0;
+          return;
+        }
+        if (_pendingExit) {
+          SystemNavigator.pop();
+          return;
+        }
+        _pendingExit = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.pressBackAgainToExit)),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _pendingExit = false);
+        });
+      },
+      child: Scaffold(
+        extendBody: true,
+        resizeToAvoidBottomInset: true,
+        key: _scaffoldKey,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: showFab ? _floatingActionButton(context) : null,
+        bottomNavigationBar: BottomMenubar(),
+        drawer: SidebarMenu(),
+        body: _body(),
+      ),
     );
   }
 }

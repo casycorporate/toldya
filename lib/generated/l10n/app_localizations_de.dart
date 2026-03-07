@@ -80,6 +80,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get back => 'Zurück';
 
   @override
+  String get pressBackAgainToExit => 'Zum Beenden erneut zurück tippen';
+
+  @override
   String get signUpNow => 'Jetzt registrieren';
 
   @override
@@ -163,6 +166,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get userBlocked => 'Nutzer blockiert.';
+
+  @override
+  String get userUnblocked => 'Nutzer entblockiert.';
 
   @override
   String get pleaseSelectBetAmount => 'Bitte wähle einen Wetteinsatz!';
@@ -1065,6 +1071,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get delete => 'Löschen';
 
   @override
+  String get editPrediction => 'Vorhersage bearbeiten';
+
+  @override
+  String get predictionUpdated => 'Vorhersage aktualisiert';
+
+  @override
   String muteUser(String name) {
     return '$name stummschalten';
   }
@@ -1246,6 +1258,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get topicGeneral => 'Allgemein';
 
   @override
+  String get userHandlePlaceholder => '@Benutzer';
+
+  @override
+  String closingAt(String time) {
+    return 'Schließt: $time';
+  }
+
+  @override
   String yesPercent(int percent) {
     return 'Ja $percent';
   }
@@ -1272,4 +1292,121 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get bottomNavProfile => 'Profil';
+
+  @override
+  String get goToProfile => 'Zum Profil';
+
+  @override
+  String get muteNotificationsForPost =>
+      'Benachrichtigungen für diese Vorhersage stummschalten';
+
+  @override
+  String get unmuteNotificationsForPost =>
+      'Benachrichtigungen für diese Vorhersage aktivieren';
+
+  @override
+  String get notificationsMuted => 'Benachrichtigungen stummgeschaltet';
+
+  @override
+  String get notificationsUnmuted => 'Benachrichtigungen aktiviert';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonHarassment => 'Belästigung oder Hass';
+
+  @override
+  String get reportReasonMisleading => 'Irreführende Informationen';
+
+  @override
+  String get reportReasonOther => 'Sonstiges';
+
+  @override
+  String get reportReceived => 'Deine Meldung wurde erhalten';
+
+  @override
+  String get unfollow => 'Entfolgen';
+
+  @override
+  String get betAmountLabel => 'Wetteinsatz';
+
+  @override
+  String get approvalPendingStatus => 'Auswahl ausstehend';
+
+  @override
+  String approvalSelectedForPost(String choice) {
+    return 'Für Beitrag $choice ausgewählt';
+  }
+
+  @override
+  String get betYesLabel => 'Mit Ja wetten';
+
+  @override
+  String get betNoLabel => 'Mit Nein wetten';
+
+  @override
+  String get recentBetsTitle => 'Letzte Wetten';
+
+  @override
+  String get conversationInformationTitle => 'Unterhaltungsinformationen';
+
+  @override
+  String reportUser(String name) {
+    return '$name melden';
+  }
+
+  @override
+  String get deleteConversationTitle => 'Unterhaltung löschen';
+
+  @override
+  String get receiveMessageRequestsTitle => 'Nachrichtenanfragen erhalten';
+
+  @override
+  String get showReadReceiptsTitle => 'Gelesen-Bestätigungen anzeigen';
+
+  @override
+  String get receiveMessageRequestsSubtitle =>
+      'Du kannst Direktnachrichten-Anfragen von allen erhalten, auch wenn du ihnen nicht folgst.';
+
+  @override
+  String get showReadReceiptsSubtitle =>
+      'Wenn dir jemand eine Nachricht sendet, sehen andere in der Unterhaltung, dass du sie gelesen hast. Wenn du diese Einstellung deaktivierst, siehst du auch keine Gelesen-Bestätigungen von anderen.';
+
+  @override
+  String get pollEnded => 'Umfrage beendet';
+
+  @override
+  String get pollEndedIn => 'Umfrage endet in';
+
+  @override
+  String get pollDay => 'Tag';
+
+  @override
+  String get pollDays => 'Tage';
+
+  @override
+  String get pollHour => 'Stunde';
+
+  @override
+  String get pollHours => 'Stunden';
+
+  @override
+  String get pollMin => 'Min';
+
+  @override
+  String get selectImage => 'Ein Bild auswählen';
+
+  @override
+  String get useCameraLabel => 'Kamera verwenden';
+
+  @override
+  String get useGalleryLabel => 'Galerie verwenden';
+
+  @override
+  String get emptyPredictionsDefaultTitle => 'Noch keine Vorhersagen';
+
+  @override
+  String get emptyPredictionsDefaultSubtitle =>
+      'Neue Vorhersagen erscheinen hier.\nTippe auf den Button unten, um eine Vorhersage zu erstellen.';
 }

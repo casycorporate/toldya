@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 
 /// Ortak boş durum içeriği: minimalist dark arka plan, ikon, başlık, alt yazı.
 class EmptyStateContent extends StatelessWidget {
   const EmptyStateContent({
     Key? key,
-    this.title = 'Henüz bir tahmin yok',
-    this.subtitle = 'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.',
+    this.title,
+    this.subtitle,
   }) : super(key: key);
 
-  final String title;
-  final String subtitle;
+  final String? title;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final displayTitle = title ?? l10n.emptyPredictionsDefaultTitle;
+    final displaySubtitle = subtitle ?? l10n.emptyPredictionsDefaultSubtitle;
     return Container(
       color: MockupDesign.background,
       height: double.infinity,
@@ -31,7 +35,7 @@ class EmptyStateContent extends StatelessWidget {
               ),
               SizedBox(height: 32),
               Text(
-                title,
+                displayTitle,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -41,7 +45,7 @@ class EmptyStateContent extends StatelessWidget {
               ),
               SizedBox(height: 16),
               Text(
-                subtitle,
+                displaySubtitle,
                 style: TextStyle(
                   color: Colors.white54,
                   fontSize: 16,
@@ -95,7 +99,7 @@ class EmptyStateScreen extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          'Toldya',
+          AppLocalizations.of(context)!.appTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 20,

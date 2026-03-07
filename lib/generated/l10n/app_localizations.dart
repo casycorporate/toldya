@@ -238,6 +238,12 @@ abstract class AppLocalizations {
   /// **'Geri'**
   String get back;
 
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkmak için tekrar geri tuşuna basın'**
+  String get pressBackAgainToExit;
+
   /// No description provided for @signUpNow.
   ///
   /// In tr, this message translates to:
@@ -399,6 +405,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kullanıcı engellendi.'**
   String get userBlocked;
+
+  /// No description provided for @userUnblocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Engel kaldırıldı.'**
+  String get userUnblocked;
 
   /// No description provided for @pleaseSelectBetAmount.
   ///
@@ -2044,6 +2056,18 @@ abstract class AppLocalizations {
   /// **'Sil'**
   String get delete;
 
+  /// No description provided for @editPrediction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmini düzenle'**
+  String get editPrediction;
+
+  /// No description provided for @predictionUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin güncellendi'**
+  String get predictionUpdated;
+
   /// No description provided for @muteUser.
   ///
   /// In tr, this message translates to:
@@ -2356,6 +2380,18 @@ abstract class AppLocalizations {
   /// **'Genel'**
   String get topicGeneral;
 
+  /// No description provided for @userHandlePlaceholder.
+  ///
+  /// In tr, this message translates to:
+  /// **'@kullanıcı'**
+  String get userHandlePlaceholder;
+
+  /// No description provided for @closingAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapanış: {time}'**
+  String closingAt(String time);
+
   /// No description provided for @yesPercent.
   ///
   /// In tr, this message translates to:
@@ -2403,6 +2439,222 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Profil'**
   String get bottomNavProfile;
+
+  /// No description provided for @goToProfile.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profile git'**
+  String get goToProfile;
+
+  /// No description provided for @muteNotificationsForPost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tahmin için bildirimleri kapat'**
+  String get muteNotificationsForPost;
+
+  /// No description provided for @unmuteNotificationsForPost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tahmin için bildirimleri aç'**
+  String get unmuteNotificationsForPost;
+
+  /// No description provided for @notificationsMuted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler kapatıldı'**
+  String get notificationsMuted;
+
+  /// No description provided for @notificationsUnmuted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler açıldı'**
+  String get notificationsUnmuted;
+
+  /// No description provided for @reportReasonSpam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Spam'**
+  String get reportReasonSpam;
+
+  /// No description provided for @reportReasonHarassment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Taciz / Nefret'**
+  String get reportReasonHarassment;
+
+  /// No description provided for @reportReasonMisleading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yanıltıcı bilgi'**
+  String get reportReasonMisleading;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportReceived.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şikayetiniz alındı'**
+  String get reportReceived;
+
+  /// No description provided for @unfollow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takipten çık'**
+  String get unfollow;
+
+  /// No description provided for @betAmountLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bahis miktarı'**
+  String get betAmountLabel;
+
+  /// No description provided for @approvalPendingStatus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçim yapılmak üzere bekleyen statüde'**
+  String get approvalPendingStatus;
+
+  /// No description provided for @approvalSelectedForPost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönderi için {choice} seçildi'**
+  String approvalSelectedForPost(String choice);
+
+  /// No description provided for @betYesLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet ile bahis yap'**
+  String get betYesLabel;
+
+  /// No description provided for @betNoLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hayır ile bahis yap'**
+  String get betNoLabel;
+
+  /// No description provided for @recentBetsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son Bahisler'**
+  String get recentBetsTitle;
+
+  /// No description provided for @conversationInformationTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görüşme bilgisi'**
+  String get conversationInformationTitle;
+
+  /// No description provided for @reportUser.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rapor et: {name}'**
+  String reportUser(String name);
+
+  /// No description provided for @deleteConversationTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görüşmeyi sil'**
+  String get deleteConversationTitle;
+
+  /// No description provided for @receiveMessageRequestsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mesaj isteklerini al'**
+  String get receiveMessageRequestsTitle;
+
+  /// No description provided for @showReadReceiptsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okundu bilgisini göster'**
+  String get showReadReceiptsTitle;
+
+  /// No description provided for @receiveMessageRequestsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip etmediğiniz kişiler de size doğrudan mesaj isteği gönderebilir.'**
+  String get receiveMessageRequestsSubtitle;
+
+  /// No description provided for @showReadReceiptsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Biri size mesaj gönderdiğinde, görüşmedeki kişiler gördüğünüzü bilir. Bu ayarı kapatırsanız, siz de başkalarının okundu bilgisini göremezsiniz.'**
+  String get showReadReceiptsSubtitle;
+
+  /// No description provided for @pollEnded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anket bitti'**
+  String get pollEnded;
+
+  /// No description provided for @pollEndedIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anket şu kadar sürede bitiyor'**
+  String get pollEndedIn;
+
+  /// No description provided for @pollDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün'**
+  String get pollDay;
+
+  /// No description provided for @pollDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün'**
+  String get pollDays;
+
+  /// No description provided for @pollHour.
+  ///
+  /// In tr, this message translates to:
+  /// **'saat'**
+  String get pollHour;
+
+  /// No description provided for @pollHours.
+  ///
+  /// In tr, this message translates to:
+  /// **'saat'**
+  String get pollHours;
+
+  /// No description provided for @pollMin.
+  ///
+  /// In tr, this message translates to:
+  /// **'dk'**
+  String get pollMin;
+
+  /// No description provided for @selectImage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir resim seçin'**
+  String get selectImage;
+
+  /// No description provided for @useCameraLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kamerayı kullan'**
+  String get useCameraLabel;
+
+  /// No description provided for @useGalleryLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Galeriyi kullan'**
+  String get useGalleryLabel;
+
+  /// No description provided for @emptyPredictionsDefaultTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz bir tahmin yok'**
+  String get emptyPredictionsDefaultTitle;
+
+  /// No description provided for @emptyPredictionsDefaultSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.'**
+  String get emptyPredictionsDefaultSubtitle;
 }
 
 class _AppLocalizationsDelegate

@@ -19,7 +19,7 @@ class GoogleLoginButton extends StatelessWidget {
     state.handleGoogleSignIn().then((status) {
       loader.hideLoader();
       if (state.user != null) {
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) Navigator.pop(context);
         loginCallback?.call();
       } else {
         cprint('Unable to login', errorIn: '_googleLoginButton');

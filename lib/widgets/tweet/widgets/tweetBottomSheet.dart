@@ -1,7 +1,5 @@
-import 'package:toldya/model/user.dart';
 import 'package:toldya/model/userPegModel.dart';
 import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
-import 'package:toldya/state/searchState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +8,15 @@ import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
+
+const Color _kToldyaSheetBackground = Color(0xFF1A1F2E);
 
 class ToldyaBottomSheet {
   Widget toldyaOptionIcon(BuildContext context,
@@ -40,395 +41,83 @@ class ToldyaBottomSheet {
         ));
   }
 
+  static const Color _destructiveColor = Color(0xFFFF6B6B);
+  static const Color _sheetBackground = _kToldyaSheetBackground;
+
   void _openbottomSheet(BuildContext context,
       {required ToldyaType type,
         required FeedModel model,
         required GlobalKey<ScaffoldState> scaffoldKey}) async {
-    var authState = Provider.of<AuthState>(context, listen: false);
-    bool isMyToldya = authState.userId == model.userId;
-    bool isAdmin = authState.userModel?.role == Role.adminRole;
-    bool isReported = model.reportList?.contains(authState.userId) ?? false;
-    bool isInBlackList = authState.userModel?.blackList?.contains(model.userId ?? '') ?? false;
     await showModalBottomSheet(
       backgroundColor: Colors.transparent,
       context: context,
-      builder: (context) {
+      builder: (sheetContext) {
         return Container(
-            padding: EdgeInsets.only(bottom: 0),
-            height: fullHeight(context) *
-                (type == ToldyaType.Toldya
-                    ? (isMyToldya ? .50 : .44)
-                    : (isMyToldya ? .38 : .52)),
-            width: fullWidth(context),
-            decoration: BoxDecoration(
-              color: Color(0xFF1A1F2E).withOpacity(0.95),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          width: fullWidth(sheetContext),
+          decoration: BoxDecoration(
+            color: _sheetBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: _ToldyaActionSheetContent(
+              model: model,
+              type: type,
+              scaffoldKey: scaffoldKey,
+              parentContext: context,
             ),
-            child: type == ToldyaType.Toldya
-                ? _tweetOptions(context,
-                isAdmin: isAdmin,
-                scaffoldKey: scaffoldKey,
-                isMyToldya: isMyToldya,
-                model: model,
-                isReported: isReported,
-                isInBlackList: isInBlackList,
-                type: type)
-                : _tweetDetailOptions(context,
-                scaffoldKey: scaffoldKey,
-                isMyToldya: isMyToldya,
-                model: model,
-                type: type));
+          ),
+        );
       },
     );
   }
 
-  Widget _tweetDetailOptions(BuildContext context,
-      {required bool isMyToldya,
-        required FeedModel model,
-        required ToldyaType type,
-        required GlobalKey<ScaffoldState> scaffoldKey}) {
-    return Column(
-      children: <Widget>[
-        Container(
-          width: fullWidth(context) * .1,
-          height: 5,
-          decoration: BoxDecoration(
-            color: Theme
-                .of(context)
-                .dividerColor,
-            borderRadius: BorderRadius.all(
-              Radius.circular(10),
-            ),
-          ),
-        ),
-        _widgetBottomSheetRow(context, AppIcon.link,
-            text: AppLocalizations.of(context)!.copyLink, isEnable: true, onPressed: () async {
-              var uri = await Utility.createLinkToCopy(
-                context,
-                "toldya/${model.key}",
-                socialMetaTagParameters: SocialMetaTagParameters(
-                    description: model.description ??
-                        AppLocalizations.of(context)!.sharedPostDescription(model.user?.displayName ?? ''),
-                    title: AppLocalizations.of(context)!.postTitle,
-                    imageUrl: Uri.parse(
-                        "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
-              );
-
-              Navigator.pop(context);
-              copyToClipBoard(
-                  scaffoldKey: scaffoldKey,
-                  text: uri.toString(),
-                  message: AppLocalizations.of(context)!.copiedToClipboard);
-            }),
-        // isMyToldya
-        //     ? _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.unFollow,
-        //         text: 'Profile sabitle',
-        //       )
-        //     : _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.unFollow,
-        //         text: '${model.user.displayName} Takibi bırak ',
-        //       ),
-        isMyToldya
-            ? _widgetBottomSheetRow(
-          context,
-          AppIcon.delete,
-          text: AppLocalizations.of(context)!.delete,
-          onPressed: () {
-            _deleteToldya(
-              context,
-              type,
-              model.key ?? '',
-              parentkey: model.parentkey,
-            );
-          },
-          isEnable: true,
-          isDestructive: true,
-        )
-            : Container(),
-        isMyToldya
-            ? Container()
-            : _widgetBottomSheetRow(
-          context,
-          AppIcon.mute,
-          text: AppLocalizations.of(context)!.muteUser(model.user?.displayName ?? ''),
-        ),
-        _widgetBottomSheetRow(
-          context,
-          AppIcon.mute,
-          text: AppLocalizations.of(context)!.muteConversation,
-        ),
-        _widgetBottomSheetRow(
-          context,
-          AppIcon.viewHidden,
-          text: AppLocalizations.of(context)!.viewHiddenReplies,
-        ),
-        isMyToldya
-            ? Container()
-            : _widgetBottomSheetRow(
-          context,
-          AppIcon.block,
-          text: AppLocalizations.of(context)!.blockUser(model.user?.displayName ?? ''),
-        ),
-        isMyToldya
-            ? Container()
-            : _widgetBottomSheetRow(
-          context,
-          AppIcon.report,
-          text: AppLocalizations.of(context)!.report,
-        ),
-        SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _tweetOptions(BuildContext context,
-      {required bool isMyToldya,
-        required bool isAdmin,
-        required bool isReported,
-        required bool isInBlackList,
-        required FeedModel model,
-        required ToldyaType type,
-        required GlobalKey<ScaffoldState> scaffoldKey}) {
-    return Column(
-      children: <Widget>[
-        Container(
-          margin: EdgeInsets.only(top: 12, bottom: 8),
-          height: 4,
-          width: 40,
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        _widgetBottomSheetRow(context, AppIcon.link,
-            text: AppLocalizations.of(context)!.copyLink, isEnable: true, onPressed: () async {
-              var uri = await Utility.createLinkToCopy(
-                context,
-                "toldya/${model.key ?? ''}",
-                socialMetaTagParameters: SocialMetaTagParameters(
-                    description: model.description ??
-                        AppLocalizations.of(context)!.sharedPostDescription(model.user?.displayName ?? ''),
-                    title: AppLocalizations.of(context)!.postTitle,
-                    imageUrl: Uri.parse(
-                        "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
-              );
-              Navigator.pop(context);
-              copyToClipBoard(
-                  scaffoldKey: scaffoldKey,
-                  text: uri.toString(),
-                  message: AppLocalizations.of(context)!.copiedToClipboard);
-            }),
-        isAdmin
-            ? _widgetBottomSheetRow(context, AppIcon.thumbpinFill,
-            text: AppLocalizations.of(context)!.sendForApproval, isEnable: true, onPressed: () {
-              _sendApproval(context, model, Statu.statusPending,
-                  ConfirmWinner.None, scaffoldKey);
-            })
-            : Container(),
-        // _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.sadFace,
-        //         text: 'Bununla ilgilenmiyorum',
-        //         // text: 'Not interested in this',
-        //       ),
-        // isMyToldya
-        //     ? _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.thumbpinFill,
-        //         text: 'Profile sabitle',
-        //       )
-        //     : _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.sadFace,
-        //         text: 'Bununla ilgilenmiyorum',
-        //       ),
-        isMyToldya
-            ? _widgetBottomSheetRow(
-          context,
-          AppIcon.delete,
-          text: AppLocalizations.of(context)!.delete,
-          onPressed: () {
-            _deleteToldya(
-              context,
-              type,
-              model.key ?? '',
-              parentkey: model.parentkey,
-            );
-          },
-          isEnable: true,
-          isDestructive: true,
-        )
-            : Container(),
-        // isMyToldya
-        //     ? Container()
-        //     : _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.unFollow,
-        //         text: '${model.user.displayName} Takibi bırak',
-        //       ),
-        // isMyToldya
-        //     ? Container()
-        //     : _widgetBottomSheetRow(
-        //         context,
-        //         AppIcon.mute,
-        //         text: '${model.user.displayName} sessize al',
-        //       ),
-        isMyToldya
-            ? Container()
-            : _widgetBottomSheetRow(context, AppIcon.block,
-            text: isInBlackList
-                ? AppLocalizations.of(context)!.unblockUser(model.user?.displayName ?? '')
-                : AppLocalizations.of(context)!.blockUser(model.user?.displayName ?? ''),
-            isEnable: true, onPressed: () {
-              _addBlackList(
-                context,
-                type,
-                model.userId ?? '',
-                parentkey: model.parentkey,
-              );
-            }),
-        isMyToldya
-            ? Container()
-            : _widgetBottomSheetRow(context, AppIcon.report,
-            text: isReported ? AppLocalizations.of(context)!.withdrawReport : AppLocalizations.of(context)!.report,
-            onPressed: () {
-              _addReportList(context, model, Statu.statusPending,
-                  ConfirmWinner.None, scaffoldKey);
-            }, isEnable: true),
-        _shouldShowDispute(model, isMyToldya, isAdmin)
-            ? _widgetBottomSheetRow(context, Icons.gavel_rounded,
-            text: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? AppLocalizations.of(context)!.disputed : AppLocalizations.of(context)!.dispute,
-            onPressed: _hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId) ? null : () {
-              _addDispute(context, model, scaffoldKey);
-            }, isEnable: !_hasDisputed(model, Provider.of<AuthState>(context, listen: false).userId))
-            : Container(),
-        isAdmin
-            ? _widgetBottomSheetRow(context, Icons.check_box, text: AppLocalizations.of(context)!.approve,
-            onPressed: () {
-              showDialog<void>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    ConfirmWinner selectedRadio = ConfirmWinner.Like;
-                    return AlertDialog(
-                      actions: [
-                        TextButton(
-                          child: Text(AppLocalizations.of(context)!.cancel),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        TextButton(
-                          child: Text(AppLocalizations.of(context)!.confirm),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _sendApproval(context, model, Statu.statusOk,
-                                selectedRadio, scaffoldKey);
-                          },
-                        ),
-                      ],
-                      content: StatefulBuilder(
-                        builder:
-                            (BuildContext context, StateSetter setState) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: List<Widget>.generate(
-                                ConfirmWinner.values.length, (int index) {
-                              return Row(
-                                children: <Widget>[
-                                  Radio<ConfirmWinner>(
-                                    value: ConfirmWinner.values[index],
-                                    groupValue: selectedRadio,
-                                    onChanged: (ConfirmWinner? value) {
-                                      if (value != null) setState(() => selectedRadio = value);
-                                    },
-                                  ),
-                                  Text(ConfirmWinner.values[index]
-                                      .toString()
-                                      .split('.')
-                                      .last),
-                                ],
-                              );
-                            }),
-                          );
-                        },
-                      ),
-                    );
-                  });
-            }, isEnable: true)
-            : Container(),
-        isAdmin
-            ? _widgetBottomSheetRow(
-          context,
-          Icons.dangerous,
-          isEnable: true,
-          onPressed: () {
-            _sendApproval(context, model, Statu.statusDenied,
-                ConfirmWinner.None, scaffoldKey);
-          },
-          text: AppLocalizations.of(context)!.reject,
-        )
-            : Container(),
-        SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget continueButton(BuildContext context) => TextButton(
-    child: Text(AppLocalizations.of(context)!.continueAction),
-    onPressed: () {},
-  );
-
-  Widget _widgetBottomSheetRow(BuildContext context, IconData icon,
-      {String text = '', Function? onPressed, bool isEnable = false, bool isDestructive = false}) {
-    final bool hasAction = onPressed != null;
-    final Color iconColor = isDestructive
-        ? Colors.redAccent
-        : (hasAction ? Colors.white : Colors.white70);
-    final Color textColor = isDestructive
-        ? Colors.redAccent
-        : (isEnable ? Colors.white : Colors.white70);
-    return Expanded(
-      child: customInkWell(
-        context: context,
-        onPressed: () {
-          if (onPressed != null)
-            onPressed();
-          else {
-            Navigator.pop(context);
-          }
-        },
+  Widget _actionRow(BuildContext context,
+      {required IconData icon,
+        required String label,
+        required bool isDestructive,
+        required VoidCallback? onTap,
+        bool isBusy = false}) {
+    final color = isDestructive ? _destructiveColor : AppColor.textPrimaryDark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isBusy ? null : onTap,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: <Widget>[
-              customIcon(
-                context,
-                icon: icon,
-                istwitterIcon: true,
-                size: 25,
-                paddingIcon: 8,
-                iconColor: iconColor,
-              ),
-              SizedBox(
-                width: 15,
-              ),
-              customText(
-                text,
-                context: context,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: isDestructive ? 16 : 18,
-                  fontWeight: isDestructive ? FontWeight.w500 : FontWeight.w400,
+              Icon(icon, size: 24, color: color),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 16,
+                    fontWeight: isDestructive ? FontWeight.w500 : FontWeight.w400,
+                  ),
                 ),
-              )
+              ),
+              if (isBusy)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: color),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _addReportList(BuildContext context, FeedModel model, int statu,
+      ConfirmWinner selectedRadio, GlobalKey<ScaffoldState> scaffoldKey) {
+    var state = Provider.of<FeedState>(context, listen: false);
+    var authState = Provider.of<AuthState>(context, listen: false);
+    state.addReportToToldya(model, authState.userId ?? '');
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   Future<void> _sendApproval(BuildContext context, FeedModel model, int statu,
@@ -460,37 +149,14 @@ class ToldyaBottomSheet {
       }
     }
     state.updateToldya(model);
-    if (context.mounted) Navigator.of(context).pop();
+    if (context.mounted && Navigator.canPop(context)) if (Navigator.canPop(context)) Navigator.of(context).pop();
 
     customSnackBar(
         scaffoldKey,
         statu == Statu.statusPending
-            ? 'Seçim yapılmak üzere bekleyen statude'
-            : 'Gönderi için ' +
-            selectedRadio
-                .toString()
-                .split('.')
-                .last +
-            ' seçildi ');
-
-    // scaffoldKey.currentState.hideCurrentSnackBar();
-    // scaffoldKey.currentState.showSnackBar(
-    //     SnackBar(
-    //       behavior: SnackBarBehavior.floating,
-    //       backgroundColor: ToldyaColor.black,
-    //       content: Text(
-    //         statu==Statu.statusPending ? 'Seçim yapılmak üzere bekleyen statude' :'Gönderi için ' +selectedRadio.toString().split('.').last + ' seçildi ',
-    //         style: TextStyle(color: Colors.white),
-    //       ),
-    //     ));
-  }
-
-  void _addReportList(BuildContext context, FeedModel model, int statu,
-      ConfirmWinner selectedRadio, GlobalKey<ScaffoldState> scaffoldKey) {
-    var state = Provider.of<FeedState>(context, listen: false);
-    var authState = Provider.of<AuthState>(context, listen: false);
-    state.addReportToToldya(model, authState.userId ?? '');
-    Navigator.of(context).pop();
+            ? AppLocalizations.of(context)!.approvalPendingStatus
+            : AppLocalizations.of(context)!.approvalSelectedForPost(
+                selectedRadio.toString().split('.').last));
   }
 
   bool _shouldShowDispute(FeedModel model, bool isMyToldya, bool isAdmin) {
@@ -511,7 +177,7 @@ class ToldyaBottomSheet {
     if (model.disputeUserIds?.contains(userId) == true) return;
     state.addDisputeToToldya(model, userId);
     customSnackBar(scaffoldKey, AppLocalizations.of(context)!.disputeRecorded);
-    Navigator.of(context).pop();
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   int calculateRank(List<UserPegModel> list, int userPeg) {
@@ -521,11 +187,11 @@ class ToldyaBottomSheet {
   void _deleteToldya(BuildContext context, ToldyaType type, String toldyaId,
       {String? parentkey}) async {
     var state = Provider.of<FeedState>(context, listen: false);
-    Navigator.of(context).pop();
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
     try {
       await state.deleteToldya(toldyaId, type, parentkey: parentkey);
       if (type == ToldyaType.Detail && context.mounted) {
-        Navigator.of(context).pop();
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
         state.removeLastToldyaDetail(toldyaId);
       }
       if (context.mounted) {
@@ -550,7 +216,7 @@ class ToldyaBottomSheet {
     var authState = Provider.of<AuthState>(context, listen: false);
     try {
       authState.addBlackList(userId);
-      Navigator.of(context).pop();
+      if (Navigator.canPop(context)) Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.userBlocked)),
       );
@@ -573,21 +239,30 @@ class ToldyaBottomSheet {
       context: context,
       builder: (context) {
         return Container(
-            padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).padding.bottom + 20),
-            constraints: BoxConstraints(maxHeight: fullHeight(context) * 0.6),
-            width: fullWidth(context),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                  offset: Offset(0, -4),
+          padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).padding.bottom + 20),
+          constraints: BoxConstraints(maxHeight: fullHeight(context) * 0.6),
+          width: fullWidth(context),
+          decoration: BoxDecoration(
+            color: _sheetBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-            child: _retweet(context, model, type, commentFlag));
+              ),
+              SizedBox(height: 16),
+              Expanded(child: _retweet(context, model, type, commentFlag)),
+            ],
+          ),
+        );
       },
     );
   }
@@ -600,29 +275,23 @@ class ToldyaBottomSheet {
     final evetPercent = total > 0 ? (totalLike * 100 / total).round() : 50;
     final hayirPercent = total > 0 ? (totalUnlike * 100 / total).round() : 50;
     final isEvet = commentFlag == 0;
-    const evetGreen = Color(0xFFE8F5E9);
-    const hayirGray = Color(0xFFF5F5F5);
+    const evetGreen = Color(0xFF2E7D32);
+    const hayirGray = Color(0xFF3D3D4A);
+    const evetBorder = Color(0xFF4CAF50);
+    const hayirBorder = Color(0xFFE53935);
+    final textPrimary = AppColor.textPrimaryDark;
 
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Color(0xFFE0E0E0),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          SizedBox(height: 20),
           Text(
             model.description ?? AppLocalizations.of(context)!.prediction,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
+              color: textPrimary,
               height: 1.3,
             ),
           ),
@@ -633,17 +302,17 @@ class ToldyaBottomSheet {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: isEvet ? evetGreen : hayirGray,
+                    color: isEvet ? evetGreen.withOpacity(0.3) : hayirGray,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isEvet ? Color(0xFF4CAF50) : Color(0xFFE0E0E0),
+                      color: isEvet ? evetBorder : Colors.white24,
                       width: 1,
                     ),
                   ),
                   child: Column(
                     children: [
-                      Text(AppLocalizations.of(context)!.yes, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
-                      Text('$evetPercent%', style: TextStyle(fontSize: 14, color: isEvet ? Color(0xFF2E7D32) : Color(0xFF757575))),
+                      Text(AppLocalizations.of(context)!.yes, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+                      Text('$evetPercent%', style: TextStyle(fontSize: 14, color: isEvet ? Color(0xFF81C784) : AppColor.textSecondaryDark)),
                     ],
                   ),
                 ),
@@ -653,17 +322,17 @@ class ToldyaBottomSheet {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: !isEvet ? Color(0xFFFFEBEE) : hayirGray,
+                    color: !isEvet ? hayirBorder.withOpacity(0.25) : hayirGray,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: !isEvet ? Color(0xFFE53935) : Color(0xFFE0E0E0),
+                      color: !isEvet ? hayirBorder : Colors.white24,
                       width: 1,
                     ),
                   ),
                   child: Column(
                     children: [
-                      Text(AppLocalizations.of(context)!.no, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
-                      Text('$hayirPercent%', style: TextStyle(fontSize: 14, color: !isEvet ? Color(0xFFC62828) : Color(0xFF757575))),
+                      Text(AppLocalizations.of(context)!.no, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+                      Text('$hayirPercent%', style: TextStyle(fontSize: 14, color: !isEvet ? Color(0xFFE57373) : AppColor.textSecondaryDark)),
                     ],
                   ),
                 ),
@@ -674,6 +343,391 @@ class ToldyaBottomSheet {
           SliderInNavigationBar(model: model, commentFlag: commentFlag),
         ],
       ),
+    );
+  }
+
+  static const Color _contentDestructiveColor = Color(0xFFFF6B6B);
+  static const Color _contentSheetBackground = Color(0xFF1A1F2E);
+}
+
+class _ToldyaActionSheetContent extends StatefulWidget {
+  final FeedModel model;
+  final ToldyaType type;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext parentContext;
+
+  const _ToldyaActionSheetContent({
+    required this.model,
+    required this.type,
+    required this.scaffoldKey,
+    required this.parentContext,
+  });
+
+  @override
+  State<_ToldyaActionSheetContent> createState() => _ToldyaActionSheetContentState();
+}
+
+class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
+  bool _isFollowLoading = false;
+  bool _isMuteLoading = false;
+
+  Future<void> _handleShare() async {
+    final l10n = AppLocalizations.of(context)!;
+    final uri = await Utility.createLinkToCopy(
+      context,
+      "toldya/${widget.model.key ?? ''}",
+      socialMetaTagParameters: SocialMetaTagParameters(
+        description: widget.model.description ??
+            l10n.sharedPostDescription(widget.model.user?.displayName ?? ''),
+        title: l10n.postTitle,
+        imageUrl: Uri.parse(
+            "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
+    );
+    if (!mounted) return;
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    Share.share(uri.toString(), subject: l10n.appTitle);
+  }
+
+  Future<void> _handleCopyLink() async {
+    final l10n = AppLocalizations.of(context)!;
+    final uri = await Utility.createLinkToCopy(
+      context,
+      "toldya/${widget.model.key ?? ''}",
+      socialMetaTagParameters: SocialMetaTagParameters(
+        description: widget.model.description ??
+            l10n.sharedPostDescription(widget.model.user?.displayName ?? ''),
+        title: l10n.postTitle,
+        imageUrl: Uri.parse(
+            "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
+    );
+    if (!mounted) return;
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    copyToClipBoard(
+      scaffoldKey: widget.scaffoldKey,
+      text: uri.toString(),
+      message: l10n.copiedToClipboard,
+    );
+  }
+
+  void _handleGoToProfile() {
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    Navigator.pushNamed(context, '/ProfilePage/${widget.model.userId}');
+  }
+
+  Future<void> _handleFollowUnfollow() async {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
+    final targetUserId = widget.model.userId ?? '';
+    if (targetUserId.isEmpty) return;
+    setState(() => _isFollowLoading = true);
+    try {
+      await authState.followUserByUserId(targetUserId, removeFollower: isFollowing);
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      final l10n = AppLocalizations.of(widget.parentContext)!;
+      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+        SnackBar(content: Text(isFollowing ? l10n.unfollowSuccess : l10n.followSuccess)),
+      );
+    } catch (_) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorGeneric), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isFollowLoading = false);
+    }
+  }
+
+  Future<void> _handleMuteToggle() async {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final postId = widget.model.key ?? '';
+    if (postId.isEmpty) return;
+    final isMuted = authState.isPostMuted(postId);
+    setState(() => _isMuteLoading = true);
+    try {
+      if (isMuted) {
+        await authState.removeMutedPostId(postId);
+      } else {
+        await authState.addMutedPostId(postId);
+      }
+      if (!mounted) return;
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      final l10n = AppLocalizations.of(widget.parentContext)!;
+      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+        SnackBar(content: Text(isMuted ? l10n.notificationsUnmuted : l10n.notificationsMuted)),
+      );
+    } catch (_) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorGeneric), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isMuteLoading = false);
+    }
+  }
+
+  void _showReportReasonSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    final feedState = Provider.of<FeedState>(context, listen: false);
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final userId = authState.userId ?? '';
+    if (userId.isEmpty) return;
+
+    final reasons = [
+      ('spam', l10n.reportReasonSpam),
+      ('harassment', l10n.reportReasonHarassment),
+      ('misleading', l10n.reportReasonMisleading),
+      ('other', l10n.reportReasonOther),
+    ];
+
+    showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (reasonContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: ToldyaBottomSheet._contentSheetBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                SizedBox(height: 8),
+                ...reasons.map((r) {
+                  final (code, label) = r;
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        feedState.addReportToToldyaWithReason(widget.model, userId, code);
+                        if (Navigator.canPop(reasonContext)) Navigator.pop(reasonContext);
+                        if (Navigator.canPop(context)) Navigator.pop(context);
+                        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+                          SnackBar(content: Text(l10n.reportReceived)),
+                        );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined, size: 24, color: ToldyaBottomSheet._contentDestructiveColor),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  color: AppColor.textPrimaryDark,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleBlockUnblock() {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final targetUserId = widget.model.userId ?? '';
+    if (targetUserId.isEmpty) return;
+    final isInBlackList = authState.userModel?.blackList?.contains(targetUserId) ?? false;
+    try {
+      authState.addBlackList(targetUserId);
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      final l10n = AppLocalizations.of(widget.parentContext)!;
+      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+        SnackBar(content: Text(isInBlackList ? l10n.userUnblocked : l10n.userBlocked)),
+      );
+    } catch (_) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.errorGeneric), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _handleDelete() {
+    final state = Provider.of<FeedState>(context, listen: false);
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    state.deleteToldya(widget.model.key ?? '', widget.type, parentkey: widget.model.parentkey).then((_) {
+      if (widget.parentContext.mounted) {
+        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(widget.parentContext)!.predictionDeleted)),
+        );
+      }
+      if (widget.type == ToldyaType.Detail && widget.parentContext.mounted) {
+        Navigator.of(widget.parentContext).pop();
+        state.removeLastToldyaDetail(widget.model.key ?? '');
+      }
+    }).catchError((_) {
+      if (widget.parentContext.mounted) {
+        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(widget.parentContext)!.errorDeleteFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
+  Widget _buildRow({
+    required IconData icon,
+    required String label,
+    required bool isDestructive,
+    required VoidCallback? onTap,
+    bool isBusy = false,
+  }) {
+    final color = isDestructive ? ToldyaBottomSheet._contentDestructiveColor : AppColor.textPrimaryDark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isBusy ? null : onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: color),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 16,
+                    fontWeight: isDestructive ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                ),
+              ),
+              if (isBusy)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: color),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = Provider.of<AuthState>(context, listen: true);
+    final isMyPost = authState.userId == widget.model.userId;
+    final l10n = AppLocalizations.of(context)!;
+    final isMuted = authState.isPostMuted(widget.model.key ?? '');
+    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
+    final isInBlackList = authState.userModel?.blackList?.contains(widget.model.userId ?? '') ?? false;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(height: 12),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        SizedBox(height: 8),
+        _buildRow(
+          icon: Icons.share_outlined,
+          label: l10n.share,
+          isDestructive: false,
+          onTap: _handleShare,
+        ),
+        _buildRow(
+          icon: Icons.link_outlined,
+          label: l10n.copyLink,
+          isDestructive: false,
+          onTap: _handleCopyLink,
+        ),
+        if (!isMyPost) ...[
+          _buildRow(
+            icon: Icons.person_outline,
+            label: l10n.goToProfile,
+            isDestructive: false,
+            onTap: _handleGoToProfile,
+          ),
+          _buildRow(
+            icon: isFollowing ? Icons.person_remove_outlined : Icons.person_add_outlined,
+            label: isFollowing ? l10n.unfollow : l10n.follow,
+            isDestructive: false,
+            onTap: _handleFollowUnfollow,
+            isBusy: _isFollowLoading,
+          ),
+        ],
+        _buildRow(
+          icon: isMuted ? Icons.notifications_outlined : Icons.notifications_off_outlined,
+          label: isMuted ? l10n.unmuteNotificationsForPost : l10n.muteNotificationsForPost,
+          isDestructive: false,
+          onTap: _handleMuteToggle,
+          isBusy: _isMuteLoading,
+        ),
+        if (isMyPost) ...[
+          _buildRow(
+            icon: Icons.edit_outlined,
+            label: l10n.editPrediction,
+            isDestructive: false,
+            onTap: () {
+              if (Navigator.canPop(context)) Navigator.pop(context);
+              Provider.of<FeedState>(context, listen: false).setToldyaToEdit = widget.model;
+              Navigator.pushNamed(context, '/CreateFeedPage/toldya');
+            },
+          ),
+          _buildRow(
+            icon: Icons.delete_outlined,
+            label: l10n.delete,
+            isDestructive: true,
+            onTap: _handleDelete,
+          ),
+        ] else ...[
+          _buildRow(
+            icon: Icons.flag_outlined,
+            label: l10n.report,
+            isDestructive: true,
+            onTap: _showReportReasonSheet,
+          ),
+          _buildRow(
+            icon: Icons.block_outlined,
+            label: isInBlackList
+                ? l10n.unblockUser(widget.model.user?.displayName ?? '')
+                : l10n.blockUser(widget.model.user?.displayName ?? ''),
+            isDestructive: true,
+            onTap: _handleBlockUnblock,
+          ),
+        ],
+        SizedBox(height: 20),
+      ],
     );
   }
 }
@@ -793,7 +847,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
           );
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
         }
       } on PlatformException catch (e) {
         // Native Android hataları PlatformException olarak gelir
@@ -876,16 +930,20 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
     final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
     const greenPrimary = Color(0xFF4CAF50);
 
+    final textSecondary = AppColor.textSecondaryDark;
+    final textPrimary = AppColor.textPrimaryDark;
+    final surfaceColor = MockupDesign.card;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(
-          'Bahis miktarı',
+          AppLocalizations.of(context)!.betAmountLabel,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF757575),
+            color: textSecondary,
           ),
         ),
         SizedBox(height: 8),
@@ -893,16 +951,16 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           width: double.infinity,
           padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           decoration: BoxDecoration(
-            color: Color(0xFFFAFAFA),
+            color: surfaceColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFFE0E0E0)),
+            border: Border.all(color: MockupDesign.cardBorder),
           ),
           child: Text(
             '$_period token',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF1A1A1A),
+              color: textPrimary,
             ),
           ),
         ),
@@ -919,16 +977,16 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF5F5F5),
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Color(0xFFE0E0E0)),
+                    border: Border.all(color: MockupDesign.cardBorder),
                   ),
                   child: Text(
                     '+$amount',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF424242),
+                      color: textPrimary,
                     ),
                   ),
                 ),
@@ -961,12 +1019,12 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(ctx),
+                            onPressed: () { if (Navigator.canPop(ctx)) Navigator.pop(ctx); },
                             child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Color(0xFF757575))),
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(ctx);
+                              if (Navigator.canPop(ctx)) Navigator.pop(ctx);
                               _send();
                             },
                             child: Text(AppLocalizations.of(context)!.confirm, style: TextStyle(color: greenPrimary, fontWeight: FontWeight.w600)),
@@ -991,7 +1049,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : Text(
-                      'Bahsi Onayla',
+                      AppLocalizations.of(context)!.confirmBet,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

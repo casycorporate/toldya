@@ -19,7 +19,7 @@ class TokenEarnPage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () { if (Navigator.canPop(context)) Navigator.of(context).pop(); },
         ),
         title: Text(
           AppLocalizations.of(context)!.tokenEarnTitle,

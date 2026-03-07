@@ -186,7 +186,7 @@ class _SignupState extends State<Signup> {
   Widget _backButton() {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Navigator.pop(context),
+      onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
@@ -362,7 +362,7 @@ class _SignupState extends State<Signup> {
       () {
         loader.hideLoader();
         if (state.authStatus == AuthStatus.LOGGED_IN) {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           widget.loginCallback?.call();
         }
       },

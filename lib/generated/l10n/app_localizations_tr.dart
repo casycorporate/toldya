@@ -78,6 +78,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get back => 'Geri';
 
   @override
+  String get pressBackAgainToExit => 'Çıkmak için tekrar geri tuşuna basın';
+
+  @override
   String get signUpNow => 'Hemen Kaydol';
 
   @override
@@ -159,6 +162,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get userBlocked => 'Kullanıcı engellendi.';
+
+  @override
+  String get userUnblocked => 'Engel kaldırıldı.';
 
   @override
   String get pleaseSelectBetAmount => 'Lütfen bahis miktarı seçin!';
@@ -1058,6 +1064,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get delete => 'Sil';
 
   @override
+  String get editPrediction => 'Tahmini düzenle';
+
+  @override
+  String get predictionUpdated => 'Tahmin güncellendi';
+
+  @override
   String muteUser(String name) {
     return '$name sessize al';
   }
@@ -1236,6 +1248,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get topicGeneral => 'Genel';
 
   @override
+  String get userHandlePlaceholder => '@kullanıcı';
+
+  @override
+  String closingAt(String time) {
+    return 'Kapanış: $time';
+  }
+
+  @override
   String yesPercent(int percent) {
     return 'Evet $percent';
   }
@@ -1262,4 +1282,119 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get bottomNavProfile => 'Profil';
+
+  @override
+  String get goToProfile => 'Profile git';
+
+  @override
+  String get muteNotificationsForPost => 'Bu tahmin için bildirimleri kapat';
+
+  @override
+  String get unmuteNotificationsForPost => 'Bu tahmin için bildirimleri aç';
+
+  @override
+  String get notificationsMuted => 'Bildirimler kapatıldı';
+
+  @override
+  String get notificationsUnmuted => 'Bildirimler açıldı';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonHarassment => 'Taciz / Nefret';
+
+  @override
+  String get reportReasonMisleading => 'Yanıltıcı bilgi';
+
+  @override
+  String get reportReasonOther => 'Diğer';
+
+  @override
+  String get reportReceived => 'Şikayetiniz alındı';
+
+  @override
+  String get unfollow => 'Takipten çık';
+
+  @override
+  String get betAmountLabel => 'Bahis miktarı';
+
+  @override
+  String get approvalPendingStatus => 'Seçim yapılmak üzere bekleyen statüde';
+
+  @override
+  String approvalSelectedForPost(String choice) {
+    return 'Gönderi için $choice seçildi';
+  }
+
+  @override
+  String get betYesLabel => 'Evet ile bahis yap';
+
+  @override
+  String get betNoLabel => 'Hayır ile bahis yap';
+
+  @override
+  String get recentBetsTitle => 'Son Bahisler';
+
+  @override
+  String get conversationInformationTitle => 'Görüşme bilgisi';
+
+  @override
+  String reportUser(String name) {
+    return 'Rapor et: $name';
+  }
+
+  @override
+  String get deleteConversationTitle => 'Görüşmeyi sil';
+
+  @override
+  String get receiveMessageRequestsTitle => 'Mesaj isteklerini al';
+
+  @override
+  String get showReadReceiptsTitle => 'Okundu bilgisini göster';
+
+  @override
+  String get receiveMessageRequestsSubtitle =>
+      'Takip etmediğiniz kişiler de size doğrudan mesaj isteği gönderebilir.';
+
+  @override
+  String get showReadReceiptsSubtitle =>
+      'Biri size mesaj gönderdiğinde, görüşmedeki kişiler gördüğünüzü bilir. Bu ayarı kapatırsanız, siz de başkalarının okundu bilgisini göremezsiniz.';
+
+  @override
+  String get pollEnded => 'Anket bitti';
+
+  @override
+  String get pollEndedIn => 'Anket şu kadar sürede bitiyor';
+
+  @override
+  String get pollDay => 'Gün';
+
+  @override
+  String get pollDays => 'Gün';
+
+  @override
+  String get pollHour => 'saat';
+
+  @override
+  String get pollHours => 'saat';
+
+  @override
+  String get pollMin => 'dk';
+
+  @override
+  String get selectImage => 'Bir resim seçin';
+
+  @override
+  String get useCameraLabel => 'Kamerayı kullan';
+
+  @override
+  String get useGalleryLabel => 'Galeriyi kullan';
+
+  @override
+  String get emptyPredictionsDefaultTitle => 'Henüz bir tahmin yok';
+
+  @override
+  String get emptyPredictionsDefaultSubtitle =>
+      'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.';
 }

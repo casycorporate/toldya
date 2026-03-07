@@ -92,7 +92,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
   Widget _backButton() {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Navigator.pop(context),
+      onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(

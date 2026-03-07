@@ -79,7 +79,7 @@ class TrendsPage extends StatelessWidget {
         groupValue: state.sortBy,
         onChanged: (val) {
           if (val != null) state.updateUserSortPrefrence = val;
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
         },
         title: Text(text, style: subtitleStyle),
         controlAffinity: ListTileControlAffinity.trailing,

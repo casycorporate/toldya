@@ -243,11 +243,18 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     );
   }
 
-  Future<bool> _onWillPop() async {
-    // final chatState = Provider.of<ChatState>(context,listen: false);
+  /// Cleanup when leaving chat: state-holding screen. Run on both AppBar back and system back (PopScope), then pop.
+  void _onPopInvoked(bool didPop, dynamic result) {
+    if (didPop) return;
     state.setIsChatScreenOpen = false;
     state.onChatScreenClosed();
-    return true;
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
+  }
+
+  void _onBackPressed() {
+    state.setIsChatScreenOpen = false;
+    state.onChatScreenClosed();
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   void submitMessage() async {
@@ -304,11 +311,16 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
   Widget build(BuildContext context) {
     state = Provider.of<ChatState>(context, listen: false);
     userImage = state.chatUser?.profilePic ?? '';
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: _onBackPressed,
+          ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

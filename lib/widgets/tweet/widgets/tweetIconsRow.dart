@@ -313,7 +313,7 @@ class ToldyaIconsRow extends StatelessWidget {
                     onTap: () {
                       onLikeTextPressed(context, model.likeList ?? []);
                     },
-                    child: customText('dedim',
+                    child: customText(AppLocalizations.of(context)!.iSayYes,
                         style: subtitleStyle.copyWith(
                             color: ToldyaColor.cerulean)),
                   ),

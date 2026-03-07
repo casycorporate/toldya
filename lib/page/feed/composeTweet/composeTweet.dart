@@ -37,6 +37,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   late FeedModel model;
   late ScrollController scrollcontroller;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isEditMode = false;
 
   File? _image;
   late TextEditingController _textEditingController;
@@ -53,9 +54,16 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   @override
   void initState() {
     var feedState = Provider.of<FeedState>(context, listen: false);
-    model = feedState.toldyaToReplyModel ?? FeedModel();
+    if (feedState.toldyaToEditModel != null) {
+      model = feedState.toldyaToEditModel!;
+      _isEditMode = true;
+      feedState.clearToldyaToEdit();
+      _textEditingController = TextEditingController(text: model.description ?? '');
+    } else {
+      model = feedState.toldyaToReplyModel ?? FeedModel();
+      _textEditingController = TextEditingController();
+    }
     scrollcontroller = ScrollController();
-    _textEditingController = TextEditingController();
     scrollcontroller..addListener(_scrollListener);
     super.initState();
   }
@@ -98,6 +106,18 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     kScreenloader.showLoader(context);
 
     try {
+      if (_isEditMode) {
+        model.description = _textEditingController.text;
+        await state.updateToldya(model);
+        if (!mounted) return;
+        kScreenloader.hideLoader();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.predictionUpdated)),
+        );
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
+        return;
+      }
+
       FeedModel toldyaModel = createToldyaModel();
 
       if (_image != null) {
@@ -136,7 +156,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
           SnackBar(content: Text(l10n.commentAdded)),
         );
       }
-      Navigator.pop(context);
+      if (Navigator.canPop(context)) Navigator.pop(context);
     } catch (_) {
       if (mounted) {
         kScreenloader.hideLoader();
@@ -300,7 +320,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                           subtitle: Text('@${u.userName ?? ''}'),
                           onTap: () {
                             setState(() => _challengeeUser = u);
-                            Navigator.pop(ctx);
+                            if (Navigator.canPop(ctx)) Navigator.pop(ctx);
                           },
                         );
                       },

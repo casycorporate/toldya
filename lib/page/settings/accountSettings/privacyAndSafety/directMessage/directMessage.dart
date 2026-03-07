@@ -28,21 +28,21 @@ class DirectMessagesPage extends StatelessWidget {
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Receive message requests",
+            AppLocalizations.of(context)!.receiveMessageRequestsTitle,
             navigateTo: null,
             showDivider: false,
             visibleSwitch: true,
             vPadding: 20,
             subtitle:
-                'You will be able to receive Direct Message requests from anyone on Fwitter, even if you don\'t follow them.',
+                AppLocalizations.of(context)!.receiveMessageRequestsSubtitle,
           ),
           SettingRowWidget(
-            "Show read receipts",
+            AppLocalizations.of(context)!.showReadReceiptsTitle,
             navigateTo: null,
             showDivider: false,
             visibleSwitch: true,
             subtitle:
-                'When someone sends you a message, people in the conversation will know you\'ve seen it. If you turn off this setting, you won\'t be able to see read receipt from others.',
+                AppLocalizations.of(context)!.showReadReceiptsSubtitle,
           ),
         ],
       ),

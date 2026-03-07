@@ -283,12 +283,12 @@ class _SidebarMenuState extends State<SidebarMenu> {
 
   void _logOut() {
     final state = Provider.of<AuthState>(context, listen: false);
-    Navigator.pop(context);
+    if (Navigator.canPop(context)) Navigator.pop(context);
     state.logoutCallback();
   }
 
   void _navigateTo(String path) {
-    Navigator.pop(context);
+    if (Navigator.canPop(context)) Navigator.pop(context);
     Navigator.of(context).pushNamed('/$path');
   }
 
@@ -333,7 +333,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
                               IconButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () { if (Navigator.canPop(context)) Navigator.pop(context); },
                                 icon: Icon(
                                   Icons.close,
                                   color: Colors.grey.shade400,

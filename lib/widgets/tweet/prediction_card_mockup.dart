@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -144,8 +145,9 @@ class PredictionCardMockup extends StatelessWidget {
                   context,
                   'toldya/${model.key}',
                   socialMetaTagParameters: SocialMetaTagParameters(
-                    description: model.description ?? 'Tahmin paylaşıldı.',
-                    title: 'Toldya',
+                    description: model.description ??
+                        AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
+                    title: AppLocalizations.of(context)!.appTitle,
                   ),
                 );
               }),

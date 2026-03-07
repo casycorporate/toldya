@@ -134,7 +134,7 @@ class _SignInState extends State<SignIn> {
             ),
             SizedBox(width: 10),
             Text(
-              'Hemen kaydol',
+              AppLocalizations.of(context)!.signUpNow,
               style: GoogleFonts.sawarabiMincho(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
@@ -187,7 +187,7 @@ class _SignInState extends State<SignIn> {
   Widget _backButton() {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Navigator.pop(context),
+      onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
@@ -339,7 +339,7 @@ class _SignInState extends State<SignIn> {
           .then((status) {
         if (state.user != null) {
           loader.hideLoader();
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           widget.loginCallback?.call();
         } else {
           cprint('Giriş yapılamıyor', errorIn: '_emailLoginButton');

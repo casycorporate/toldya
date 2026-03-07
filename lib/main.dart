@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/searchState.dart';
@@ -20,6 +21,15 @@ import 'state/notificationState.dart';
 
 /// Navigator key for FCM deep linking (NotificationService uses this).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Debug observer to log route pops (e.g. back from Profile).
+class _NavObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    debugPrint('[Nav] didPop current=${route.settings.name} previous=${previousRoute?.settings.name}');
+    super.didPop(route, previousRoute);
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,10 +53,21 @@ void main() async {
   // FCM: Bildirim servisini başlat (izin, token, foreground/background/terminated yönetimi).
   await NotificationService.init(navigatorKey);
 
-  runApp(MyApp());
+  // Locale: single source of truth from SharedPreferences before first frame.
+  final prefs = await SharedPreferences.getInstance();
+  const String localeKey = 'locale';
+  final savedCode = prefs.getString(localeKey);
+  final Locale initialLocale = (savedCode != null && ['tr', 'en', 'de'].contains(savedCode))
+      ? Locale(savedCode)
+      : const Locale('tr');
+
+  runApp(MyApp(initialLocale: initialLocale));
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({Key? key, required this.initialLocale}) : super(key: key);
+  final Locale initialLocale;
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -56,7 +77,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AppState>(create: (_) => AppState()),
+        ChangeNotifierProvider<AppState>(create: (_) => AppState(initialLocale: widget.initialLocale)),
         ChangeNotifierProvider<AuthState>(create: (_) => AuthState()),
         ChangeNotifierProvider<FeedState>(create: (_) => FeedState()),
         ChangeNotifierProvider<ChatState>(create: (_) => ChatState()),
@@ -69,7 +90,9 @@ class _MyAppState extends State<MyApp> {
         child: Consumer<AppState>(
         builder: (context, appState, _) {
           return MaterialApp(
+            key: ValueKey<String>(appState.locale.languageCode),
             navigatorKey: navigatorKey,
+            navigatorObservers: [_NavObserver()],
             title: 'Toldya',
             theme: AppTheme.apptheme.copyWith(
               textTheme: GoogleFonts.sawarabiMinchoTextTheme(
@@ -90,12 +113,8 @@ class _MyAppState extends State<MyApp> {
             ],
             supportedLocales: AppLocalizations.supportedLocales,
             locale: appState.locale,
-            localeResolutionCallback: (locale, supported) {
-              if (appState.locale != null) return appState.locale;
-              for (final s in supported) {
-                if (s.languageCode == locale?.languageCode) return s;
-              }
-              return const Locale('tr');
+            localeResolutionCallback: (_, __) {
+              return appState.locale;
             },
           );
         },

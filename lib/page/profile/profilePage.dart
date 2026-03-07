@@ -1,4 +1,5 @@
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
@@ -9,6 +10,7 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/topicMap.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/model/user.dart';
+import 'package:toldya/state/appState.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -46,9 +48,14 @@ String _rankTitleForXp(BuildContext context, int xp) {
 }
 
 class ProfilePage extends StatefulWidget {
-  ProfilePage({Key? key, this.profileId}) : super(key: key);
+  ProfilePage({Key? key, this.profileId, this.isTabContent = false, this.parentScaffoldKey})
+      : super(key: key);
 
   final String? profileId;
+  /// True when shown as HomePage bottom bar tab (index 3). Back must not pop; use drawer or no-op.
+  final bool isTabContent;
+  /// When [isTabContent] is true, leading can open this scaffold's drawer (e.g. HomePage).
+  final GlobalKey<ScaffoldState>? parentScaffoldKey;
 
   _ProfilePageState createState() => _ProfilePageState();
 }
@@ -87,13 +94,25 @@ class _ProfilePageState extends State<ProfilePage>
       elevation: 0,
       backgroundColor: Colors.transparent,
       iconTheme: IconThemeData(color: Colors.white),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded),
-        onPressed: () {
-          Provider.of<AuthState>(context, listen: false).profilePageClosing(widget.profileId);
-          Navigator.of(context).pop();
-        },
-      ),
+      leading: widget.isTabContent
+          ? IconButton(
+              icon: Icon(Icons.arrow_back_rounded),
+              onPressed: () {
+                debugPrint('[Profile] back (tab) pressed profileId=${widget.profileId} isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
+                final appState = Provider.of<AppState>(context, listen: false);
+                appState.setpageIndex = appState.lastTabBeforeProfile;
+              },
+            )
+          : IconButton(
+              icon: Icon(Icons.arrow_back_rounded),
+              onPressed: () {
+                debugPrint('[Profile] back pressed profileId=${widget.profileId} isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
+                final routeName = ModalRoute.of(context)?.settings.name;
+                debugPrint('[Profile] about to pop, currentRoute=$routeName');
+                Provider.of<AuthState>(context, listen: false).profilePageClosing(widget.profileId);
+                if (Navigator.canPop(context)) Navigator.of(context).pop();
+              },
+            ),
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.settings_outlined),
@@ -142,13 +161,18 @@ class _ProfilePageState extends State<ProfilePage>
     return false;
   }
 
-  /// This meathod called when user pressed back button
-  /// When profile page is about to close
-  /// Maintain minimum user's profile in profile page list
-  Future<bool> _onWillPop() async {
-    final state = Provider.of<AuthState>(context, listen: false);
-    state.profilePageClosing(widget.profileId);
-    return true;
+  /// Cleanup when leaving profile: run profilePageClosing then pop. AppBar leading and PopScope (system back) both use this (same cleanup, then pop).
+  /// When [isTabContent] is true, do not pop; switch to last tab (Feed/Search/Notifications) instead.
+  void _onPopInvoked(bool didPop, dynamic result) {
+    if (didPop) return;
+    if (widget.isTabContent) {
+      debugPrint('[Profile] system back (tab) isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.setpageIndex = appState.lastTabBeforeProfile;
+      return;
+    }
+    Provider.of<AuthState>(context, listen: false).profilePageClosing(widget.profileId);
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   late TabController _tabController;
@@ -183,6 +207,16 @@ class _ProfilePageState extends State<ProfilePage>
     String id = widget.profileId ?? authstate.userId ?? '';
     final profileUserId = authstate.profileUserModel?.userId ?? '';
 
+    final profileMatchesPage = authstate.profileUserModel == null
+        ? false
+        : (widget.profileId == null ||
+            authstate.profileUserModel!.userId == widget.profileId);
+    final showHeader = !authstate.isbusy &&
+        !isBlackList() &&
+        authstate.profileUserModel != null &&
+        profileMatchesPage;
+    debugPrint('[ProfilePage] build profileId=${widget.profileId} profileUserModel=${authstate.profileUserModel != null} isbusy=${authstate.isbusy} showHeader=$showHeader');
+
     /// Filter user's tweet among all tweets available in home page tweets list
     List<FeedModel> list = feedlist
         .where((x) =>
@@ -191,8 +225,9 @@ class _ProfilePageState extends State<ProfilePage>
             (x.likeList ?? []).any((e) => e.userId == profileUserId))
         .toList();
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         key: scaffoldKey,
         backgroundColor: MockupDesign.background,

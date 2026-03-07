@@ -177,7 +177,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Uygulama avatarları',
+                AppLocalizations.of(context)!.appAvatars,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -191,7 +191,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   return GestureDetector(
                     onTap: () {
                       setState(() => _image = asset);
-                      Navigator.pop(context);
+                      if (Navigator.canPop(context)) Navigator.pop(context);
                     },
                     child: Container(
                       width: 64,
@@ -288,7 +288,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: InkWell(
                         onTap: () {
                           setState(() => _banner = key);
-                          Navigator.pop(context);
+                          if (Navigator.canPop(context)) Navigator.pop(context);
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Stack(
@@ -464,7 +464,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final bannerParam = _banner.isNotEmpty ? _banner : null;
     try {
       await state.updateUserProfile(model, _scaffoldKey, image: imageParam, bannerImage: bannerParam, successMessage: AppLocalizations.of(context)!.changesSaved);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted && Navigator.canPop(context)) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) setState(() => _isSaving = false);
       customSnackBar(_scaffoldKey, l10n.errorSaveFailed);

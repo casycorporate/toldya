@@ -78,6 +78,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get back => 'Back';
 
   @override
+  String get pressBackAgainToExit => 'Press back again to exit';
+
+  @override
   String get signUpNow => 'Sign up now';
 
   @override
@@ -159,6 +162,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userBlocked => 'User blocked.';
+
+  @override
+  String get userUnblocked => 'User unblocked.';
 
   @override
   String get pleaseSelectBetAmount => 'Please select a bet amount!';
@@ -1057,6 +1063,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
+  String get editPrediction => 'Edit prediction';
+
+  @override
+  String get predictionUpdated => 'Prediction updated';
+
+  @override
   String muteUser(String name) {
     return 'Mute $name';
   }
@@ -1235,6 +1247,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topicGeneral => 'General';
 
   @override
+  String get userHandlePlaceholder => '@user';
+
+  @override
+  String closingAt(String time) {
+    return 'Closes: $time';
+  }
+
+  @override
   String yesPercent(int percent) {
     return 'Yes $percent';
   }
@@ -1261,4 +1281,121 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bottomNavProfile => 'Profile';
+
+  @override
+  String get goToProfile => 'Go to profile';
+
+  @override
+  String get muteNotificationsForPost =>
+      'Mute notifications for this prediction';
+
+  @override
+  String get unmuteNotificationsForPost =>
+      'Unmute notifications for this prediction';
+
+  @override
+  String get notificationsMuted => 'Notifications muted';
+
+  @override
+  String get notificationsUnmuted => 'Notifications unmuted';
+
+  @override
+  String get reportReasonSpam => 'Spam';
+
+  @override
+  String get reportReasonHarassment => 'Harassment or hate';
+
+  @override
+  String get reportReasonMisleading => 'Misleading information';
+
+  @override
+  String get reportReasonOther => 'Other';
+
+  @override
+  String get reportReceived => 'Your report has been received';
+
+  @override
+  String get unfollow => 'Unfollow';
+
+  @override
+  String get betAmountLabel => 'Bet amount';
+
+  @override
+  String get approvalPendingStatus => 'Selection pending status';
+
+  @override
+  String approvalSelectedForPost(String choice) {
+    return 'Selected $choice for post';
+  }
+
+  @override
+  String get betYesLabel => 'Bet Yes';
+
+  @override
+  String get betNoLabel => 'Bet No';
+
+  @override
+  String get recentBetsTitle => 'Recent bets';
+
+  @override
+  String get conversationInformationTitle => 'Conversation information';
+
+  @override
+  String reportUser(String name) {
+    return 'Report $name';
+  }
+
+  @override
+  String get deleteConversationTitle => 'Delete conversation';
+
+  @override
+  String get receiveMessageRequestsTitle => 'Receive message requests';
+
+  @override
+  String get showReadReceiptsTitle => 'Show read receipts';
+
+  @override
+  String get receiveMessageRequestsSubtitle =>
+      'You will be able to receive Direct Message requests from anyone, even if you don\'t follow them.';
+
+  @override
+  String get showReadReceiptsSubtitle =>
+      'When someone sends you a message, people in the conversation will know you\'ve seen it. If you turn off this setting, you won\'t be able to see read receipts from others.';
+
+  @override
+  String get pollEnded => 'Poll ended';
+
+  @override
+  String get pollEndedIn => 'Poll ended in';
+
+  @override
+  String get pollDay => 'Day';
+
+  @override
+  String get pollDays => 'Days';
+
+  @override
+  String get pollHour => 'hour';
+
+  @override
+  String get pollHours => 'Hours';
+
+  @override
+  String get pollMin => 'min';
+
+  @override
+  String get selectImage => 'Select an image';
+
+  @override
+  String get useCameraLabel => 'Use camera';
+
+  @override
+  String get useGalleryLabel => 'Use gallery';
+
+  @override
+  String get emptyPredictionsDefaultTitle => 'No predictions yet';
+
+  @override
+  String get emptyPredictionsDefaultSubtitle =>
+      'New predictions will appear here.\nTap the button below to create a prediction.';
 }

@@ -209,33 +209,26 @@ double getCountdownProgress(String? endDate, String? createdAt) {
   }
 }
 
-String getPollTime(String date) {
-  int hr, mm;
-  String msg = 'Poll ended';
+String getPollTime(BuildContext context, String date) {
+  final l10n = AppLocalizations.of(context)!;
   var enddate = DateTime.parse(date);
   if (DateTime.now().isAfter(enddate)) {
-    return msg;
+    return l10n.pollEnded;
   }
-  msg = 'Poll ended in';
   var dur = enddate.difference(DateTime.now());
-  hr = dur.inHours - dur.inDays * 24;
-  mm = dur.inMinutes - (dur.inHours * 60);
+  int hr = dur.inHours - dur.inDays * 24;
+  int mm = dur.inMinutes - (dur.inHours * 60);
+  final parts = <String>[];
   if (dur.inDays > 0) {
-    msg = ' ' + dur.inDays.toString() + (dur.inDays > 1 ? ' Days ' : ' Day');
+    parts.add('${dur.inDays} ${dur.inDays > 1 ? l10n.pollDays : l10n.pollDay}');
   }
   if (hr > 0) {
-    msg += ' ' + hr.toString() + ' hour';
+    parts.add('$hr ${hr > 1 ? l10n.pollHours : l10n.pollHour}');
   }
   if (mm > 0) {
-    msg += ' ' + mm.toString() + ' min';
+    parts.add('$mm ${l10n.pollMin}');
   }
-  return (dur.inDays).toString() +
-      ' Days ' +
-      ' ' +
-      hr.toString() +
-      ' Hours ' +
-      mm.toString() +
-      ' min';
+  return parts.isEmpty ? l10n.pollEnded : '${l10n.pollEndedIn} ${parts.join(' ')}';
 }
 
 String? getSocialLinks(String? url) {

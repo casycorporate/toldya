@@ -23,11 +23,22 @@ class FeedState extends AppState {
   bool isBusy = false;
   Map<String, List<FeedModel>> toldyaReplyMap = {};
   FeedModel? _toldyaToReplyModel;
+  FeedModel? _toldyaToEditModel;
 
   FeedModel? get toldyaToReplyModel => _toldyaToReplyModel;
+  FeedModel? get toldyaToEditModel => _toldyaToEditModel;
 
   set setToldyaToReply(FeedModel model) {
     _toldyaToReplyModel = model;
+  }
+
+  set setToldyaToEdit(FeedModel model) {
+    _toldyaToEditModel = model;
+  }
+
+  void clearToldyaToEdit() {
+    _toldyaToEditModel = null;
+    notifyListeners();
   }
 
   List<FeedModel>? _commentlist;
@@ -733,6 +744,31 @@ class FeedState extends AppState {
           .set(model.reportList);
     } catch (error) {
       cprint(error, errorIn: 'addReportToToldya');
+    }
+  }
+
+  /// Report a toldya with a reason code (for moderators). Keeps reportList and adds reportReasons.
+  void addReportToToldyaWithReason(FeedModel model, String userId, String reason) {
+    try {
+      model.reportList ??= [];
+      if (!model.reportList!.any((id) => id == userId)) {
+        model.reportList!.add(userId);
+      }
+      model.reportReasons ??= {};
+      model.reportReasons![userId] = reason;
+
+      kDatabase
+          .child('toldya')
+          .child(model.key ?? '')
+          .child('reportList')
+          .set(model.reportList);
+      kDatabase
+          .child('toldya')
+          .child(model.key ?? '')
+          .child('reportReasons')
+          .set(model.reportReasons);
+    } catch (error) {
+      cprint(error, errorIn: 'addReportToToldyaWithReason');
     }
   }
 

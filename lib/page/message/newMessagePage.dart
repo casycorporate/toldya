@@ -60,16 +60,18 @@ class _NewMessagePageState extends State<NewMessagePage> {
     );
   }
 
-  Future<bool> _onWillPop() async {
-    final state = Provider.of<SearchState>(context, listen: false);
-    state.filterByUsername("");
-    return true;
+  /// Cleanup when leaving: clear search filter. Back (AppBar BackButton or system) triggers PopScope, then pop.
+  void _onPopInvoked(bool didPop, dynamic result) {
+    if (didPop) return;
+    Provider.of<SearchState>(context, listen: false).filterByUsername("");
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         appBar: CustomAppBar(
           scaffoldKey: widget.scaffoldKey,
