@@ -4,6 +4,8 @@ import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
@@ -23,57 +25,65 @@ class RetoldyaWidget extends StatelessWidget {
   final ToldyaType type;
 
   Widget _tweet(BuildContext context, FeedModel model) {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final authorUserId = model.user?.userId ?? model.userId ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Container(
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           width: fullWidth(context) - 12,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              Container(
-                width: 25,
-                height: 25,
-                child: customProfileImage(context, model.user?.profilePic, userId: model.user?.userId),
-              ),
-              SizedBox(width: 10),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                    minWidth: 0, maxWidth: fullWidth(context) * .5),
-                child: TitleText(
-                  model.user?.displayName ?? '',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: 3),
-              (model.user?.isVerified ?? false)
-                  ? customIcon(
-                      context,
-                      icon: AppIcon.blueTick,
-                      istwitterIcon: true,
-                      iconColor: AppColor.primary,
-                      size: 13,
-                      paddingIcon: 3,
-                    )
-                  : SizedBox(width: 0),
-              SizedBox(
-                width: (model.user?.isVerified ?? false) ? 5 : 0,
-              ),
-              Flexible(
-                child: customText(
-                  '${model.user?.userName ?? ''}',
-                  style: userNameStyle,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: 4),
-              customText('· ${getChatTime(model.createdAt ?? '')}',
-                  style: userNameStyle),
-            ],
+          child: FutureBuilder<UserModel?>(
+            future: authorUserId.isEmpty ? Future.value(null) : authState.getuserDetail(authorUserId),
+            builder: (context, authorSnap) {
+              final author = authorSnap.data ?? model.user;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Container(
+                    width: 25,
+                    height: 25,
+                    child: customProfileImage(context, author?.profilePic, userId: author?.userId),
+                  ),
+                  SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                        minWidth: 0, maxWidth: fullWidth(context) * .5),
+                    child: TitleText(
+                      author?.displayName ?? '',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: 3),
+                  (author?.isVerified ?? false)
+                      ? customIcon(
+                          context,
+                          icon: AppIcon.blueTick,
+                          istwitterIcon: true,
+                          iconColor: AppColor.primary,
+                          size: 13,
+                          paddingIcon: 3,
+                        )
+                      : SizedBox(width: 0),
+                  SizedBox(
+                    width: (author?.isVerified ?? false) ? 5 : 0,
+                  ),
+                  Flexible(
+                    child: customText(
+                      formatHandle(author?.userName, author?.displayName),
+                      style: userNameStyle,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  customText('· ${getChatTime(model.createdAt ?? '')}',
+                      style: userNameStyle),
+                ],
+              );
+            },
           ),
         ),
         model.description == null

@@ -8,9 +8,11 @@ import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/searchState.dart';
 import 'package:toldya/widgets/customAppBar.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
+import 'package:toldya/widgets/newWidget/custom_shimmer.dart';
+import 'package:toldya/page/profile/leaderboard/league_pre_season_empty_state.dart';
+import 'package:toldya/page/profile/leaderboard/active_league_view.dart';
 import 'package:provider/provider.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -44,9 +46,15 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? MockupDesign.textPrimary : theme.colorScheme.onSurface;
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        backgroundColor: MockupDesign.background,
+        appBar: AppBar(
         leading: BackButton(color: titleColor),
         title: Text(
           AppLocalizations.of(context)!.leaderboardTitle,
@@ -57,7 +65,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           ),
         ),
         centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: MockupDesign.background,
         elevation: 0,
         iconTheme: IconThemeData(color: titleColor),
         bottom: TabBar(
@@ -103,21 +111,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       ),
       body: Consumer<SearchState>(
         builder: (context, state, _) {
-          if (state.isBusy || state.userlist == null) {
-            return Center(
-              child: CustomScreenLoader(
-                height: 80,
-                width: 80,
-                backgroundColor: Colors.transparent,
-              ),
-            );
-          }
           final list = state.userlist ?? [];
+          final isLeagueLoading = state.isBusy || state.userlist == null;
           final topPredictors = List<UserModel>.from(list)
             ..sort((a, b) => (b.predictorScore ?? 0).compareTo(a.predictorScore ?? 0));
           final topBettors = List<UserModel>.from(list)
             ..sort((a, b) => (b.rank ?? 0).compareTo(a.rank ?? 0));
-          final currentUserId = Provider.of<AuthState>(context, listen: false).userId;
+          final currentUserId = Provider.of<AuthState>(context, listen: false).userId ?? '';
 
           return TabBarView(
             controller: _tabController,
@@ -135,70 +135,58 @@ class _LeaderboardPageState extends State<LeaderboardPage>
               _LeagueTab(
                 userlist: list,
                 currentUserId: currentUserId,
+                isGlobalLoading: isLeagueLoading,
               ),
             ],
           );
         },
       ),
+    ),
     );
   }
 }
 
-/// Haftalık Lig sekmesi: mevcut kullanıcının lig grubunu XP'ye göre listeler.
+/// Haftalık Lig sekmesi: LeagueShimmer / PreSeason boş durum / ActiveLeagueView.
 class _LeagueTab extends StatelessWidget {
   const _LeagueTab({
     required this.userlist,
     required this.currentUserId,
+    required this.isGlobalLoading,
   });
 
   final List<UserModel> userlist;
   final String currentUserId;
+  final bool isGlobalLoading;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<LeagueEntry>>(
-      future: fetchLeagueGroupForUser(currentUserId),
+    if (isGlobalLoading) {
+      return const LeagueShimmer(itemCount: 8);
+    }
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        fetchLeagueGroupForUser(currentUserId),
+        fetchLeagueConfig(),
+      ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CustomScreenLoader(
-              height: 80,
-              width: 80,
-              backgroundColor: Colors.transparent,
-            ),
-          );
+          return const LeagueShimmer(itemCount: 8);
         }
-        final entries = snapshot.data ?? [];
+        final results = snapshot.data as List<dynamic>?;
+        final entries = results != null && results.isNotEmpty
+            ? results[0] as List<LeagueEntry>
+            : <LeagueEntry>[];
+        final config = results != null && results.length > 1
+            ? results[1] as LeagueConfig
+            : LeagueConfig();
         if (entries.isEmpty) {
-          return Center(
-            child: NotifyText(
-              title: AppLocalizations.of(context)!.leagueNotCreatedYet,
-              subTitle: AppLocalizations.of(context)!.leagueWillAppearWhenAssigned,
-            ),
-          );
+          return const LeaguePreSeasonEmptyState();
         }
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          itemCount: entries.length,
-          itemBuilder: (context, index) {
-            final entry = entries[index];
-            UserModel user;
-            try {
-              user = userlist.firstWhere((u) => u.userId == entry.userId);
-            } catch (_) {
-              user = UserModel(
-                userId: entry.userId,
-                displayName: entry.userId,
-                userName: entry.userId,
-              );
-            }
-            return _LeaderTile(
-              user: user,
-              rank: index + 1,
-              score: entry.xpSnapshot,
-              isPredictor: false,
-            );
-          },
+        return ActiveLeagueView(
+          config: config,
+          entries: entries,
+          userlist: userlist,
+          currentUserId: currentUserId,
         );
       },
     );

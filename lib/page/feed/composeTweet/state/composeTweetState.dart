@@ -9,12 +9,21 @@ import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/searchState.dart';
 
 class ComposeToldyaState extends ChangeNotifier {
+  static const int kToldyaMaxLength = 280;
+  static const int kToldyaWarnLength = 260;
+
   bool showUserList = false;
   bool enableSubmitButton = false;
   bool hideUserList = false;
   String description = "";
   String serverToken = '';
   final usernameRegex = r'(@\w*[a-zA-Z1-9]$)';
+
+  bool _isOverLimit = false;
+  bool _isNearLimit = false;
+  bool get isOverLimit => _isOverLimit;
+  bool get isNearLimit => _isNearLimit;
+  int get characterCount => description.length;
 
   bool _isScrollingDown = false;
   bool get isScrollingDown => _isScrollingDown;
@@ -52,16 +61,17 @@ class ComposeToldyaState extends ChangeNotifier {
   void onDescriptionChanged(String text, SearchState searchState) {
     description = text;
     hideUserList = false;
-    if (text.isEmpty || text.length > 280) {
-      /// Disable submit button if description is not availabele
+    _isNearLimit = text.length >= kToldyaWarnLength && text.length < kToldyaMaxLength;
+    _isOverLimit = text.length > kToldyaMaxLength;
+
+    if (text.isEmpty || text.length > kToldyaMaxLength) {
       enableSubmitButton = false;
       notifyListeners();
       return;
     }
 
-    /// Enable submit button if description is availabele
     enableSubmitButton = true;
-    var last = text.substring(text.length - 1, text.length);
+    var last = text.length > 0 ? text.substring(text.length - 1, text.length) : '';
 
     /// Regex to search last username available from description
     /// Ex. `Hello @john do you know @ricky`
@@ -82,10 +92,18 @@ class ComposeToldyaState extends ChangeNotifier {
         searchState.filterByUsername(name);
       }
     } else {
-      /// Hide userlist if no matched username found
       hideUserList = false;
-      notifyListeners();
     }
+    notifyListeners();
+  }
+
+  /// Sync state when initial text is set (e.g. edit mode). Updates description, limit flags, and submit button.
+  void setInitialDescription(String text) {
+    description = text;
+    _isNearLimit = text.length >= kToldyaWarnLength && text.length < kToldyaMaxLength;
+    _isOverLimit = text.length > kToldyaMaxLength;
+    enableSubmitButton = text.isNotEmpty && text.length <= kToldyaMaxLength;
+    notifyListeners();
   }
 
   /// When user select user from userlist it will add username in description

@@ -186,7 +186,8 @@ exports.onBetCreated = functions.database
 
 /**
  * Yeni tahmin + meydan okuma: toldya/{toldyaId} onCreate.
- * challengeeUserId varsa (ve ana tahmin ise, parentkey yok) challengee'ye bildirim yazıp FCM gönderir.
+ * - parentkey set ise (yorum): tahmin sahibine notification + FCM.
+ * - parentkey yok ve challengeeUserId varsa: challengee'ye bildirim + FCM.
  */
 exports.onToldyaCreated = functions.database
   .ref("toldya/{toldyaId}")
@@ -194,7 +195,53 @@ exports.onToldyaCreated = functions.database
     const toldyaId = context.params.toldyaId;
     const data = snap.val();
     if (!data) return null;
-    if (data.parentkey) return null;
+
+    const parentKey = data.parentkey && String(data.parentkey).trim();
+    if (parentKey) {
+      try {
+        const parentSnap = await getDb().ref("toldya").child(parentKey).once("value");
+        const parent = parentSnap.val();
+        const ownerId = parent && parent.userId ? String(parent.userId).trim() : null;
+        if (!ownerId) return null;
+        const commenterId = data.userId ? String(data.userId).trim() : null;
+        if (commenterId === ownerId) return null;
+
+        let commenterDisplayName = "Bir kullanıcı";
+        if (commenterId) {
+          const profileSnap = await getDb().ref("profile").child(commenterId).once("value");
+          const profile = profileSnap.val();
+          if (profile) {
+            const name = profile.displayName || profile.userName || profile.name;
+            if (name) commenterDisplayName = String(name);
+          }
+        }
+        const description = (data.description && String(data.description).trim()) || "";
+        const notifTitle = "Yeni Yorum!";
+        const notifBody = `${commenterDisplayName} tahminine yorum yaptı.`;
+        const updates = {};
+        updates[`notification/${ownerId}/${toldyaId}`] = {
+          type: "Reply",
+          toldyaId: toldyaId,
+          parentKey: parentKey,
+          commenterUserId: commenterId || "",
+          updatedAt: new Date().toISOString(),
+        };
+        await getDb().ref().update(updates);
+
+        const token = await getFcmToken(ownerId);
+        if (token) {
+          await sendFcm(token, notifTitle, notifBody, {
+            type: "prediction_result",
+            id: parentKey,
+          });
+          console.log("[onToldyaCreated] reply notification sent to", ownerId, "toldyaId=", toldyaId);
+        }
+      } catch (e) {
+        console.error("[onToldyaCreated] reply error", toldyaId, e.message || e);
+      }
+      return null;
+    }
+
     const challengeeUserId = data.challengeeUserId && String(data.challengeeUserId).trim();
     if (!challengeeUserId) return null;
     const creatorId = data.userId && String(data.userId).trim();
@@ -267,6 +314,15 @@ exports.onFollowerCreated = functions.database
       const notifTitle = "Yeni Takipçi!";
       const notifBody = `${followerDisplayName} seni takip etmeye başladı.`;
       const dataPayload = { type: "new_follower", id: followerId };
+
+      const updates = {};
+      updates[`notification/${followedUserId}/${followerId}`] = {
+        type: "Follow",
+        followerId: followerId,
+        followerDisplayName: followerDisplayName,
+        updatedAt: new Date().toISOString(),
+      };
+      await getDb().ref().update(updates);
 
       await sendFcm( token, notifTitle, notifBody, dataPayload );
       console.log("[onFollowerCreated] sent to", followedUserId, "from", followerId);

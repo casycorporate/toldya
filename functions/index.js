@@ -229,7 +229,6 @@ async function runAiModerationLogic(apiKey) {
   const updates = {};
   for (const [key, tweet] of Object.entries(toldyas)) {
     if (!tweet) continue;
-    if (tweet.parentkey) continue;
     if (tweet.statu !== STATU_PENDING_AI_REVIEW) continue;
     const description = tweet.description || "";
     const createdAt = tweet.createdAt || new Date().toISOString();
@@ -257,31 +256,34 @@ async function runAiModerationLogic(apiKey) {
     try {
       if (approved && result) {
         const { reason, category, endDateIso, resolutionDateIso } = result;
+        const isReply = !!tweet.parentkey;
         updates[`toldya/${key}/statu`] = STATU_LIVE;
         updates[`toldya/${key}/aiModerationReason`] = safeString(reason) || "Onaylandı";
-        updates[`toldya/${key}/topic`] = safeString(category);
-        const created = new Date(createdAt);
-        const defaultEnd = new Date(created.getTime() + 24 * 60 * 60 * 1000);
-        const defaultRes = new Date(created.getTime() + 25 * 60 * 60 * 1000);
-        let endDate = defaultEnd.toISOString();
-        let resolutionDate = defaultRes.toISOString();
-        if (endDateIso) {
-          const d = new Date(endDateIso);
-          if (!isNaN(d.getTime()) && d >= created) endDate = d.toISOString();
+        if (category) updates[`toldya/${key}/topic`] = safeString(category);
+        if (!isReply) {
+          const created = new Date(createdAt);
+          const defaultEnd = new Date(created.getTime() + 24 * 60 * 60 * 1000);
+          const defaultRes = new Date(created.getTime() + 25 * 60 * 60 * 1000);
+          let endDate = defaultEnd.toISOString();
+          let resolutionDate = defaultRes.toISOString();
+          if (endDateIso) {
+            const d = new Date(endDateIso);
+            if (!isNaN(d.getTime()) && d >= created) endDate = d.toISOString();
+          }
+          if (resolutionDateIso) {
+            const d = new Date(resolutionDateIso);
+            if (!isNaN(d.getTime()) && d >= created) resolutionDate = d.toISOString();
+          }
+          if (new Date(endDate) < created) {
+            endDate = defaultEnd.toISOString();
+            resolutionDate = defaultRes.toISOString();
+          }
+          if (new Date(resolutionDate) <= new Date(endDate)) {
+            resolutionDate = new Date(new Date(endDate).getTime() + 60 * 60 * 1000).toISOString();
+          }
+          updates[`toldya/${key}/endDate`] = safeString(endDate);
+          updates[`toldya/${key}/resolutionDate`] = safeString(resolutionDate);
         }
-        if (resolutionDateIso) {
-          const d = new Date(resolutionDateIso);
-          if (!isNaN(d.getTime()) && d >= created) resolutionDate = d.toISOString();
-        }
-        if (new Date(endDate) < created) {
-          endDate = defaultEnd.toISOString();
-          resolutionDate = defaultRes.toISOString();
-        }
-        if (new Date(resolutionDate) <= new Date(endDate)) {
-          resolutionDate = new Date(new Date(endDate).getTime() + 60 * 60 * 1000).toISOString();
-        }
-        updates[`toldya/${key}/endDate`] = safeString(endDate);
-        updates[`toldya/${key}/resolutionDate`] = safeString(resolutionDate);
       } else {
         updates[`toldya/${key}/statu`] = STATU_REJECTED_BY_AI;
         updates[`toldya/${key}/aiModerationReason`] = safeString(lastReason) || "Reddedildi";
@@ -322,8 +324,8 @@ exports.runAiModeration = functions
     }
   });
 
-// Zamanlanmış: Her 10 dakikada bir tüm batch fonksiyonları çalışır (manuel HTTP çağrıları da durur).
-const SCHEDULE_CRON = "every 10 minutes";
+// Zamanlanmış: Her 30 dakikada bir tüm batch fonksiyonları çalışır (manuel HTTP çağrıları da durur).
+const SCHEDULE_CRON = "every 30 minutes";
 
 /**
  * Bitiş tarihi geçmiş ve hâlâ Live (0) olan tahminleri statusLocked (5) yapar.
@@ -357,9 +359,22 @@ async function runLockPredictionsLogic() {
   return { locked: Object.keys(updates).length };
 }
 
-// --- Weekly Leagues (Haftalık Lig): XP'ye göre gruplar, haftalık snapshot ---
+// --- Weekly Leagues (Haftalık Lig): tier, weeklyXp, yükselme/düşme ---
+// Tier eşikleri (toplam xp): 0–500 Bronze, 501–1500 Silver, 1501–3500 Gold, 3501+ Diamond
 const LEAGUE_GROUP_SIZE = 30;
-const LEAGUE_TIER_NAMES = ["Bronz", "Gümüş", "Altın"];
+const LEAGUE_TIER_NAMES_OLD = ["Bronz", "Gümüş", "Altın"];
+const LEAGUE_TIERS = ["Bronze", "Silver", "Gold", "Diamond"];
+const XP_BRONZE_MAX = 500;
+const XP_SILVER_MAX = 1500;
+const XP_GOLD_MAX = 3500;
+
+function getTierFromXp(xp) {
+  const x = typeof xp === "number" ? xp : (parseInt(xp, 10) || 0);
+  if (x <= XP_BRONZE_MAX) return "Bronze";
+  if (x <= XP_SILVER_MAX) return "Silver";
+  if (x <= XP_GOLD_MAX) return "Gold";
+  return "Diamond";
+}
 
 /** ISO hafta kimliği (örn. "2025-W06") */
 function getISOWeekId(date) {
@@ -369,6 +384,30 @@ function getISOWeekId(date) {
   const yearStart = new Date(d.getFullYear(), 0, 1);
   const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   return d.getFullYear() + "-W" + String(weekNo).padStart(2, "0");
+}
+
+/** Verilen weekId'nin Pazar 23:59 UTC bitiş tarihi (ISO string). */
+function getWeekEndISO(weekId) {
+  const m = weekId.match(/^(\d{4})-W(\d{2})$/);
+  if (!m) return null;
+  const y = parseInt(m[1], 10);
+  const w = parseInt(m[2], 10);
+  const jan4 = new Date(Date.UTC(y, 0, 4));
+  const day = jan4.getUTCDay();
+  const mondayWeek1 = new Date(Date.UTC(y, 0, 4 - (day === 0 ? 6 : day - 1)));
+  const mondayWeekW = new Date(mondayWeek1);
+  mondayWeekW.setUTCDate(mondayWeek1.getUTCDate() + (w - 1) * 7);
+  const sunday = new Date(mondayWeekW);
+  sunday.setUTCDate(mondayWeekW.getUTCDate() + 6);
+  sunday.setUTCHours(23, 59, 0, 0);
+  return sunday.toISOString();
+}
+
+/** Tarihten sonraki haftanın weekId'si. */
+function getNextWeekId(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 7);
+  return getISOWeekId(d);
 }
 
 /**
@@ -432,12 +471,151 @@ exports.runLeagueAssignment = functions.https.onRequest(async (req, res) => {
   }
 });
 
+/**
+ * Haftalık lig sıfırlama: Tüm weeklyXp=0, sonraki hafta için tier bazlı 30’luk gruplar atar.
+ * Mevcut hafta grupları varsa üst 5 yükselir, alt 5 düşer; yoksa tier = getTierFromXp(xp).
+ * leagues/config: currentWeekId, weekEndsAt (Pazar 23:59 UTC), tierNames, groupSize.
+ */
+async function runWeeklyLeagueResetLogic() {
+  const db = getDb();
+  const profileRef = db.ref("profile");
+  const snapshot = await profileRef.once("value");
+  const profiles = snapshot.val();
+  if (!profiles || typeof profiles !== "object") {
+    return { weekId: null, groups: 0, usersAssigned: 0 };
+  }
+
+  const now = new Date();
+  const currentWeekId = getISOWeekId(now);
+  const nextWeekId = getNextWeekId(now);
+
+  // 1) Tüm profillerde weeklyXp = 0
+  const zeroUpdates = {};
+  for (const uid of Object.keys(profiles)) {
+    zeroUpdates[`profile/${uid}/weeklyXp`] = 0;
+  }
+  if (Object.keys(zeroUpdates).length > 0) {
+    await db.ref().update(zeroUpdates);
+  }
+
+  // 2) Mevcut hafta gruplarını oku; her kullanıcı için sonraki tier hesapla (üst 5 yükselir, alt 5 düşer)
+  const userIdToNextTier = {};
+  const weekRef = db.ref(`leagues/weeks/${currentWeekId}/groups`);
+  const weekSnap = await weekRef.once("value");
+  const currentGroups = weekSnap.val();
+
+  if (currentGroups && typeof currentGroups === "object") {
+    for (const [, groupMap] of Object.entries(currentGroups)) {
+      if (!groupMap || typeof groupMap !== "object") continue;
+      const entries = Object.entries(groupMap).map(([uid, xp]) => ({
+        userId: uid,
+        xp: typeof xp === "number" ? xp : (parseInt(xp, 10) || 0),
+      }));
+      entries.sort((a, b) => b.xp - a.xp);
+      const tierIdx = (tier) => {
+        const i = LEAGUE_TIERS.indexOf(tier);
+        return i >= 0 ? i : 0;
+      };
+      for (let r = 0; r < entries.length; r++) {
+        const rank = r + 1;
+        const userId = entries[r].userId;
+        const p = profiles[userId];
+        const currentTier = (p && p.tier) ? String(p.tier) : getTierFromXp(p?.xp);
+        const idx = tierIdx(currentTier);
+        if (rank <= 5) {
+          userIdToNextTier[userId] = LEAGUE_TIERS[Math.min(idx + 1, LEAGUE_TIERS.length - 1)];
+        } else if (rank >= 26) {
+          userIdToNextTier[userId] = LEAGUE_TIERS[Math.max(idx - 1, 0)];
+        } else {
+          userIdToNextTier[userId] = currentTier;
+        }
+      }
+    }
+  }
+
+  // Mevcut hafta grubu yoksa veya listede olmayan kullanıcılar: tier = xp’ten
+  for (const [userId, p] of Object.entries(profiles)) {
+    if (!p || typeof p !== "object") continue;
+    if (!userIdToNextTier[userId]) {
+      userIdToNextTier[userId] = getTierFromXp(p.xp);
+    }
+  }
+
+  // 3) Tier’a göre topla, karıştır, 30’luk gruplara böl
+  const byTier = {};
+  for (const tier of LEAGUE_TIERS) byTier[tier] = [];
+  for (const [uid, tier] of Object.entries(userIdToNextTier)) {
+    if (byTier[tier]) byTier[tier].push(uid);
+  }
+
+  const groups = {};
+  const profileUpdates = {};
+  for (const tier of LEAGUE_TIERS) {
+    const list = byTier[tier] || [];
+    for (let i = 0; i < list.length; i++) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    let groupIndex = 0;
+    for (let i = 0; i < list.length; i += LEAGUE_GROUP_SIZE) {
+      const chunk = list.slice(i, i + LEAGUE_GROUP_SIZE);
+      const groupKey = `${tier}_${groupIndex}`;
+      const groupData = {};
+      for (const uid of chunk) groupData[uid] = 0;
+      groups[groupKey] = groupData;
+      for (const uid of chunk) {
+        profileUpdates[`profile/${uid}/leagueWeekId`] = nextWeekId;
+        profileUpdates[`profile/${uid}/leagueGroupId`] = groupKey;
+        profileUpdates[`profile/${uid}/tier`] = tier;
+      }
+      groupIndex++;
+    }
+  }
+
+  const weekWriteRef = db.ref(`leagues/weeks/${nextWeekId}/groups`);
+  await weekWriteRef.set(groups);
+
+  const batchSize = 400;
+  const keys = Object.keys(profileUpdates);
+  for (let i = 0; i < keys.length; i += batchSize) {
+    const batch = {};
+    for (let j = i; j < Math.min(i + batchSize, keys.length); j++) {
+      batch[keys[j]] = profileUpdates[keys[j]];
+    }
+    await db.ref().update(batch);
+  }
+
+  const weekEndsAt = getWeekEndISO(nextWeekId);
+  await db.ref("leagues/config").set({
+    currentWeekId: nextWeekId,
+    groupSize: LEAGUE_GROUP_SIZE,
+    tierNames: LEAGUE_TIERS,
+    weekEndsAt: weekEndsAt || null,
+  });
+
+  const groupCount = Object.keys(groups).length;
+  console.log(`[runWeeklyLeagueReset] nextWeekId=${nextWeekId}, groups=${groupCount}, users=${keys.length / 3}`);
+  return { weekId: nextWeekId, groups: groupCount, usersAssigned: keys.length / 3 };
+}
+
+/** Manuel tetikleme: Haftalık lig sıfırlama. */
+exports.runWeeklyLeagueReset = functions.https.onRequest(async (req, res) => {
+  try {
+    const result = await runWeeklyLeagueResetLogic();
+    res.status(200).json({ ok: true, ...result });
+  } catch (e) {
+    console.error("runWeeklyLeagueReset error", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Logic fonksiyonları script/manuel çalıştırma için export
 exports.runLockPredictionsLogic = runLockPredictionsLogic;
 exports.runOracleResolutionLogic = runOracleResolutionLogic;
 exports.runDistributeWinningsLogic = runDistributeWinningsLogic;
 exports.runStashDripLogic = runStashDripLogic;
 exports.runLeagueAssignmentLogic = runLeagueAssignmentLogic;
+exports.runWeeklyLeagueResetLogic = runWeeklyLeagueResetLogic;
 
 /** TEST: Manuel – Bitiş tarihi geçen tahminleri kilitler. (Production'da schedule'a çevrilecek.) */
 exports.runLockPredictions = functions.https.onRequest(async (req, res) => {
@@ -1065,6 +1243,19 @@ exports.scheduledStashDrip = functions.pubsub
       console.log("[scheduledStashDrip] done", result);
     } catch (e) {
       console.error("[scheduledStashDrip] error", e);
+    }
+  });
+
+/** Pazar 23:59 UTC: Haftalık lig sıfırlama (weeklyXp=0, sonraki hafta grupları atanır). */
+const WEEKLY_LEAGUE_CRON = "59 23 * * 0";
+exports.scheduledWeeklyLeagueReset = functions.pubsub
+  .schedule(WEEKLY_LEAGUE_CRON)
+  .onRun(async () => {
+    try {
+      const result = await runWeeklyLeagueResetLogic();
+      console.log("[scheduledWeeklyLeagueReset] done", result);
+    } catch (e) {
+      console.error("[scheduledWeeklyLeagueReset] error", e);
     }
   });
 

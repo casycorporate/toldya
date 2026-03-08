@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/widgets/animated_bounce_button.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/customRoute.dart';
 import 'package:toldya/helper/enum.dart';
@@ -159,47 +161,52 @@ class ToldyaIconsRow extends StatelessWidget {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return Material(
-      color: color.withOpacity(0.12),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onPressed,
+    return AnimatedBounceButton(
+      child: Material(
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.4), width: 1),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: color),
-              SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (count.isNotEmpty)
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onPressed();
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.4), width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 20, color: color),
+                SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      count,
+                      label,
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: color.withOpacity(0.9),
-                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontSize: 14,
                       ),
                     ),
-                ],
-              ),
-            ],
+                    if (count.isNotEmpty)
+                      Text(
+                        count,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: color.withOpacity(0.9),
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

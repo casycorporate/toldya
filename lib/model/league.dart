@@ -15,26 +15,29 @@ class LeagueEntry {
 }
 
 /// League config from RTDB leagues/config.
+/// [weekEndsAt] = haftanın bittiği Pazar 23:59 UTC (ISO string), geri sayım için.
 class LeagueConfig {
   LeagueConfig({
     this.currentWeekId,
     this.groupSize = 30,
-    this.tierNames = const ['Bronz', 'Gümüş', 'Altın'],
+    this.tierNames = const ['Bronze', 'Silver', 'Gold', 'Diamond'],
+    this.weekEndsAt,
   });
 
   final String? currentWeekId;
   final int groupSize;
   final List<String> tierNames;
+  final String? weekEndsAt;
 
   static LeagueConfig fromMap(Map<dynamic, dynamic>? map) {
     if (map == null) return LeagueConfig();
-    List<String> names = ['Bronz', 'Gümüş', 'Altın'];
+    List<String> names = ['Bronze', 'Silver', 'Gold', 'Diamond'];
     if (map['tierNames'] is List) {
       names = (map['tierNames'] as List)
           .map((e) => e?.toString() ?? '')
           .where((s) => s.isNotEmpty)
           .toList();
-      if (names.isEmpty) names = ['Bronz', 'Gümüş', 'Altın'];
+      if (names.isEmpty) names = ['Bronze', 'Silver', 'Gold', 'Diamond'];
     }
     return LeagueConfig(
       currentWeekId: map['currentWeekId']?.toString(),
@@ -42,8 +45,18 @@ class LeagueConfig {
           ? map['groupSize'] as int
           : (int.tryParse(map['groupSize']?.toString() ?? '30') ?? 30),
       tierNames: names,
+      weekEndsAt: map['weekEndsAt']?.toString(),
     );
   }
+}
+
+/// Fetches leagues/config (currentWeekId, weekEndsAt, tierNames, groupSize).
+Future<LeagueConfig> fetchLeagueConfig() async {
+  final snap = await kDatabase.child('leagues/config').get();
+  final map = snap.exists && snap.value != null
+      ? Map<dynamic, dynamic>.from(snap.value! as Map)
+      : null;
+  return LeagueConfig.fromMap(map);
 }
 
 /// Fetches the current week's league group for [userId]: list of entries (userId, xp) sorted by XP descending.

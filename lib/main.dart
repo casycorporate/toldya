@@ -1,6 +1,7 @@
 import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
 import 'package:toldya/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 // import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,11 @@ class _NavObserver extends NavigatorObserver {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Realtime Database: enable disk persistence for offline/cached data (Android/iOS only; no-op on web).
+  try {
+    FirebaseDatabase.instance.setPersistenceEnabled(true);
+  } catch (_) {}
 
   // App Check KAPALI: Bazı cihazlarda GMS "Unknown calling package name 'com.google.android.gms'"
   // SecurityException veriyor. Sunucuda placeBet/claimDailyBonus için enforceAppCheck: false.

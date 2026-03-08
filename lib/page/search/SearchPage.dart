@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
@@ -30,7 +31,8 @@ class _SearchPageState extends State<SearchPage> {
   int _selectedCategoryIndex = 0;
   final List<String> _recentSearches = [];
 
-  static const List<String> _categoryTopicValues = ['Akış', 'Spor', 'Ekonomi', 'Eğlence'];
+  /// Internal topic values for filtering; display labels come from l10n (categoryFlow, categorySports, etc.).
+  static const List<String> _categoryTopicValues = [topic.gundem, 'spor', 'eco', 'fun'];
 
   @override
   void initState() {
@@ -167,6 +169,7 @@ class _SearchPageState extends State<SearchPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
+        HapticFeedback.lightImpact();
         Provider.of<SearchState>(context, listen: false).getDataFromDatabase();
         return Future.value();
       },
@@ -303,7 +306,30 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
         ),
-        if (userList.isEmpty && predictionList.isEmpty)
+        if (searchState.searchError != null && userList.isEmpty)
+          Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.errorTryAgain,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                ),
+                SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: () {
+                    searchState.clearSearchError();
+                    searchState.getDataFromDatabase();
+                  },
+                  icon: Icon(Icons.refresh, size: 20, color: Colors.grey.shade400),
+                  label: Text(AppLocalizations.of(context)!.retry),
+                ),
+              ],
+            ),
+          )
+        else if (userList.isEmpty && predictionList.isEmpty)
           Padding(
             padding: EdgeInsets.all(24),
             child: Text(
@@ -407,8 +433,7 @@ class _SuggestionUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final handle = user.userName ?? user.displayName ?? '';
-    final displayHandle = handle.startsWith('@') ? handle : '@$handle';
+    final displayHandle = formatHandle(user.userName, user.displayName);
     return ListTile(
       onTap: onTap,
       leading: CircleAvatar(
@@ -586,7 +611,7 @@ class _ResultsPeopleTabState extends State<_ResultsPeopleTab> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          user.userName != null ? '@${user.userName}' : '',
+                          formatHandle(user.userName, user.displayName),
                           style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
                           overflow: TextOverflow.ellipsis,
                         ),

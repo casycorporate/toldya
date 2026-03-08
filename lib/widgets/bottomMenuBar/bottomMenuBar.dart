@@ -95,7 +95,7 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
   final iconList = <IconData>[
     Icons.home_outlined,
     Icons.search,
-    Icons.notifications_none,
+    Icons.leaderboard_outlined,
     Icons.person_outline,
   ];
 
@@ -105,7 +105,7 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     final labels = <String>[
       l10n.bottomNavHome,
       l10n.bottomNavSearch,
-      l10n.bottomNavNotifications,
+      l10n.bottomNavLeaderboard,
       l10n.bottomNavProfile,
     ];
     var state = Provider.of<AppState>(context);
@@ -155,14 +155,18 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
       child: InkWell(
         onTap: () => setState(() => state.setpageIndex = index),
         child: Padding(
-          padding: const EdgeInsets.only(top: 6.0),
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(iconList[index], size: 24, color: color),
+              Icon(iconList[index], size: 22, color: color),
               const SizedBox(height: 2),
               Text(
                 labels[index],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,

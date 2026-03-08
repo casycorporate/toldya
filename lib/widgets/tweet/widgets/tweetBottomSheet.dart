@@ -3,6 +3,8 @@ import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:toldya/widgets/animated_bounce_button.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
@@ -48,6 +50,7 @@ class ToldyaBottomSheet {
       {required ToldyaType type,
         required FeedModel model,
         required GlobalKey<ScaffoldState> scaffoldKey}) async {
+    HapticFeedback.lightImpact();
     await showModalBottomSheet(
       backgroundColor: Colors.transparent,
       context: context,
@@ -234,6 +237,7 @@ class ToldyaBottomSheet {
       {required ToldyaType type,
         required FeedModel model,
         required GlobalKey<ScaffoldState> scaffoldKey}) async {
+    HapticFeedback.lightImpact();
     await showModalBottomSheet(
       backgroundColor: Colors.transparent,
       context: context,
@@ -752,11 +756,14 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
   int maxVal = 0;
   bool isPressed = false;
   bool _isPlacingBet = false;
+  bool _showSuccess = false;
 
   @override
   void initState() {
     super.initState();
   }
+
+  static const Color _greenPrimary = Color(0xFF4CAF50);
 
   @override
   Widget build(BuildContext context) {
@@ -844,10 +851,14 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         });
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
-          );
-          if (Navigator.canPop(context)) Navigator.pop(context);
+          setState(() => _showSuccess = true);
+          Future.delayed(const Duration(milliseconds: 350), () {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
+            );
+            if (Navigator.canPop(context)) Navigator.pop(context);
+          });
         }
       } on PlatformException catch (e) {
         // Native Android hataları PlatformException olarak gelir
@@ -874,6 +885,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         debugPrint('[BAHIS HATASI] details: ${e.details}');
         if (context.mounted) {
           final l10n = AppLocalizations.of(context)!;
+          final code = e.code.toLowerCase().replaceAll('_', '-');
           String errorMessage = l10n.betErrorGeneric;
           if (e.code == 'internal' || e.code == 'INTERNAL') {
             errorMessage = l10n.gmsUpdateMessage;
@@ -881,6 +893,10 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             errorMessage = l10n.loginRequired;
           } else if (e.code == 'deadline-exceeded') {
             errorMessage = l10n.betTimeout;
+          } else if (code == 'insufficient-balance' || code.contains('insufficient')) {
+            errorMessage = l10n.tokenInsufficient;
+          } else if (code.contains('bet-limit') || code.contains('limit')) {
+            errorMessage = e.message != null && e.message!.isNotEmpty ? e.message! : l10n.betErrorGeneric;
           } else if (e.message != null && e.message!.isNotEmpty) {
             errorMessage = e.message!;
           } else if (e.code.isNotEmpty) {
@@ -916,6 +932,78 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       }
     }
 
+    Widget confirmBtn = AnimatedBounceButton(
+      enabled: !_isPlacingBet,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isPlacingBet
+              ? null
+              : () {
+                  HapticFeedback.mediumImpact();
+                  if (_period <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount), duration: Duration(seconds: 2)),
+                    );
+                    return;
+                  }
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: Text(AppLocalizations.of(context)!.confirmBet, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
+                      content: Text(
+                        AppLocalizations.of(context)!.confirmBetMessage('$_period'),
+                        style: TextStyle(color: Color(0xFF616161)),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () { if (Navigator.canPop(ctx)) Navigator.pop(ctx); },
+                          child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Color(0xFF757575))),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            if (Navigator.canPop(ctx)) Navigator.pop(ctx);
+                            _send();
+                          },
+                          child: Text(AppLocalizations.of(context)!.confirm, style: TextStyle(color: _greenPrimary, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 16),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _isPlacingBet ? Colors.grey : _greenPrimary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: _isPlacingBet
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : Text(
+                    AppLocalizations.of(context)!.confirmBet,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+    if (_showSuccess) {
+      confirmBtn = confirmBtn.animate().scale(duration: 300.ms, begin: Offset(0.95, 0.95), end: Offset(1, 1));
+    }
+
     final balance = authState.userModel?.pegCount ?? 0;
     final xp = authState.userModel?.xp ?? 0;
     final totalPool = sumOfVote(widget.model.likeList ?? []) +
@@ -928,7 +1016,6 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
 
     const presetAmounts = [10, 25, 50, 100];
     final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
-    const greenPrimary = Color(0xFF4CAF50);
 
     final textSecondary = AppColor.textSecondaryDark;
     final textPrimary = AppColor.textPrimaryDark;
@@ -995,70 +1082,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           }).toList(),
         ),
         SizedBox(height: 24),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _isPlacingBet
-                ? null
-                : () {
-                    if (_period <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount), duration: Duration(seconds: 2)),
-                      );
-                      return;
-                    }
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: Text(AppLocalizations.of(context)!.confirmBet, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
-                        content: Text(
-                          AppLocalizations.of(context)!.confirmBetMessage('$_period'),
-                          style: TextStyle(color: Color(0xFF616161)),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () { if (Navigator.canPop(ctx)) Navigator.pop(ctx); },
-                            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Color(0xFF757575))),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              if (Navigator.canPop(ctx)) Navigator.pop(ctx);
-                              _send();
-                            },
-                            child: Text(AppLocalizations.of(context)!.confirm, style: TextStyle(color: greenPrimary, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 16),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _isPlacingBet ? Colors.grey : greenPrimary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: _isPlacingBet
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(
-                      AppLocalizations.of(context)!.confirmBet,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-            ),
-          ),
-        ),
+        confirmBtn,
       ],
     );
   }

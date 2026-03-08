@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/widgets/animated_bounce_button.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/topicMap.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/user.dart';
 import 'package:toldya/model/userPegModel.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
@@ -219,8 +222,7 @@ class _PredictionDetailBody extends StatelessWidget {
     final maxBet = [balance, Tokenomics.maxBetByRank(balance, xp), Tokenomics.maxBetByPool(total)].reduce((a, b) => a < b ? a : b);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
-    final userName = model.user?.userName ?? model.user?.displayName ?? '';
-    final displayHandle = userName.isNotEmpty ? (userName.startsWith('@') ? userName : '@$userName') : AppLocalizations.of(context)!.userHandlePlaceholder;
+    final authorUserId = model.userId ?? model.user?.userId ?? '';
     final percentNo = 1.0 - percent;
 
     return Padding(
@@ -242,49 +244,57 @@ class _PredictionDetailBody extends StatelessWidget {
               urlStyle: TextStyle(fontSize: 23, color: AppNeon.cyan, fontWeight: FontWeight.w700),
             ),
           SizedBox(height: 16),
-          // 2. Kullanıcı & bilgi satırı: avatar, @kullaniciadi, kategori | Kapanış
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${model.userId}'),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.grey.shade800,
-                  child: ClipOval(
-                    child: customProfileImage(context, model.user?.profilePic, userId: model.user?.userId, height: 44),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayHandle,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: Colors.white,
+          // 2. Kullanıcı & bilgi satırı: güncel profil (getuserDetail) + formatHandle
+          FutureBuilder<UserModel?>(
+            future: authorUserId.isEmpty ? Future.value(null) : Provider.of<AuthState>(context, listen: false).getuserDetail(authorUserId),
+            builder: (context, authorSnap) {
+              final author = authorSnap.data ?? model.user;
+              final displayHandle = formatHandle(author?.userName, author?.displayName);
+              final handleToShow = displayHandle.isEmpty ? AppLocalizations.of(context)!.userHandlePlaceholder : displayHandle;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${model.userId}'),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.grey.shade800,
+                      child: ClipOval(
+                        child: customProfileImage(context, author?.profilePic, userId: author?.userId ?? model.userId, height: 44),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (model.topic != null && (model.topic ?? '').isNotEmpty)
-                      Text(
-                        topicLabel,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              Text(
-                kapanisText.isNotEmpty ? AppLocalizations.of(context)!.closingAt(kapanisText) : '',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                textAlign: TextAlign.end,
-              ),
-            ],
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          handleToShow,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (model.topic != null && (model.topic ?? '').isNotEmpty)
+                          Text(
+                            topicLabel,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    kapanisText.isNotEmpty ? AppLocalizations.of(context)!.closingAt(kapanisText) : '',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                    textAlign: TextAlign.end,
+                  ),
+                ],
+              );
+            },
           ),
           SizedBox(height: 20),
           // 3. Oran çubuğu: üstte YES % / NO %, altta bar
@@ -328,25 +338,31 @@ class _PredictionDetailBody extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           ),
           SizedBox(height: 16),
-          // 4. Ana eylem butonları: Evet / Hayır, 56px, stadium, tam renk
+          // 4. Ana eylem butonları: Evet / Hayır, 56px, stadium, tam renk (bounce + haptic)
           Row(
             children: [
               Expanded(
-                child: Material(
-                  color: evetColor,
-                  borderRadius: BorderRadius.circular(28),
-                  child: InkWell(
-                    onTap: () => _openBet(context, authState, 0),
+                child: AnimatedBounceButton(
+                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
+                  child: Material(
+                    color: evetColor,
                     borderRadius: BorderRadius.circular(28),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: Text(
-                        AppLocalizations.of(context)!.betYesLabel,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _openBet(context, authState, 0);
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context)!.betYesLabel,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -355,21 +371,27 @@ class _PredictionDetailBody extends StatelessWidget {
               ),
               SizedBox(width: 16),
               Expanded(
-                child: Material(
-                  color: hayirColor,
-                  borderRadius: BorderRadius.circular(28),
-                  child: InkWell(
-                    onTap: () => _openBet(context, authState, 1),
+                child: AnimatedBounceButton(
+                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
+                  child: Material(
+                    color: hayirColor,
                     borderRadius: BorderRadius.circular(28),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: Text(
-                        AppLocalizations.of(context)!.betNoLabel,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _openBet(context, authState, 1);
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context)!.betNoLabel,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),

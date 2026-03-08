@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
@@ -22,9 +23,11 @@ import 'package:provider/provider.dart';
 import '../helper/locator.dart';
 import '../helper/push_notification_service.dart';
 import '../model/PushNotificationModel.dart';
+import '../services/notification_service.dart';
 import 'common/sidebar.dart';
 import 'notification/notificationPage.dart';
 import 'search/SearchPage.dart';
+import 'profile/leaderboard/leaderboardPage.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -39,6 +42,8 @@ class _HomePageState extends State<HomePage> {
   int pageIndex = 0;
   late StreamSubscription<PushNotificationModel> pushNotificationSubscription;
   bool _pendingExit = false;
+  /// When on Feed tab, false = hide bar on scroll down, true = show on scroll up. Ignored when not on Feed.
+  bool _bottomBarVisible = true;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,8 +78,12 @@ class _HomePageState extends State<HomePage> {
   void initNotificaiton() {
     var state = Provider.of<NotificationState>(context, listen: false);
     var authstate = Provider.of<AuthState>(context, listen: false);
-    state.databaseInit(authstate.userId);
+    final userId = authstate.userId;
+    state.databaseInit(userId);
     state.initfirebaseService();
+    if (userId.isNotEmpty) {
+      NotificationService.instance.getTokenAndPersist();
+    }
     pushNotificationSubscription = getIt<PushNotificationService>()
         .pushNotificationResponseStream
         .listen(listenPushNotification);
@@ -168,22 +177,30 @@ class _HomePageState extends State<HomePage> {
   // }
 
   Widget _body() {
-    return SafeArea(
-      child: _getPage(Provider.of<AppState>(context).pageIndex),
-    );
-  }
-
-  List<Widget> _buildScreens() {
-    return [
-      FeedPage(
-        scaffoldKey: _scaffoldKey,
-        refreshIndicatorKey: refreshIndicatorKey,
+    final index = Provider.of<AppState>(context).pageIndex;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification n) {
+        if (n is! UserScrollNotification) return false;
+        final appState = Provider.of<AppState>(context, listen: false);
+        if (appState.pageIndex != 0) return false;
+        final visible = n.direction == ScrollDirection.reverse;
+        if (visible != _bottomBarVisible && mounted) {
+          setState(() => _bottomBarVisible = visible);
+        }
+        return false;
+      },
+      child: SafeArea(
+        child: IndexedStack(
+          index: index,
+          children: [
+            _getPage(0),
+            _getPage(1),
+            _getPage(2),
+            _getPage(3),
+          ],
+        ),
       ),
-      SearchPage(scaffoldKey: _scaffoldKey),
-      NotificationPage(scaffoldKey: _scaffoldKey),
-      ChatListPage(scaffoldKey: _scaffoldKey),
-      FeedPage(scaffoldKey: _scaffoldKey),
-    ];
+    );
   }
 
   Widget _getPage(int index) {
@@ -198,7 +215,7 @@ class _HomePageState extends State<HomePage> {
         return SearchPage(scaffoldKey: _scaffoldKey);
         break;
       case 2:
-        return NotificationPage(scaffoldKey: _scaffoldKey);
+        return LeaderboardPage();
         break;
       case 3:
         return ProfilePage(isTabContent: true, parentScaffoldKey: _scaffoldKey);
@@ -245,6 +262,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final bool showFab = MediaQuery.of(context).viewInsets.bottom==0.0;
+    final appState = Provider.of<AppState>(context);
+    // Feed'de bar görünürlüğü FeedPage içindeki NestedScrollView'dan gelen scroll yönüne göre (AppState.feedBottomBarVisible).
+    final showBottomBar = appState.pageIndex == 0 ? appState.feedBottomBarVisible : (appState.pageIndex != 0 || _bottomBarVisible);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
@@ -272,8 +292,20 @@ class _HomePageState extends State<HomePage> {
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: showFab ? _floatingActionButton(context) : null,
-        bottomNavigationBar: BottomMenubar(),
+        floatingActionButton: showFab
+            ? AnimatedSlide(
+                offset: Offset(0, showBottomBar ? 0 : 1),
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: _floatingActionButton(context),
+              )
+            : null,
+        bottomNavigationBar: AnimatedSlide(
+          offset: Offset(0, showBottomBar ? 0 : 1),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: BottomMenubar(),
+        ),
         drawer: SidebarMenu(),
         body: _body(),
       ),

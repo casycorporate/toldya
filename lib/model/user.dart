@@ -20,6 +20,10 @@ class UserModel {
   int? stashCount;
   /// Rütbe/limit için deneyim puanı (backend ile uyumlu)
   int? xp;
+  /// Haftalık XP (her Pazar sıfırlanır; lig sıralaması için)
+  int? weeklyXp;
+  /// Lig tier: Bronze, Silver, Gold, Diamond (backend runWeeklyLeagueReset ile set edilir)
+  String? tier;
   /// Son günlük bonus alım zamanı (ISO string)
   String? lastDailyClaimAt;
   /// Bahisçi skoru: Ne kadar isabetli tahminlere oynadı
@@ -58,6 +62,8 @@ class UserModel {
       this.pegCount,
       this.stashCount,
       this.xp,
+      this.weeklyXp,
+      this.tier,
       this.lastDailyClaimAt,
       this.rank,
       this.predictorScore,
@@ -90,6 +96,8 @@ class UserModel {
     pegCount = map["pegCount"];
     stashCount = map["stashCount"];
     xp = map["xp"];
+    weeklyXp = map["weeklyXp"];
+    tier = map["tier"]?.toString();
     lastDailyClaimAt = map["lastDailyClaimAt"];
     predictorScore = map['predictorScore'];
     currentStreak = map['currentStreak'];
@@ -148,6 +156,8 @@ class UserModel {
       'pegCount': pegCount,
       'stashCount': stashCount,
       'xp': xp,
+      'weeklyXp': weeklyXp,
+      'tier': tier,
       'lastDailyClaimAt': lastDailyClaimAt,
       'rank': rank,
       'predictorScore': predictorScore ?? 0,
@@ -174,6 +184,8 @@ class UserModel {
       int? pegCount,
       int? stashCount,
       int? xp,
+      int? weeklyXp,
+      String? tier,
       String? lastDailyClaimAt,
       String? webSite,
       bool? isVerified,
@@ -196,6 +208,8 @@ class UserModel {
         pegCount: pegCount ?? this.pegCount,
         stashCount: stashCount ?? this.stashCount,
         xp: xp ?? this.xp,
+        weeklyXp: weeklyXp ?? this.weeklyXp,
+        tier: tier ?? this.tier,
         lastDailyClaimAt: lastDailyClaimAt ?? this.lastDailyClaimAt,
         isVerified: isVerified ?? this.isVerified,
         key: key ?? this.key,

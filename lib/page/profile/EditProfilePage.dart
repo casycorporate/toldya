@@ -369,15 +369,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  /// Kullanıcı adını normalize eder: baştaki @ kaldırılır, sadece [a-zA-Z0-9_] kalır. Uygun değilse null.
+  /// Kullanıcı adını normalize eder: baştaki @ kaldırılır, sadece [a-zA-Z0-9_] kalır. Uygun değilse null. Dönen değer @ içermez.
   String? _normalizeUsername(String raw) {
     final s = raw.trim().replaceFirst(RegExp(r'^@+'), '').trim();
     if (s.length < _usernameMinLength || s.length > _usernameMaxLength) return null;
     if (!_usernameRegex.hasMatch(s)) return null;
-    return '@$s';
+    return s;
   }
 
   /// Firebase profile listesinde bu userName başka bir kullanıcıda var mı?
+  /// Hem eski (@sinan) hem yeni (sinan) formatla uyumlu: her iki taraf @'sız normalize edilip karşılaştırılır.
   Future<bool> _isUsernameTaken(String normalizedUserName, String currentUserId) async {
     final snapshot = await kDatabase.child('profile').get();
     if (snapshot.value == null) return false;
@@ -388,8 +389,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (uid == currentUserId) continue;
       final data = entry.value;
       if (data is! Map) continue;
-      final existing = data['userName']?.toString().trim();
-      if (existing != null && existing.toLowerCase() == lower) return true;
+      final existing = data['userName'];
+      final existingNorm = (existing?.toString().trim() ?? '').replaceFirst(RegExp(r'^@+'), '').trim().toLowerCase();
+      if (existingNorm.isNotEmpty && existingNorm == lower) return true;
     }
     return false;
   }

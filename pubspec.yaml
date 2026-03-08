@@ -51,6 +51,8 @@ dependencies:
   crypto: ^3.0.3
   percent_indicator: ^4.2.3
   flutter_svg: ^2.0.10+1
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.0
 
 dev_dependencies:
   flutter_test:

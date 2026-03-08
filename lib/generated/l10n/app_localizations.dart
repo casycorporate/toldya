@@ -346,6 +346,24 @@ abstract class AppLocalizations {
   /// **'Bir hata oluştu. Lütfen tekrar deneyin.'**
   String get errorTryAgain;
 
+  /// No description provided for @retry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar dene'**
+  String get retry;
+
+  /// No description provided for @loading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yükleniyor...'**
+  String get loading;
+
+  /// No description provided for @endOfResults.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçların sonu'**
+  String get endOfResults;
+
   /// No description provided for @post.
   ///
   /// In tr, this message translates to:
@@ -831,6 +849,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Lig ataması yapıldığında burada görüneceksin.'**
   String get leagueWillAppearWhenAssigned;
+
+  /// No description provided for @leaguePreSeasonTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni Sezon İçin Nefesler Tutuldu! 🏆'**
+  String get leaguePreSeasonTitle;
+
+  /// No description provided for @leaguePreSeasonSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rakiplerin belirleniyor... Lig atamaları yapıldığında burada 30 kişilik grubunla kıyasıya bir mücadele başlayacak.'**
+  String get leaguePreSeasonSubtitle;
+
+  /// No description provided for @leagueCountdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{days} gün {hours} saat'**
+  String leagueCountdown(int days, int hours);
 
   /// No description provided for @tokenInsufficientForVote.
   ///
@@ -1792,6 +1828,18 @@ abstract class AppLocalizations {
   /// **'{count} kişi paylaşımınıza oy verdi'**
   String votedOnYourPost(int count);
 
+  /// No description provided for @notificationCommentedOnPost.
+  ///
+  /// In tr, this message translates to:
+  /// **'tahminine yorum yaptı'**
+  String get notificationCommentedOnPost;
+
+  /// No description provided for @notificationStartedFollowingYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'seni takip etmeye başladı'**
+  String get notificationStartedFollowingYou;
+
   /// No description provided for @emailVerificationTitle.
   ///
   /// In tr, this message translates to:
@@ -2439,6 +2487,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Profil'**
   String get bottomNavProfile;
+
+  /// No description provided for @bottomNavLeaderboard.
+  ///
+  /// In tr, this message translates to:
+  /// **'Liderlik'**
+  String get bottomNavLeaderboard;
 
   /// No description provided for @goToProfile.
   ///

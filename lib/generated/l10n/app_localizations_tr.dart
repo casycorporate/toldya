@@ -133,6 +133,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get errorTryAgain => 'Bir hata oluştu. Lütfen tekrar deneyin.';
 
   @override
+  String get retry => 'Tekrar dene';
+
+  @override
+  String get loading => 'Yükleniyor...';
+
+  @override
+  String get endOfResults => 'Sonuçların sonu';
+
+  @override
   String get post => 'Gönderi';
 
   @override
@@ -388,6 +397,18 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get leagueWillAppearWhenAssigned =>
       'Lig ataması yapıldığında burada görüneceksin.';
+
+  @override
+  String get leaguePreSeasonTitle => 'Yeni Sezon İçin Nefesler Tutuldu! 🏆';
+
+  @override
+  String get leaguePreSeasonSubtitle =>
+      'Rakiplerin belirleniyor... Lig atamaları yapıldığında burada 30 kişilik grubunla kıyasıya bir mücadele başlayacak.';
+
+  @override
+  String leagueCountdown(int days, int hours) {
+    return '$days gün $hours saat';
+  }
 
   @override
   String get tokenInsufficientForVote =>
@@ -911,6 +932,12 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get notificationCommentedOnPost => 'tahminine yorum yaptı';
+
+  @override
+  String get notificationStartedFollowingYou => 'seni takip etmeye başladı';
+
+  @override
   String get emailVerificationTitle => 'E-posta doğrulama';
 
   @override
@@ -1282,6 +1309,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get bottomNavProfile => 'Profil';
+
+  @override
+  String get bottomNavLeaderboard => 'Liderlik';
 
   @override
   String get goToProfile => 'Profile git';

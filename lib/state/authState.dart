@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/network_utils.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -39,6 +40,14 @@ class AuthState extends AppState {
   List<String> _mutedPostIds = [];
   /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
   String? _pendingProfileRequestId;
+  String? _profileError;
+
+  String? get profileError => _profileError;
+
+  void clearProfileError() {
+    _profileError = null;
+    notifyListeners();
+  }
 
   UserModel? get userModel => _userModel;
 
@@ -295,6 +304,15 @@ class AuthState extends AppState {
     }
   }
 
+  /// Optimistic UI & rollback: bakiye alanlarını doğrudan günceller (placeBet anında veya geri alımda kullanılır).
+  void setBalanceOptimistic(int pegCount, int stashCount) {
+    if (_userModel != null) {
+      _userModel!.pegCount = pegCount;
+      _userModel!.stashCount = stashCount;
+      notifyListeners();
+    }
+  }
+
   /// Bugün günlük bonus alındı mı?
   bool get canClaimDailyBonus {
     final at = _userModel?.lastDailyClaimAt;
@@ -537,47 +555,45 @@ class AuthState extends AppState {
   }
 
   /// Fetch user profile
-  /// If `userProfileId` is null then logged in user's profile will fetched
+  /// If `userProfileId` is null then logged in user's profile will fetched.
+  /// Does not clear _profileUserModelList; keeps previous data until new data or error.
   getProfileUser({String? userProfileId}) {
-    try {
-      loading = true;
-      if (_profileUserModelList == null) {
-        _profileUserModelList = [];
-      }
-
-      userProfileId = userProfileId ?? user?.uid ?? '';
-      _pendingProfileRequestId = userProfileId;
-      final requestedId = userProfileId;
-
-      kDatabase
-          .child("profile")
-          .child(userProfileId!)
-          .once()
-          .then((snapshot) {
-        if (requestedId != _pendingProfileRequestId) return;
-        if (snapshot.snapshot.value != null) {
-          var map = snapshot.snapshot.value;
-          if (map != null) {
-            _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
-            if (user?.uid != null && userProfileId == user!.uid) {
-              _userModel = _profileUserModelList!.last;
-              _userModel!.isVerified = user!.emailVerified;
-              if (!user!.emailVerified) {
-                // Check if logged in user verified his email address or not
-                reloadUser();
-              }
-              updateFCMToken();
-            }
-            logEvent('get_profile');
-          }
-        }
-        loading = false;
-        notifyListeners();
-      });
-    } catch (error) {
-      loading = false;
-      cprint(error, errorIn: 'getProfileUser');
+    _profileError = null;
+    loading = true;
+    if (_profileUserModelList == null) {
+      _profileUserModelList = [];
     }
+
+    userProfileId = userProfileId ?? user?.uid ?? '';
+    _pendingProfileRequestId = userProfileId;
+    final requestedId = userProfileId;
+
+    runWithTimeoutAndRetry(() => kDatabase.child("profile").child(userProfileId!).once())
+        .then((snapshot) {
+      if (requestedId != _pendingProfileRequestId) return;
+      if (snapshot.snapshot.value != null) {
+        var map = snapshot.snapshot.value;
+        if (map != null) {
+          _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
+          if (user?.uid != null && userProfileId == user!.uid) {
+            _userModel = _profileUserModelList!.last;
+            _userModel!.isVerified = user!.emailVerified;
+            if (!user!.emailVerified) {
+              reloadUser();
+            }
+            updateFCMToken();
+          }
+          logEvent('get_profile');
+        }
+      }
+      loading = false;
+      notifyListeners();
+    }).catchError((error) {
+      loading = false;
+      _profileError = error?.toString() ?? 'Failed to load profile';
+      cprint(error, errorIn: 'getProfileUser');
+      notifyListeners();
+    });
   }
 
   /// if firebase token not available in profile
@@ -638,7 +654,20 @@ class AuthState extends AppState {
           .child(currentUser.userId ?? '')
           .child('followingList')
           .set(currentUser.followingList);
-      cprint('user added to following list', event: 'add_follow');
+      if (!removeFollower) {
+        kDatabase
+            .child('followers')
+            .child(profileUser.userId ?? '')
+            .child(currentUser.userId ?? '')
+            .set(ServerValue.timestamp);
+      } else {
+        kDatabase
+            .child('followers')
+            .child(profileUser.userId ?? '')
+            .child(currentUser.userId ?? '')
+            .remove();
+      }
+      cprint(removeFollower ? 'user removed from following list' : 'user added to following list', event: removeFollower ? 'remove_follow' : 'add_follow');
       notifyListeners();
     } catch (error) {
       cprint(error, errorIn: 'followUser');
@@ -674,6 +703,19 @@ class AuthState extends AppState {
           .child(currentUser.userId ?? '')
           .child('followingList')
           .set(currentUser.followingList);
+      if (!removeFollower) {
+        await kDatabase
+            .child('followers')
+            .child(targetUserId)
+            .child(currentUser.userId ?? '')
+            .set(ServerValue.timestamp);
+      } else {
+        await kDatabase
+            .child('followers')
+            .child(targetUserId)
+            .child(currentUser.userId ?? '')
+            .remove();
+      }
       notifyListeners();
     } catch (error) {
       cprint(error, errorIn: 'followUserByUserId');

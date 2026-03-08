@@ -17,6 +17,7 @@ import 'package:toldya/widgets/customAppBar.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -54,11 +55,14 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   @override
   void initState() {
     var feedState = Provider.of<FeedState>(context, listen: false);
+    var composeState = Provider.of<ComposeToldyaState>(context, listen: false);
     if (feedState.toldyaToEditModel != null) {
       model = feedState.toldyaToEditModel!;
       _isEditMode = true;
       feedState.clearToldyaToEdit();
-      _textEditingController = TextEditingController(text: model.description ?? '');
+      final initial = model.description ?? '';
+      _textEditingController = TextEditingController(text: initial);
+      composeState.setInitialDescription(initial);
     } else {
       model = feedState.toldyaToReplyModel ?? FeedModel();
       _textEditingController = TextEditingController();
@@ -97,9 +101,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
 
   /// Submit tweet to save in firebase database
   void _submitButton() async {
-    if (_textEditingController.text == null ||
-        _textEditingController.text.isEmpty ||
-        _textEditingController.text.length > 280) {
+    if (_textEditingController.text.isEmpty ||
+        _textEditingController.text.length > ComposeToldyaState.kToldyaMaxLength) {
       return;
     }
     var state = Provider.of<FeedState>(context, listen: false);
@@ -132,6 +135,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       } else {
         await state.addcommentToPost(toldyaModel);
       }
+      debugPrint("[FeedDebug] Compose: post published, toldyaKey=${toldyaModel.key ?? 'unknown'}");
 
       await Provider.of<ComposeToldyaState>(context, listen: false)
           .sendNotification(
@@ -338,6 +342,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: true,
       appBar: CustomAppBar(
         title: customTitleText(''),
         onActionPressed: _submitButton,
@@ -353,22 +358,30 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         isbootomLine: Provider.of<ComposeToldyaState>(context).isScrollingDown,
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        child: Stack(
-          children: <Widget>[
-            SingleChildScrollView(
-              controller: scrollcontroller,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.isToldya) _buildChallengeeRow(),
-                  widget.isRetoldya
-                      ? _ComposeRetoldya(this)
-                      : _ComposeToldya(this),
-                ],
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          child: Stack(
+            children: <Widget>[
+              SingleChildScrollView(
+                controller: scrollcontroller,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.isToldya) _buildChallengeeRow(),
+                      widget.isRetoldya
+                          ? _ComposeRetoldya(this)
+                          : _ComposeToldya(this),
+                    ],
+                  ),
+                ),
               ),
-            ),
             // Align(
             //   alignment: Alignment.bottomCenter,
             //   child: ComposeBottomIconWidget(
@@ -377,6 +390,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
             //   ),
             // ),
           ],
+        ),
         ),
       ),
     );
@@ -684,7 +698,8 @@ class _TextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final searchState = Provider.of<SearchState>(context, listen: false);
-    return Column(
+    final theme = Theme.of(context);
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         TextField(
@@ -695,7 +710,7 @@ class _TextField extends StatelessWidget {
           },
           maxLines: null,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: theme.colorScheme.onSurface,
             fontSize: 18,
           ),
           decoration: InputDecoration(
@@ -707,10 +722,45 @@ class _TextField extends StatelessWidget {
                       : 'Bu tahmine yorum yap',
               hintStyle: TextStyle(
                 fontSize: 18,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               )),
         ),
+        Consumer<ComposeToldyaState>(
+          builder: (context, state, _) {
+            final color = state.isOverLimit
+                ? theme.colorScheme.error
+                : state.isNearLimit
+                    ? Colors.orange
+                    : theme.colorScheme.onSurface.withOpacity(0.7);
+            return Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${state.characterCount} / ${ComposeToldyaState.kToldyaMaxLength}',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ],
+    );
+    return Consumer<ComposeToldyaState>(
+      builder: (context, state, _) {
+        final key = ValueKey(state.isOverLimit ? 'over' : 'under');
+        final child = KeyedSubtree(
+          key: key,
+          child: state.isOverLimit
+              ? content.animate().shake(duration: 300.ms, hz: 4, curve: Curves.easeInOut)
+              : content,
+        );
+        return child;
+      },
     );
   }
 }

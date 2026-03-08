@@ -264,32 +264,37 @@ class _ToldyaBody extends StatelessWidget {
             ? FontWeight.w400
             : FontWeight.w400;
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        SizedBox(width: 14),
-        Container(width: 52, height: 78, child: _userAvater(model.user?.userId ?? '')),
-        SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
+    final authorUserId = model.user?.userId ?? '';
+    return FutureBuilder<UserModel?>(
+      future: authorUserId.isEmpty ? Future.value(null) : authstate.getuserDetail(authorUserId),
+      builder: (context, authorSnap) {
+        final author = authorSnap.data ?? model.user;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(width: 14),
+            Container(width: 52, height: 78, child: _userAvater(authorUserId)),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    child: Row(
-                      children: <Widget>[
-                        Flexible(
-                          child: TitleText(
-                            model.user?.displayName ?? '',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            overflow: TextOverflow.ellipsis,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Expanded(
+                        child: Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: TitleText(
+                                author?.displayName ?? '',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                overflow: TextOverflow.ellipsis,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
                         if ((model.user?.currentStreak ?? 0) >= 3)
                           Padding(
                             padding: EdgeInsets.only(left: 4),
@@ -434,6 +439,8 @@ class _ToldyaBody extends StatelessWidget {
         SizedBox(width: 10),
       ],
     );
+      },
+    );
   }
 }
 
@@ -540,47 +547,48 @@ class _ToldyaDetailBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: 1),
-                leading: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context)
-                        .pushNamed('/ProfilePage/' + (model?.userId ?? ''));
-                  },
-                  child:  Container(width: 40, height: 60, child: _userAvater(model.user?.userId ?? '')),
-                ),
-                title: Row(
-                  children: <Widget>[
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                          minWidth: 0, maxWidth: fullWidth(context) * .31),
-                      child: TitleText(model.user?.displayName ?? '',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          overflow: TextOverflow.ellipsis),
+              FutureBuilder<UserModel?>(
+                future: authstate.getuserDetail(model.user?.userId ?? model.userId ?? ''),
+                builder: (context, authorSnap) {
+                  final author = authorSnap.data ?? model.user;
+                  final authorUserId = author?.userId ?? model.userId ?? '';
+                  return ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 1),
+                    leading: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context)
+                            .pushNamed('/ProfilePage/' + (authorUserId.isNotEmpty ? authorUserId : model?.userId ?? ''));
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 60,
+                        child: authorSnap.hasData && authorSnap.data != null
+                            ? customProfileImage(context, authorSnap.data!.profilePic, userId: authorSnap.data!.userId, height: 40)
+                            : _userAvater(model.user?.userId ?? ''),
+                      ),
                     ),
-                    SizedBox(width: 2),
+                    title: Row(
+                      children: <Widget>[
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                              minWidth: 0, maxWidth: fullWidth(context) * .31),
+                          child: TitleText(author?.displayName ?? '',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        SizedBox(width: 2),
 
-                    customText('· ${getEndTime(model.endDate ?? '')}',
-                        style: userNameStyle),
-                    // model.user.isVerified
-                    //     ? customIcon(
-                    //         context,
-                    //         icon: AppIcon.blueTick,
-                    //         istwitterIcon: true,
-                    //         iconColor: AppColor.primary,
-                    //         size: 13,
-                    //         paddingIcon: 3,
-                    //       )
-                    //     : SizedBox(width: 0),
-                    SizedBox(
-                      width: (model.user?.isVerified ?? false) ? 1 : 0,
+                        customText('· ${getEndTime(model.endDate ?? '')}',
+                            style: userNameStyle),
+                        SizedBox(
+                          width: (author?.isVerified ?? false) ? 1 : 0,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                subtitle:
-                    customText('${model.user?.userName ?? ''}', style: userNameStyle),
-                trailing:
+                    subtitle:
+                        customText(formatHandle(author?.userName, author?.displayName), style: userNameStyle),
+                    trailing:
                 FittedBox(
                   fit: BoxFit.fill,
                   child: Row(
@@ -617,6 +625,8 @@ class _ToldyaDetailBody extends StatelessWidget {
                     ],
                   ),
                 ),
+              );
+                },
               ),
               if (_showStatuBadge(model.statu))
                 Padding(

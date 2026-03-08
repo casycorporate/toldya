@@ -29,6 +29,16 @@ class AppState extends ChangeNotifier {
       _lastTabBeforeProfile = index;
     }
     _pageIndex = index;
+    if (index == 0) _feedBottomBarVisible = true;
+    notifyListeners();
+  }
+
+  /// Feed sekmesinde bottom bar görünürlüğü (NestedScrollView iç scroll'dan gelen yöne göre).
+  bool _feedBottomBarVisible = true;
+  bool get feedBottomBarVisible => _feedBottomBarVisible;
+  set setFeedBottomBarVisible(bool value) {
+    if (_feedBottomBarVisible == value) return;
+    _feedBottomBarVisible = value;
     notifyListeners();
   }
 

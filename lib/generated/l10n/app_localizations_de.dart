@@ -137,6 +137,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
 
   @override
+  String get retry => 'Erneut versuchen';
+
+  @override
+  String get loading => 'Laden...';
+
+  @override
+  String get endOfResults => 'Ende der Ergebnisse';
+
+  @override
   String get post => 'Beitrag';
 
   @override
@@ -393,6 +402,18 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get leagueWillAppearWhenAssigned =>
       'Du erscheinst hier, sobald die Liga-Zuordnung durchgeführt wurde.';
+
+  @override
+  String get leaguePreSeasonTitle => 'Die neue Saison steht vor der Tür! 🏆';
+
+  @override
+  String get leaguePreSeasonSubtitle =>
+      'Die Gegner werden ermittelt... Sobald die Liga-Zuordnung erfolgt ist, trittst du hier in einer 30er-Gruppe an.';
+
+  @override
+  String leagueCountdown(int days, int hours) {
+    return '${days}d ${hours}h';
+  }
 
   @override
   String get tokenInsufficientForVote =>
@@ -916,6 +937,12 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get notificationCommentedOnPost => 'hat deine Vorhersage kommentiert';
+
+  @override
+  String get notificationStartedFollowingYou => 'folgt dir jetzt';
+
+  @override
   String get emailVerificationTitle => 'E‑Mail‑Bestätigung';
 
   @override
@@ -1292,6 +1319,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get bottomNavProfile => 'Profil';
+
+  @override
+  String get bottomNavLeaderboard => 'Liga';
 
   @override
   String get goToProfile => 'Zum Profil';

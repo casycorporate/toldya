@@ -261,7 +261,9 @@ class NotificationService {
         break;
       case 'NotificationType.Message':
       case 'Message':
-        navigator.pushNamed('/ChatScreenPage');
+        if (id.isNotEmpty) {
+          navigator.pushNamed('/ChatScreenPage');
+        }
         break;
       default:
         if (id.isNotEmpty) {

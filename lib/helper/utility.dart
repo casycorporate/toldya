@@ -20,6 +20,14 @@ final kAnalytics = FirebaseAnalytics.instance;
 final DatabaseReference kDatabase = FirebaseDatabase.instance.ref();
 final kScreenloader = CustomLoader();
 
+/// Kullanıcı adı gösterimi: baştaki @ kaldırılır, sadece kullanıcı adı döner (örn. "sinanyilmaz").
+String formatHandle(String? userName, [String? displayName]) {
+  final raw = userName?.trim() ?? displayName?.trim() ?? '';
+  if (raw.isEmpty) return '';
+  final withoutLeadingAt = raw.startsWith('@') ? raw.substring(1) : raw;
+  return withoutLeadingAt.trim();
+}
+
 String getPostTime2(String date) {
   if (date == null || date.isEmpty) {
     return '';

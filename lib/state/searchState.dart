@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/network_utils.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/user.dart';
 import 'appState.dart';
@@ -9,6 +10,14 @@ class SearchState extends AppState {
   SortUser sortBy = SortUser.ByMaxFollower;
   List<UserModel>? _userFilterlist;
   List<UserModel>? _userlist;
+  String? _searchError;
+
+  String? get searchError => _searchError;
+
+  void clearSearchError() {
+    _searchError = null;
+    notifyListeners();
+  }
 
   List<UserModel>? get userlist {
     final list = _userFilterlist;
@@ -18,32 +27,36 @@ class SearchState extends AppState {
   }
 
   /// get [UserModel list] from firebase realtime Database
+  /// Does not clear _userlist/_userFilterlist at start; keeps previous data until new data or error.
   void getDataFromDatabase() {
-    try {
-      isBusy = true;
-      kDatabase.child('profile').once().then(
-        (snapshot) {
-          _userlist = <UserModel>[];
-          _userFilterlist = <UserModel>[];
-          if (snapshot.snapshot.value != null) {
-            final map = Map<dynamic, dynamic>.from(snapshot.snapshot.value as Map);
-            map.forEach((key, value) {
-              var model = UserModel.fromJson(Map<String, dynamic>.from(value as Map));
-              model.key = key.toString();
-              _userlist!.add(model);
-              _userFilterlist!.add(model);
-            });
-            _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
-          } else {
-            _userlist = null;
-          }
-          isBusy = false;
-        },
-      );
-    } catch (error) {
+    _searchError = null;
+    isBusy = true;
+    notifyListeners();
+    runWithTimeoutAndRetry(() => kDatabase.child('profile').once()).then((snapshot) {
+      final newList = <UserModel>[];
+      if (snapshot.snapshot.value != null) {
+        final map = Map<dynamic, dynamic>.from(snapshot.snapshot.value as Map);
+        map.forEach((key, value) {
+          var model = UserModel.fromJson(Map<String, dynamic>.from(value as Map));
+          model.key = key.toString();
+          newList.add(model);
+        });
+      }
+      _userlist = newList.isEmpty ? null : newList;
+      if (newList.isEmpty) {
+        _userFilterlist = null;
+      } else {
+        _userFilterlist = List.from(newList);
+        _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+      }
       isBusy = false;
+      notifyListeners();
+    }).catchError((error) {
+      isBusy = false;
+      _searchError = error?.toString() ?? 'Failed to load search data';
       cprint(error, errorIn: 'getDataFromDatabase');
-    }
+      notifyListeners();
+    });
   }
 
   /// It will reset filter list

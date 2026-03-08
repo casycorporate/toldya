@@ -20,6 +20,7 @@ import 'package:toldya/page/settings/accountSettings/contentPrefrences/trends/tr
 import 'package:toldya/page/settings/accountSettings/dataUsage/dataUsagePage.dart';
 import 'package:toldya/page/settings/accountSettings/displaySettings/displayAndSoundPage.dart';
 import 'package:toldya/page/settings/accountSettings/notifications/notificationPage.dart';
+import 'package:toldya/page/notification/notificationPage.dart' as notification_feed;
 import 'package:toldya/page/settings/accountSettings/privacyAndSafety/directMessage/directMessage.dart';
 import 'package:toldya/page/settings/accountSettings/privacyAndSafety/privacyAndSafetyPage.dart';
 import 'package:toldya/page/settings/accountSettings/proxy/proxyPage.dart';
@@ -102,7 +103,8 @@ class Routes{
       case "AccountSettingsPage":return CustomRoute<bool>(builder:(BuildContext context)=> AccountSettingsPage(),); 
       case "AccountSettingsPage":return CustomRoute<bool>(builder:(BuildContext context)=> AccountSettingsPage(),); 
       case "PrivacyAndSaftyPage":return CustomRoute<bool>(builder:(BuildContext context)=> PrivacyAndSaftyPage(),); 
-      case "NotificationPage":return CustomRoute<bool>(builder:(BuildContext context)=> NotificationPage(),); 
+      case "NotificationPage":return CustomRoute<bool>(builder:(BuildContext context)=> NotificationPage(),);
+      case "NotificationFeedPage":return CustomRoute<bool>(builder:(BuildContext context)=> notification_feed.NotificationPage(),); 
       case "ContentPrefrencePage":return CustomRoute<bool>(builder:(BuildContext context)=> ContentPrefrencePage(),); 
       case "DisplayAndSoundPage":return CustomRoute<bool>(builder:(BuildContext context)=> DisplayAndSoundPage(),); 
       case "DirectMessagesPage":return CustomRoute<bool>(builder:(BuildContext context)=> DirectMessagesPage(),); 

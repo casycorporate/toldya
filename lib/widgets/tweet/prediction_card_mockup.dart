@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/widgets/animated_bounce_button.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
@@ -8,6 +10,7 @@ import 'package:toldya/helper/topicMap.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/user.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -64,35 +67,50 @@ class PredictionCardMockup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Üst satır: sol avatar + @kullanici + kategori; sağ LIVE + Kalan + aksiyon ikonları
+          // Üst satır: sol avatar + @kullanici (güncel profil) + kategori; sağ LIVE + Kalan + aksiyon ikonları
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _avatarSection(context),
-              SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '@${model.user?.userName ?? model.user?.displayName ?? ''}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      topicLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
+                child: FutureBuilder<UserModel?>(
+                  future: Provider.of<AuthState>(context, listen: false).getuserDetail(model.user?.userId ?? ''),
+                  builder: (context, AsyncSnapshot<UserModel?> snapshot) {
+                    final user = snapshot.data ?? model.user;
+                    final handle = formatHandle(user?.userName, user?.displayName);
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildAvatar(context, user),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                handle,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                topicLabel,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               if (isLive || isTrend) ...[
@@ -297,40 +315,32 @@ class PredictionCardMockup extends StatelessWidget {
     );
   }
 
-  Widget _avatarSection(BuildContext context) {
-    return FutureBuilder(
-      future: Provider.of<AuthState>(context, listen: false).getuserDetail(model.user?.userId ?? ''),
-      builder: (context, AsyncSnapshot<dynamic> snapshot) {
-        if (!snapshot.hasData || snapshot.data == null) {
-          return SizedBox(width: 34, height: 34);
-        }
-        final user = snapshot.data as dynamic;
-        final userId = user?.userId ?? model.user?.userId ?? '';
-        final profilePic = user?.profilePic ?? '';
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pushNamed('/ProfilePage/$userId'),
+  Widget _buildAvatar(BuildContext context, UserModel? user) {
+    final userId = user?.userId ?? model.user?.userId ?? '';
+    final profilePic = user?.profilePic ?? '';
+    if (userId.isEmpty) return SizedBox(width: 34, height: 34);
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/ProfilePage/$userId'),
+      child: Container(
+        padding: EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppNeon.orange.withOpacity(0.8), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: AppNeon.orange.withOpacity(0.2),
+              blurRadius: 6,
+            ),
+          ],
+        ),
+        child: ClipOval(
           child: Container(
-            padding: EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppNeon.orange.withOpacity(0.8), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: AppNeon.orange.withOpacity(0.2),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Container(
-                color: Theme.of(context).cardColor,
-                padding: EdgeInsets.all(1),
-                child: customProfileImage(context, profilePic.isEmpty ? null : profilePic, userId: userId, height: 28),
-              ),
-            ),
+            color: Theme.of(context).cardColor,
+            padding: EdgeInsets.all(1),
+            child: customProfileImage(context, profilePic.isEmpty ? null : profilePic, userId: userId, height: 28),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -377,32 +387,38 @@ class PredictionCardMockup extends StatelessWidget {
     required VoidCallback onPressed,
     required bool closed,
   }) {
-    return Material(
-      color: color.withOpacity(0.15),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onPressed,
+    return AnimatedBounceButton(
+      enabled: !closed,
+      child: Material(
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.4), width: 1),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: color),
-              SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  fontSize: 14,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onPressed();
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.4), width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 20, color: color),
+                SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

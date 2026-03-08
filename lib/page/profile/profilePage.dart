@@ -15,6 +15,7 @@ import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/custom_shimmer.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
@@ -217,10 +218,25 @@ class _ProfilePageState extends State<ProfilePage>
         profileMatchesPage;
     debugPrint('[ProfilePage] build profileId=${widget.profileId} profileUserModel=${authstate.profileUserModel != null} isbusy=${authstate.isbusy} showHeader=$showHeader');
 
-    /// Filter user's tweet among all tweets available in home page tweets list
-    List<FeedModel> list = feedlist
+    if (id.isNotEmpty && profileMatchesPage && state.profileUserToldyaUserId != id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Provider.of<FeedState>(context, listen: false).loadToldyaListForUser(id);
+        }
+      });
+    }
+
+    /// Bahislerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
+    final listForBahislerim = (state.profileUserToldyaUserId == id && state.profileUserToldyaList != null)
+        ? state.profileUserToldyaList!
+        : feedlist
+            .where((x) =>
+                (x.parentkey == null || x.childRetoldyaKey != null) &&
+                x.userId == id)
+            .toList();
+    /// Oy verdiklerim: from feedlist where user has voted
+    final listForOyVerdiklerim = feedlist
         .where((x) =>
-            x.userId == id ||
             (x.unlikeList ?? []).any((e) => e.userId == profileUserId) ||
             (x.likeList ?? []).any((e) => e.userId == profileUserId))
         .toList();
@@ -239,33 +255,57 @@ class _ProfilePageState extends State<ProfilePage>
                 ? false
                 : (widget.profileId == null ||
                     authstate.profileUserModel!.userId == widget.profileId);
-            final showHeader = !authstate.isbusy &&
-                !isBlackList() &&
-                authstate.profileUserModel != null &&
-                profileMatchesPage;
+            final hasProfile = authstate.profileUserModel != null && profileMatchesPage;
+            final showHeader = !isBlackList() && hasProfile;
             final waitingForProfile =
                 widget.profileId != null && !profileMatchesPage;
             final ownProfileWaiting = widget.profileId == null &&
-                authstate.profileUserModel == null &&
-                !authstate.isbusy;
+                authstate.profileUserModel == null;
+            final showProfileShimmer = (waitingForProfile || ownProfileWaiting) &&
+                authstate.isbusy &&
+                authstate.profileError == null;
+            final showProfileError = (waitingForProfile || ownProfileWaiting) &&
+                authstate.profileError != null;
+            final l10n = AppLocalizations.of(context)!;
             return <Widget>[
               getAppbar(),
-              authstate.isbusy || isBlackList()
+              if (authstate.isbusy && showHeader)
+                SliverToBoxAdapter(
+                  child: LinearProgressIndicator(
+                    backgroundColor: MockupDesign.background,
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                  ),
+                ),
+              authstate.isbusy && isBlackList()
                   ? _emptyBox()
                   : SliverToBoxAdapter(
                       child: !showHeader
-                          ? (waitingForProfile || ownProfileWaiting)
+                          ? showProfileError
                               ? Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 48),
-                                  child: Center(
-                                    child: CustomScreenLoader(
-                                      height: 60,
-                                      width: 60,
-                                      backgroundColor: Colors.transparent,
-                                    ),
+                                  padding: EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        l10n.errorTryAgain,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                      ),
+                                      SizedBox(height: 16),
+                                      TextButton.icon(
+                                        onPressed: () {
+                                          authstate.clearProfileError();
+                                          authstate.getProfileUser(userProfileId: widget.profileId);
+                                        },
+                                        icon: Icon(Icons.refresh),
+                                        label: Text(l10n.retry),
+                                      ),
+                                    ],
                                   ),
                                 )
-                              : SizedBox.shrink()
+                              : showProfileShimmer
+                                  ? ProfileShimmer()
+                                  : SizedBox.shrink()
                           : _ProfileHeader(
                               user: authstate.profileUserModel!,
                               isMyProfile: isMyProfile,
@@ -355,7 +395,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 child: _tweetList(
                                   context,
                                   authstate,
-                                  list,
+                                  listForBahislerim,
                                   false,
                                   false,
                                   id,
@@ -364,10 +404,10 @@ class _ProfilePageState extends State<ProfilePage>
                               ),
                             ],
                           )
-                        : _tweetList(context, authstate, list, false, false, id),
+                        : _tweetList(context, authstate, listForBahislerim, false, false, id),
 
-                    /// Display all reply tweet list
-                    _tweetList(context, authstate, list, true, false, id),
+                    /// Display all reply tweet list (oy verdiklerim)
+                    _tweetList(context, authstate, listForOyVerdiklerim, true, false, id),
 
                     // /// Display all reply and comments tweet list
                     // _tweetList(context, authstate, list, false, true)
@@ -932,11 +972,11 @@ class _ProfilePageState extends State<ProfilePage>
           final s = parseStatu(x.statu);
           if (s == null) return false;
           switch (statusFilter) {
-            case 0: // Aktif: yayında, bahis alınabilir (statu 0, 2)
-              return s == Statu.statusLive || s == Statu.statusOk;
+            case 0: // Aktif: yayında veya kilitli, bahis açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
+              return s == Statu.statusLive || s == Statu.statusLocked;
             case 1: // Bekleyen: admin/AI incelemesi bekliyor (statu 1, 6)
               return s == Statu.statusPending || s == Statu.statusPendingAiReview;
-            case 2: // Tamamlanan: onaylanmış / sonuçlanmış (statu 2, 4)
+            case 2: // Tamamlanan: onaylanmış / sonuçlanmış (statu 2, 4) — "bitmiş" burada
               return s == Statu.statusOk || s == Statu.statusComplete;
             case 3: // Reddedilen: admin/AI reddi (statu 3, 7)
               return s == Statu.statusDenied || s == Statu.statusRejectedByAi;
@@ -965,32 +1005,67 @@ class _ProfilePageState extends State<ProfilePage>
           .toList();
     }
 
-    /// if [authState.isbusy] is true then an loading indicator will be displayed on screen.
-    return authstate.isbusy
-        ? Container(
-            height: fullHeight(context) - 180,
-            child: CustomScreenLoader(
-              height: double.infinity,
-              width: fullWidth(context),
-              backgroundColor: MockupDesign.background,
-            ),
-          )
-
-        /// if tweet list is empty or null then need to show user a message
-        : list.isEmpty
-            ? Container(
-                padding: EdgeInsets.only(top: 20, left: 30, right: 30),
-                color: MockupDesign.background,
-                child: NotifyText(
-                  title: _emptyListTitle(
-                    isreply: isreply,
-                    isMedia: isMedia,
-                    statusFilter: statusFilter,
-                    isMyProfile: isMyProfile,
-                    profileUserName: authstate.profileUserModel?.userName ?? '',
+    /// When loading: show list with top indicator if we have data, else shimmer placeholders.
+    if (authstate.isbusy && list.isNotEmpty) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(
+            backgroundColor: MockupDesign.background,
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing8),
+              itemCount: list.length,
+              itemBuilder: (context, index) => Padding(
+                padding: EdgeInsets.only(bottom: spacing8),
+                child: _ProfilePredictionCard(
+                  model: list[index],
+                  scaffoldKey: scaffoldKey,
+                  trailing: ToldyaBottomSheet().toldyaOptionIcon(
+                    context,
+                    model: list[index],
+                    type: ToldyaType.Toldya,
+                    scaffoldKey: scaffoldKey,
                   ),
-                  subTitle:
-                      isMyProfile ? AppLocalizations.of(context)!.addNow : AppLocalizations.of(context)!.willShowHere,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (authstate.isbusy && list.isEmpty) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing8),
+          child: FeedShimmer(itemCount: 3),
+        ),
+      );
+    }
+
+    /// if tweet list is empty or null then need to show user a message
+    final bottomPadding = 24.0 + MediaQuery.of(context).padding.bottom;
+    return list.isEmpty
+            ? SingleChildScrollView(
+                child: Container(
+                  padding: EdgeInsets.only(top: 20, left: 30, right: 30, bottom: bottomPadding),
+                  color: MockupDesign.background,
+                  constraints: BoxConstraints(
+                    minHeight: 200,
+                  ),
+                  child: NotifyText(
+                    title: _emptyListTitle(
+                      isreply: isreply,
+                      isMedia: isMedia,
+                      statusFilter: statusFilter,
+                      isMyProfile: isMyProfile,
+                      profileUserName: authstate.profileUserModel?.userName ?? '',
+                    ),
+                    subTitle:
+                        isMyProfile ? AppLocalizations.of(context)!.addNow : AppLocalizations.of(context)!.willShowHere,
+                  ),
                 ),
               )
 
@@ -1112,7 +1187,7 @@ class _ProfilePredictionCard extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              '@${model.user?.userName ?? model.user?.displayName ?? ''}',
+                              formatHandle(model.user?.userName, model.user?.displayName),
                               style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
                               overflow: TextOverflow.ellipsis,
                             ),
