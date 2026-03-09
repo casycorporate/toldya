@@ -46,7 +46,6 @@ dependencies:
   cupertino_radio_choice: ^1.0.1+1
   animated_bottom_navigation_bar: ^0.3.2
   circular_reveal_animation: ^2.0.0
-  flutter_rating_bar: ^4.0.1
   flutter_picker: ^2.0.2
   crypto: ^3.0.3
   percent_indicator: ^4.2.3

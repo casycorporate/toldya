@@ -19,7 +19,10 @@ class NotificationState extends AppState {
   List<NotificationModel>? _notificationList;
   DateTime? _lastSeenAt;
   bool isBusy = false;
+  bool _hasCompletedInitialLoad = false;
   String? _notificationError;
+
+  bool get hasCompletedInitialLoad => _hasCompletedInitialLoad;
 
   String? get notificationError => _notificationError;
 
@@ -125,10 +128,12 @@ class NotificationState extends AppState {
       }
       _notificationList = newList;
       isBusy = false;
+      _hasCompletedInitialLoad = true;
       await _loadLastSeenAt(userId);
       notifyListeners();
     }).catchError((error) {
       isBusy = false;
+      _hasCompletedInitialLoad = true;
       _notificationError = error?.toString() ?? 'Failed to load notifications';
       cprint(error, errorIn: 'getDataFromDatabase');
       notifyListeners();

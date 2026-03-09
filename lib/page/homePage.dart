@@ -176,7 +176,7 @@ class _HomePageState extends State<HomePage> {
   //   });
   // }
 
-  Widget _body() {
+  Widget _body({required bool reserveBottomPadding}) {
     final index = Provider.of<AppState>(context).pageIndex;
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification n) {
@@ -190,6 +190,8 @@ class _HomePageState extends State<HomePage> {
         return false;
       },
       child: SafeArea(
+        top: true,
+        bottom: reserveBottomPadding,
         child: IndexedStack(
           index: index,
           children: [
@@ -228,30 +230,30 @@ class _HomePageState extends State<HomePage> {
 
   Widget _floatingActionButton(BuildContext context) {
     return Container(
-      height: 56,
-      width: 56,
+      height: 52,
+      width: 52,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppNeon.green,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
         child: InkWell(
-          customBorder: CircleBorder(),
+          customBorder: const CircleBorder(),
           onTap: () => Navigator.of(context).pushNamed('/CreateFeedPage/toldya'),
           child: Center(
             child: Icon(
               Icons.bolt,
               color: Colors.white,
-              size: 28,
+              size: 26,
             ),
           ),
         ),
@@ -263,8 +265,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final bool showFab = MediaQuery.of(context).viewInsets.bottom==0.0;
     final appState = Provider.of<AppState>(context);
-    // Feed'de bar görünürlüğü FeedPage içindeki NestedScrollView'dan gelen scroll yönüne göre (AppState.feedBottomBarVisible).
-    final showBottomBar = appState.pageIndex == 0 ? appState.feedBottomBarVisible : (appState.pageIndex != 0 || _bottomBarVisible);
+    // Feed'de bar görünürlüğü FeedPage içindeki scroll olaylarına göre (AppState.feedBottomBarVisible).
+    final showBottomBar = appState.pageIndex == 0
+        ? appState.feedBottomBarVisible
+        : (appState.pageIndex != 0 || _bottomBarVisible);
+    final isFeedTab = appState.pageIndex == 0;
+    final reserveBottomPadding = isFeedTab ? showBottomBar : true;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
@@ -286,28 +292,30 @@ class _HomePageState extends State<HomePage> {
           if (mounted) setState(() => _pendingExit = false);
         });
       },
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: true,
-        key: _scaffoldKey,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: showFab
-            ? AnimatedSlide(
-                offset: Offset(0, showBottomBar ? 0 : 1),
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: _floatingActionButton(context),
-              )
-            : null,
-        bottomNavigationBar: AnimatedSlide(
-          offset: Offset(0, showBottomBar ? 0 : 1),
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          child: BottomMenubar(),
+      child: MediaQuery.removePadding(
+        context: context,
+        removeBottom: true,
+        child: Scaffold(
+          extendBody: true,
+          resizeToAvoidBottomInset: true,
+          key: _scaffoldKey,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: showFab && showBottomBar
+              ? _floatingActionButton(context)
+              : null,
+          bottomNavigationBar: SizedBox(
+            height: 56,
+            child: AnimatedSlide(
+              offset: Offset(0, showBottomBar ? 0 : 1),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: BottomMenubar(),
+            ),
+          ),
+          drawer: SidebarMenu(),
+          body: _body(reserveBottomPadding: reserveBottomPadding),
         ),
-        drawer: SidebarMenu(),
-        body: _body(),
       ),
     );
   }

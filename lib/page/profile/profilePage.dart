@@ -1,7 +1,6 @@
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
@@ -21,32 +20,10 @@ import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
 import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
+import 'package:toldya/widgets/rank/xpProgressBarWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
-double _xpProgress(int xp) {
-  if (xp < AppIcon.xpCaylakMax) return (xp / AppIcon.xpCaylakMax).clamp(0.0, 1.0);
-  if (xp < AppIcon.xpUstaMin) return ((xp - AppIcon.xpCaylakMax) / (AppIcon.xpUstaMin - AppIcon.xpCaylakMax)).clamp(0.0, 1.0);
-  return 1.0;
-}
-
-String _xpProgressLabel(BuildContext context, int xp) {
-  final l10n = AppLocalizations.of(context)!;
-  if (xp < AppIcon.xpCaylakMax) {
-    return l10n.xpProgressLabel(xp, AppIcon.xpCaylakMax);
-  }
-  if (xp < AppIcon.xpUstaMin) {
-    return l10n.xpProgressLabel(xp, AppIcon.xpUstaMin);
-  }
-  return l10n.xpProgressMaxLabel(xp);
-}
-
-String _rankTitleForXp(BuildContext context, int xp) {
-  final l10n = AppLocalizations.of(context)!;
-  if (xp < AppIcon.xpCaylakMax) return l10n.rankRookie;
-  if (xp < AppIcon.xpUstaMin) return l10n.rankPredictor;
-  return l10n.rankMaster;
-}
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.profileId, this.isTabContent = false, this.parentScaffoldKey})
@@ -262,7 +239,6 @@ class _ProfilePageState extends State<ProfilePage>
             final ownProfileWaiting = widget.profileId == null &&
                 authstate.profileUserModel == null;
             final showProfileShimmer = (waitingForProfile || ownProfileWaiting) &&
-                authstate.isbusy &&
                 authstate.profileError == null;
             final showProfileError = (waitingForProfile || ownProfileWaiting) &&
                 authstate.profileError != null;
@@ -438,18 +414,6 @@ class _ProfilePageState extends State<ProfilePage>
         final displayHandle = handle.startsWith('@') ? handle : '@$handle';
         final xp = user.xp ?? 0;
         final hasXp = user.xp != null;
-        Color rankBg;
-        Color rankBorder;
-        if (xp < AppIcon.xpCaylakMax) {
-          rankBg = Colors.white.withOpacity(0.03);
-          rankBorder = Colors.white.withOpacity(0.12);
-        } else if (xp < AppIcon.xpUstaMin) {
-          rankBg = AppNeon.green.withOpacity(0.18);
-          rankBorder = AppNeon.green.withOpacity(0.6);
-        } else {
-          rankBg = Colors.amber.withOpacity(0.20);
-          rankBorder = Colors.amber.withOpacity(0.7);
-        }
         return Container(
           color: MockupDesign.background,
           padding: EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -492,6 +456,13 @@ class _ProfilePageState extends State<ProfilePage>
                     SizedBox(width: 6),
                     Icon(Icons.local_fire_department, size: 22, color: Colors.orange),
                   ],
+                  if (hasXp) ...[
+                    SizedBox(width: 8),
+                    RankBadgeWidget(
+                      xp: xp,
+                      compact: false,
+                    ),
+                  ],
                 ],
               ),
               SizedBox(height: 2),
@@ -499,36 +470,6 @@ class _ProfilePageState extends State<ProfilePage>
                 displayHandle.isEmpty ? AppLocalizations.of(context)!.defaultUserHandle : displayHandle,
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
-              if (hasXp) ...[
-                SizedBox(height: 6),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: rankBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: rankBorder, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.military_tech,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        _rankTitleForXp(context, xp),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               SizedBox(height: 10),
               Center(
                 child: Material(
@@ -606,39 +547,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ),
             SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: _xpProgress(xp),
-                      minHeight: 8,
-                      backgroundColor: theme.colorScheme.onSurface.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(AppNeon.green),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  _xpProgressLabel(context, xp),
-                  style: TextStyle(fontSize: 11, color: AppNeon.green),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Text(
-              xp < AppIcon.xpCaylakMax
-                  ? AppLocalizations.of(context)!.xpHintToBecomePredictor(AppIcon.xpCaylakMax)
-                  : xp < AppIcon.xpUstaMin
-                      ? AppLocalizations.of(context)!.xpHintToBecomeMaster(AppIcon.xpUstaMin)
-                      : AppLocalizations.of(context)!.xpHintMaxRank,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
+            XpProgressBarWidget(xp: xp),
             SizedBox(height: 10),
           ],
           Row(
@@ -667,11 +576,11 @@ class _ProfilePageState extends State<ProfilePage>
           SizedBox(height: 8),
           Row(
             children: [
-              ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
+              RankBadgeWidget(xp: user.xp ?? 0, compact: true),
               SizedBox(width: 10),
-                Text(
-                  AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
-                  style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
+                style: TextStyle(
                   color: theme.colorScheme.onSurface.withOpacity(0.8),
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -1483,48 +1392,16 @@ class UserNameRowWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.rankProgressTitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                    ),
-                    Text(
-                      _xpProgressLabel(context, user.xp ?? 0),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: _xpProgress(xp),
-                    minHeight: 8,
-                    backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
-                  ),
-                ),
-                SizedBox(height: 4),
-                  Text(
-                    xp < AppIcon.xpCaylakMax
-                        ? AppLocalizations.of(context)!.xpHintToBecomePredictor(AppIcon.xpCaylakMax)
-                        : xp < AppIcon.xpUstaMin
-                            ? AppLocalizations.of(context)!.xpHintToBecomeMaster(AppIcon.xpUstaMin)
-                            : AppLocalizations.of(context)!.xpHintMaxRank,
+                Text(
+                  AppLocalizations.of(context)!.rankProgressTitle,
                   style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
+                SizedBox(height: 4),
+                XpProgressBarWidget(xp: xp),
               ],
             ),
           ),
@@ -1559,7 +1436,7 @@ class UserNameRowWidget extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             children: <Widget>[
-              ratingBar(user.rank ?? 0, 5, context, itemSize: 16.0),
+              RankBadgeWidget(xp: user.xp ?? 0, compact: true),
               SizedBox(width: 10),
               customText(
                 AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),

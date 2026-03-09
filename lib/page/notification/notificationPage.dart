@@ -147,7 +147,7 @@ class NotificationPageBody extends StatelessWidget {
         ),
       );
     }
-    if (state.isBusy && list.isEmpty) {
+    if (!state.hasCompletedInitialLoad) {
       return Center(
         child: CustomScreenLoader(
           height: 80,

@@ -17,6 +17,7 @@ import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/reply_vote_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -251,6 +252,7 @@ class _PredictionDetailBody extends StatelessWidget {
               final author = authorSnap.data ?? model.user;
               final displayHandle = formatHandle(author?.userName, author?.displayName);
               final handleToShow = displayHandle.isEmpty ? AppLocalizations.of(context)!.userHandlePlaceholder : displayHandle;
+              final authorXp = author?.xp ?? 0;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -269,14 +271,26 @@ class _PredictionDetailBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          handleToShow,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: Colors.white,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                handleToShow,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            RankBadgeWidget(
+                              xp: authorXp,
+                              compact: true,
+                            ),
+                          ],
                         ),
                         if (model.topic != null && (model.topic ?? '').isNotEmpty)
                           Text(

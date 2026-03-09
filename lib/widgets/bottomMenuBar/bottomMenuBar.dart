@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
@@ -8,44 +6,6 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/appState.dart';
 import 'package:provider/provider.dart';
 import '../customWidgets.dart';
-
-/// Kavisli bar: üst köşeler yuvarlak, ortada FAB için yarım daire çentik.
-/// Guest (FAB rect) varsa ona göre, yoksa bar ortasına çentik çizer.
-class _CurvedNotchedRectangle extends NotchedShape {
-  const _CurvedNotchedRectangle({
-    this.cornerRadius = 16,
-    this.notchRadius = 28,
-  });
-
-  final double cornerRadius;
-  final double notchRadius;
-
-  @override
-  Path getOuterPath(Rect host, Rect? guest) {
-    final w = host.width;
-    final h = host.height;
-    final r = math.min(cornerRadius, math.min(h / 2, w / 4));
-    final nr = math.min(notchRadius, (h - 2) / 2);
-    final centerX = guest != null ? guest!.center.dx : host.center.dx;
-    final path = Path();
-
-    // Sol alt -> sol üst (yuvarlak köşe)
-    path.moveTo(0, h);
-    path.lineTo(0, r);
-    path.arcToPoint(Offset(r, 0), radius: Radius.circular(r), clockwise: false);
-    // Üst kenar -> çentiğin sol ucu
-    path.lineTo(centerX - nr, 0);
-    // Çentik: aşağı inen yarım daire (arcTo ile açık açı)
-    final notchRect = Rect.fromLTWH(centerX - nr, 0, nr * 2, nr * 2);
-    path.arcTo(notchRect, math.pi, math.pi, false);
-    // Üst kenar -> sağ üst
-    path.lineTo(w - r, 0);
-    path.arcToPoint(Offset(w, r), radius: Radius.circular(r), clockwise: false);
-    path.lineTo(w, h);
-    path.close();
-    return path;
-  }
-}
 
 class BottomMenubar extends StatefulWidget{
   final IconData? iconData;
@@ -114,31 +74,42 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     final barColor = isDark ? AppColor.surfaceDark : theme.cardColor;
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
+      notchMargin: 10,
       clipBehavior: Clip.antiAlias,
       elevation: 0,
       color: barColor,
       child: Container(
+        height: 56,
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: theme.dividerColor.withOpacity(isDark ? 0.7 : 0.3),
-              width: 0.6,
+              color: theme.dividerColor.withOpacity(isDark ? 0.25 : 0.2),
+              width: 1,
             ),
           ),
         ),
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navIcon(context, state, 0, labels),
-              _navIcon(context, state, 1, labels),
-              const SizedBox(width: 56),
-              _navIcon(context, state, 2, labels),
-              _navIcon(context, state, 3, labels),
-            ],
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navIcon(context, state, 0, labels),
+                  _navIcon(context, state, 1, labels),
+                ],
+              ),
+            ),
+            const SizedBox(width: 64),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navIcon(context, state, 2, labels),
+                  _navIcon(context, state, 3, labels),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -151,29 +122,39 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     final Color inactiveColor =
         theme.colorScheme.onSurface.withOpacity(0.6);
     final color = isActive ? activeColor : inactiveColor;
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(iconList[index], size: 24, color: color),
+        const SizedBox(height: 2),
+        Text(
+          labels[index],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            height: 1.2,
+            color: color,
+          ),
+        ),
+      ],
+    );
     return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => state.setpageIndex = index),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(iconList[index], size: 22, color: color),
-              const SizedBox(height: 2),
-              Text(
-                labels[index],
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: color,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => state.setpageIndex = index),
+          child: SizedBox(
+            height: 56,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: content,
               ),
-            ],
+            ),
           ),
         ),
       ),

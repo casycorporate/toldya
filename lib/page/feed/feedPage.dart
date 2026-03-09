@@ -178,20 +178,19 @@ class _FeedPage extends State<FeedPage> {
         return val;
       }).toList();
       final feedStateForScroll = Provider.of<FeedState>(context, listen: false);
-      final appState = Provider.of<AppState>(context, listen: false);
       for (var i = 0; i < _tabValues.length && i < _scrollControllers.length; i++) {
         if (!_scrollListenerAttached[i]) {
           _scrollListenerAttached[i] = true;
           final c = _scrollControllers[i];
           c.addListener(() {
-            if (!feedStateForScroll.hasMoreFeed || feedStateForScroll.isLoadingMore) return;
-            if (c.hasClients && c.position.pixels >= c.position.maxScrollExtent - 200) {
+            if (c.hasClients &&
+                feedStateForScroll.hasMoreFeed &&
+                !feedStateForScroll.isLoadingMore &&
+                c.position.pixels >= c.position.maxScrollExtent - 200) {
               feedStateForScroll.loadMoreFeed();
             }
             if (c.hasClients) {
-              final dir = c.position.userScrollDirection;
-              if (dir == ScrollDirection.forward) appState.setFeedBottomBarVisible = false;
-              if (dir == ScrollDirection.reverse) appState.setFeedBottomBarVisible = true;
+              // Sadece idle timer'ı resetle; görünürlük, yukarıdaki NotificationListener tarafından yönetiliyor.
               _resetIdleShowBarTimer();
             }
           });
@@ -203,31 +202,19 @@ class _FeedPage extends State<FeedPage> {
         backgroundColor: Theme.of(context).brightness == Brightness.dark
             ? MockupDesign.background
             : Theme.of(context).scaffoldBackgroundColor,
-        body: GestureDetector(
-          onTap: () {
-            final app = Provider.of<AppState>(context, listen: false);
-            app.setFeedBottomBarVisible = !app.feedBottomBarVisible;
+        body: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification n) {
+            final appState = Provider.of<AppState>(context, listen: false);
+            if (n.metrics.axis == Axis.vertical &&
+                (n is UserScrollNotification || n is ScrollUpdateNotification)) {
+              if (appState.feedBottomBarVisible) {
+                appState.setFeedBottomBarVisible = false;
+              }
+              _resetIdleShowBarTimer();
+            }
+            return false;
           },
-          behavior: HitTestBehavior.translucent,
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (ScrollNotification n) {
-              final appState = Provider.of<AppState>(context, listen: false);
-              if (n is UserScrollNotification) {
-                appState.setFeedBottomBarVisible = (n.direction == ScrollDirection.reverse);
-                return false;
-              }
-              if (n is ScrollUpdateNotification && n.metrics.axisDirection == AxisDirection.down) {
-                final p = n.metrics.pixels;
-                if (_lastScrollPixels != null) {
-                  if (p > _lastScrollPixels!) appState.setFeedBottomBarVisible = false;
-                  if (p < _lastScrollPixels!) appState.setFeedBottomBarVisible = true;
-                }
-                _lastScrollPixels = p;
-                return false;
-              }
-              return false;
-            },
-            child: NestedScrollView(
+          child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
               SliverOverlapAbsorber(
@@ -395,7 +382,7 @@ class _FeedPage extends State<FeedPage> {
                 topic_val: topicVal,
               );
               final hasData = state.feedlist != null;
-              final firstLoad = !hasData && state.isBusy;
+              final waitingForDb = state.feedlist == null;
               final refreshing = hasData && state.isBusy;
               final hasError = state.feedError != null;
               final l10n = AppLocalizations.of(context)!;
@@ -446,14 +433,14 @@ class _FeedPage extends State<FeedPage> {
                             ),
                           ),
                         )
-                      else if (firstLoad)
+                      else if (waitingForDb)
                         SliverToBoxAdapter(
                           child: SizedBox(
                             height: fullHeight(context) - 135,
                             child: FeedShimmer(),
                           ),
                         )
-                      else if (!state.isBusy && tabList.isEmpty)
+                      else if (tabList.isEmpty)
                         SliverToBoxAdapter(
                           child: SizedBox(
                             height: fullHeight(context) - 135,
@@ -536,12 +523,11 @@ class _FeedPage extends State<FeedPage> {
                   });
             });
           }).toList(),
-        ),
-        ),
-        ),
-        ),
-      ),
-    );
+        ), // TabBarView
+      ), // NestedScrollView
+    ), // NotificationListener
+  ), // Scaffold
+); // DefaultTabController
     });
   }
 }

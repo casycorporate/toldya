@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 import '../customWidgets.dart';
 import 'widgets/retweetWidget.dart';
 import 'widgets/tweetImage.dart';
+import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 
 /// Statü etiketinin (Beklemede/İncelemede/AI reddi) kartta gösterilmesi gerekiyor mu?
 bool _showStatuBadge(int? statu) {
@@ -191,65 +192,59 @@ class _ToldyaBody extends StatelessWidget {
     }
 
     Widget _userAvater(String userId) {
-      return FutureBuilder(
+      return FutureBuilder<UserModel?>(
         future: authstate.getuserDetail(userId),
-        //  initialData: InitialData,
         builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
-          if (snapshot.hasData && snapshot.data != null) {
-            final data = snapshot.data!;
-            return GestureDetector(
-              onTap: () {
-                Navigator.of(context)
-                    .pushNamed('/ProfilePage/' + (data.userId ?? ''));
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    padding: EdgeInsets.all(2.5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppNeon.orange.withOpacity(0.8),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppNeon.orange.withOpacity(0.2),
-                          blurRadius: 8,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Container(
-                        color: Theme.of(context).cardColor,
-                        padding: EdgeInsets.all(2),
-                        child: customProfileImage(context, data.profilePic, userId: data.userId, height: 44),
-                      ),
-                    ),
-                  ),
-                  FutureBuilder(
-                    future: authstate.getuserDetail(model.user?.userId ?? ''),
-                    //  initialData: InitialData,
-                    builder: (BuildContext context,
-                        AsyncSnapshot<UserModel?> snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        // name(snapshot.data.displayName);
-                        return ratingBar(snapshot.data!.rank ?? 0, 3, context,
-                            itemSize: 11.0);
-                      } else {
-                        return Container();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            );
-          } else {
-            return Container();
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const SizedBox.shrink();
           }
+          final data = snapshot.data!;
+          return GestureDetector(
+            onTap: () {
+              Navigator.of(context)
+                  .pushNamed('/ProfilePage/' + (data.userId ?? ''));
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  padding: EdgeInsets.all(2.5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppNeon.orange.withOpacity(0.8),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppNeon.orange.withOpacity(0.2),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Container(
+                      color: Theme.of(context).cardColor,
+                      padding: EdgeInsets.all(2),
+                      child: customProfileImage(
+                        context,
+                        data.profilePic,
+                        userId: data.userId,
+                        height: 44,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4),
+                RankBadgeWidget(
+                  xp: data.xp ?? 0,
+                  compact: true,
+                ),
+              ],
+            ),
+          );
         },
       );
     }

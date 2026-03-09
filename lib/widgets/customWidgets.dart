@@ -9,7 +9,6 @@ import 'package:flutter/widgets.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:toldya/widgets/newWidget/DataHolder.dart';
@@ -225,36 +224,6 @@ Widget customProfileImage(
       backgroundImage: isAsset
           ? AssetImage(effectivePath)
           : customAdvanceNetworkImage(effectivePath),
-    ),
-  );
-}
-
-Widget ratingBar(int initialRating,int itemCount,
-    BuildContext context, {
-      bool ignoreGestures = true,
-      double itemSize =10.0
-    }) {
-  return Container(
-    height: 10,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      // border: Border.all(color: Colors.grey.shade100, width:2),
-    ),
-    child:  RatingBar(
-        ratingWidget: RatingWidget(
-          full: Image.asset("assets/icons/prometheusfull.png"),
-          half:Image.asset("assets/icons/prometheushalf.png"),
-          empty:Image.asset("assets/icons/prometheusempty.png"),
-        ),
-      initialRating: (initialRating / 100).toDouble(),
-      minRating: 1,
-      direction: Axis.horizontal,
-      allowHalfRating: true,
-      itemCount: itemCount,
-      itemSize: itemSize,
-      itemPadding: EdgeInsets.symmetric(horizontal: 1.0),
-      ignoreGestures: ignoreGestures,
-      onRatingUpdate: (_) {},
     ),
   );
 }
