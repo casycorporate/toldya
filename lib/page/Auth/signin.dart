@@ -10,7 +10,6 @@ import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 // import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -126,7 +125,7 @@ class _SignInState extends State<SignIn> {
           children: <Widget>[
             Text(
               'Henüz bir hesabın yok mu?',
-              style: GoogleFonts.sawarabiMincho(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
@@ -135,7 +134,7 @@ class _SignInState extends State<SignIn> {
             SizedBox(width: 10),
             Text(
               AppLocalizations.of(context)!.signUpNow,
-              style: GoogleFonts.sawarabiMincho(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -165,7 +164,7 @@ class _SignInState extends State<SignIn> {
           ),
           Text(
             'veya',
-            style: GoogleFonts.sawarabiMincho(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 14,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
@@ -201,7 +200,7 @@ class _SignInState extends State<SignIn> {
             ),
             Text(
               'Geri',
-              style: GoogleFonts.sawarabiMincho(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface,
@@ -221,14 +220,14 @@ class _SignInState extends State<SignIn> {
       textAlign: TextAlign.center,
       text: TextSpan(
         text: 't',
-        style: GoogleFonts.portLligatSans(
+        style: theme.textTheme.displaySmall?.copyWith(
           fontSize: 30,
           fontWeight: FontWeight.w700,
           color: onSurface,
         ),
         children: [
-          TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30)),
-          TextSpan(text: 'ya', style: TextStyle(color: onSurface, fontSize: 30)),
+          TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30, fontWeight: FontWeight.w700)),
+          TextSpan(text: 'ya', style: TextStyle(color: onSurface, fontSize: 30, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -251,7 +250,7 @@ class _SignInState extends State<SignIn> {
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.emailAddress,
-        style: GoogleFonts.sawarabiMincho(
+        style: theme.textTheme.bodyLarge?.copyWith(
           fontSize: 16,
           color: theme.colorScheme.onSurface,
         ),
@@ -279,7 +278,7 @@ class _SignInState extends State<SignIn> {
       onTap: onPressed,
       child: Text(
         title,
-        style: GoogleFonts.sawarabiMincho(
+        style: theme.textTheme.bodyMedium?.copyWith(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: theme.colorScheme.primary,
@@ -313,7 +312,7 @@ class _SignInState extends State<SignIn> {
           ),
           child: Text(
             'Giriş',
-            style: GoogleFonts.sawarabiMincho(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onPrimary,

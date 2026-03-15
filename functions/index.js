@@ -345,7 +345,7 @@ async function runLockPredictionsLogic() {
   return { locked: Object.keys(updates).length };
 }
 
-/** V1: Kapanış zamanı geçmiş LOCKED tahminleri PENDING_RESULT yap ve admin'e e-posta gönder. */
+/** V1: Kapanış zamanı geçmiş LOCKED tahminleri PENDING_RESULT yap; tüm sonuç bekleyenleri admin'e tek özet mail ile gönder. */
 async function runClosePredictionsLogic() {
   const toldyaRef = getDb().ref("toldya");
   const snapshot = await toldyaRef.once("value");
@@ -354,7 +354,6 @@ async function runClosePredictionsLogic() {
 
   const now = new Date();
   const updates = {};
-  const toEmail = [];
   for (const [key, tweet] of Object.entries(toldyas)) {
     if (!tweet) continue;
     if (tweet.parentkey) continue;
@@ -365,7 +364,6 @@ async function runClosePredictionsLogic() {
       const end = new Date(endDate);
       if (end <= now) {
         updates[`toldya/${key}/statu`] = STATU_PENDING_RESULT;
-        toEmail.push({ key, description: (tweet.description || "").substring(0, 80), endDate });
       }
     } catch (e) {
       console.warn("Invalid endDate for tweet", key, e);
@@ -375,30 +373,63 @@ async function runClosePredictionsLogic() {
     await getDb().ref().update(updates);
     console.log(`Closed ${Object.keys(updates).length} predictions (PENDING_RESULT)`);
   }
-  for (const item of toEmail) {
-    await sendAdminClosingEmail(item.key, item.description, item.endDate);
+
+  // Tüm sonuç bekleyen toldyaları topla (yeni kapanan + önceki saatlerden kalan) ve tek mail gönder
+  const pendingList = [];
+  for (const [key, tweet] of Object.entries(toldyas)) {
+    if (!tweet) continue;
+    if (tweet.parentkey) continue;
+    if (tweet.feedResult != null) continue;
+    const isNowPending = updates[`toldya/${key}/statu`] === STATU_PENDING_RESULT;
+    const wasPending = tweet.statu === STATU_PENDING_RESULT;
+    if (!isNowPending && !wasPending) continue;
+    pendingList.push({
+      key,
+      description: (tweet.description || "").substring(0, 120),
+      endDate: tweet.endDate || "",
+    });
   }
-  return { closed: Object.keys(updates).length };
+  if (pendingList.length > 0) {
+    await sendAdminPendingSummaryEmail(pendingList);
+  }
+  return { closed: Object.keys(updates).length, pendingCount: pendingList.length };
 }
 
-/** Admin'e "Tahmin kapanış zamanı geldi, sonuç girin" e-postası. SENDGRID_API_KEY + ADMIN_EMAIL veya MAIL_WEBHOOK_URL gerekir. */
-async function sendAdminClosingEmail(toldyaId, description, endDate) {
+/** Admin'e sonuç bekleyen tüm toldyaları tek özet mailde gönderir. Kazanan taraf setToldyaResult ile girilir, sonra saatlik job ödül dağıtır. */
+async function sendAdminPendingSummaryEmail(pendingList) {
   const adminEmail = process.env.ADMIN_EMAIL || (functions.config().admin && functions.config().admin.email);
   const sendgridKey = process.env.SENDGRID_API_KEY || (functions.config().sendgrid && functions.config().sendgrid.api_key);
   const webhookUrl = process.env.MAIL_WEBHOOK_URL || (functions.config().mail && functions.config().mail.webhook_url);
 
-  const subject = `[Toldya] Sonuç girilmeli: ${(description || toldyaId).substring(0, 50)}`;
-  const body = `Tahmin kapanış zamanı geldi.\n\nToldya ID: ${toldyaId}\nMetin: ${description || "(yok)"}\nKapanış: ${endDate}\n\nSonuç girmek için: setToldyaResult callable (toldyaId, result: 1=EVET, 2=HAYIR) veya Firebase Console ile toldya/${toldyaId}/feedResult ve statu güncelleyin.`;
+  const subject = `[Toldya] ${pendingList.length} tahmin sonuç bekliyor`;
+  const lines = [
+    "Tahmin süresi biten ve sonuç girilmesi gereken toldyalar:",
+    "",
+    ...pendingList.map((p, i) => `${i + 1}. Toldya ID: ${p.key}\n   Metin: ${(p.description || "(yok)").replace(/\n/g, " ")}\n   Kapanış: ${p.endDate}`),
+    "",
+    "Kazanan tarafı belirlemek için:",
+    "- setToldyaResult Callable çağrısı: { toldyaId: \"<id>\", result: 1 } = EVET kazandı, { result: 2 } = HAYIR kazandı.",
+    "- Veya Firebase Console: toldya/<id>/feedResult = 1 veya 2, toldya/<id>/statu = 2 (Ok).",
+    "",
+    "Sonuç girdikten sonra bir sonraki saatlik job kazananlara ödül dağıtacaktır.",
+  ];
+  const body = lines.join("\n");
 
   if (webhookUrl) {
     try {
       await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: adminEmail || "admin@example.com", subject, text: body, toldyaId }),
+        body: JSON.stringify({
+          to: adminEmail || "admin@example.com",
+          subject,
+          text: body,
+          pendingCount: pendingList.length,
+          toldyaIds: pendingList.map((p) => p.key),
+        }),
       });
     } catch (e) {
-      console.warn("[sendAdminClosingEmail] webhook error", e.message);
+      console.warn("[sendAdminPendingSummaryEmail] webhook error", e.message);
     }
     return;
   }
@@ -418,11 +449,11 @@ async function sendAdminClosingEmail(toldyaId, description, endDate) {
         }),
       });
     } catch (e) {
-      console.warn("[sendAdminClosingEmail] SendGrid error", e.message);
+      console.warn("[sendAdminPendingSummaryEmail] SendGrid error", e.message);
     }
     return;
   }
-  console.log("[sendAdminClosingEmail] No ADMIN_EMAIL/SENDGRID_API_KEY or MAIL_WEBHOOK_URL; skipping. Body:", body.substring(0, 200));
+  console.log("[sendAdminPendingSummaryEmail] No ADMIN_EMAIL/SENDGRID or MAIL_WEBHOOK_URL; skipping. Pending:", pendingList.length);
 }
 
 // --- Weekly Leagues (Haftalık Lig): tier, weeklyXp, yükselme/düşme ---
@@ -661,6 +692,31 @@ exports.runDistributeRewardsLogic = runDistributeRewardsLogic;
 exports.runStashDripLogic = runStashDripLogic;
 exports.runLeagueAssignmentLogic = runLeagueAssignmentLogic;
 exports.runWeeklyLeagueResetLogic = runWeeklyLeagueResetLogic;
+
+/** Saatlik job: Tahmin süresi bitenleri kapat → admin'e mail → sonuç girilenlere ödül dağıt. */
+exports.hourlyToldyaJob = functions
+  .runWith({ timeoutSeconds: 540 })
+  .pubsub.schedule("0 * * * *")
+  .timeZone("Europe/Istanbul")
+  .onRun(async () => {
+    const results = {};
+    try {
+      results.lock = await runLockPredictionsLogic();
+    } catch (e) {
+      console.error("[hourlyToldyaJob] runLockPredictionsLogic", e.message);
+    }
+    try {
+      results.close = await runClosePredictionsLogic();
+    } catch (e) {
+      console.error("[hourlyToldyaJob] runClosePredictionsLogic", e.message);
+    }
+    try {
+      results.distribute = await runDistributeRewardsLogic();
+    } catch (e) {
+      console.error("[hourlyToldyaJob] runDistributeRewardsLogic", e.message);
+    }
+    console.log("[hourlyToldyaJob] done", results);
+  });
 
 // FeedResult değerleri (lib/helper/constant.dart ile uyumlu)
 const FEED_RESULT_LIKE = 1;  // Evet

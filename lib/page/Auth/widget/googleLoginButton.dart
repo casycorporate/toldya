@@ -6,7 +6,6 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class GoogleLoginButton extends StatelessWidget {
@@ -82,7 +81,7 @@ class GoogleLoginButton extends StatelessWidget {
             SizedBox(width: 12),
             Text(
               AppLocalizations.of(context)!.googleSignInButton,
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: textColor,

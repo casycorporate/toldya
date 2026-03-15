@@ -23,7 +23,7 @@ class TrendsPage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
+            color: Theme.of(context).colorScheme.onSurface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(15),
               topRight: Radius.circular(15),
@@ -75,7 +75,7 @@ class TrendsPage extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 0, horizontal: 5),
       child: RadioListTile<SortUser>(
         value: sortBy,
-        activeColor: ToldyaColor.dodgetBlue,
+        activeColor: Theme.of(context).colorScheme.primary,
         groupValue: state.sortBy,
         onChanged: (val) {
           if (val != null) state.updateUserSortPrefrence = val;

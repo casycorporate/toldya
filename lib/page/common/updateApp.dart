@@ -39,7 +39,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ToldyaColor.mystic,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         margin: EdgeInsets.symmetric(horizontal: 36),
         child: Column(
@@ -58,7 +58,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
             TitleText(
               AppLocalizations.of(context)!.unsupportedVersionMessage,
               fontSize: 14,
-              color: AppColor.darkGrey,
+              color: Theme.of(context).colorScheme.outline,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 30),
@@ -69,7 +69,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
                 style: TextButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30)),
-                  backgroundColor: ToldyaColor.dodgetBlue,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                 ),
                 onPressed: () {

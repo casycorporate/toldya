@@ -27,7 +27,7 @@ class UsersListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ToldyaColor.mystic,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
           isBackButton: true,
           title: customTitleText(pageTitle),

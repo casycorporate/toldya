@@ -16,18 +16,20 @@ import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 /// Mockup’a uygun tahmin kartı: soru üstte, countdown belirgin, progress + Evet/Hayır.
+/// [enableVote]: false ise Evet/Hayır butonları tıklanamaz (sadece ana akışta tahmin girişi).
 class PredictionCardMockup extends StatelessWidget {
   final FeedModel model;
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final bool enableVote;
 
   const PredictionCardMockup({
     Key? key,
     required this.model,
     required this.scaffoldKey,
+    this.enableVote = true,
   }) : super(key: key);
 
   @override
@@ -151,7 +153,7 @@ class PredictionCardMockup extends StatelessWidget {
             UrlText(
               text: model.description,
               onHashTagPressed: (_) {},
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: ToldyaDesign.textPrimary,
@@ -214,7 +216,7 @@ class PredictionCardMockup extends StatelessWidget {
                   label: AppLocalizations.of(context)!.yes,
                   isYes: true,
                   closed: closed,
-                  onTap: () => _onVoteTap(context, 0),
+                  onTap: enableVote ? () => _onVoteTap(context, 0) : null,
                 ),
               ),
               SizedBox(width: 12),
@@ -223,7 +225,7 @@ class PredictionCardMockup extends StatelessWidget {
                   label: AppLocalizations.of(context)!.no,
                   isYes: false,
                   closed: closed,
-                  onTap: () => _onVoteTap(context, 1),
+                  onTap: enableVote ? () => _onVoteTap(context, 1) : null,
                 ),
               ),
             ],
@@ -467,28 +469,28 @@ class _VoteButton extends StatelessWidget {
   final String label;
   final bool isYes;
   final bool closed;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _VoteButton({
     required this.label,
     required this.isYes,
     required this.closed,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBounceButton(
-      enabled: !closed,
+      enabled: !closed && onTap != null,
       child: Material(
         color: isYes ? ToldyaDesign.yes : Colors.transparent,
         borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
         elevation: 0,
         shadowColor: Colors.transparent,
         child: InkWell(
-          onTap: closed ? null : () {
+          onTap: (closed || onTap == null) ? null : () {
             HapticFeedback.mediumImpact();
-            onTap();
+            onTap!();
           },
           borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
           child: Container(

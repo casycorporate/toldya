@@ -38,15 +38,6 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
     super.initState();
   }
 
-  Widget _commentRow(FeedModel model) {
-    return Toldya(
-      model: model,
-      type: ToldyaType.Reply,
-      trailing: ToldyaBottomSheet().toldyaOptionIcon(context,
-          scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     var state = Provider.of<FeedState>(context);
@@ -109,82 +100,9 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                       child: _PredictionDetailBody(model: model, scaffoldKey: scaffoldKey),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, spacing24, MockupDesign.screenPadding, spacing8),
-                      child: Text(
-                        AppLocalizations.of(context)!.comments,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildListDelegate(
-                      state.toldyaReplyMap == null ||
-                              state.toldyaReplyMap[postId] == null ||
-                              (state.toldyaReplyMap[postId] ?? []).isEmpty
-                          ? [
-                              Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Center(
-                                  child: Text(
-                                    AppLocalizations.of(context)!.noCommentsYet,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                          : (() {
-                              final list = (state.toldyaReplyMap[postId] ?? <FeedModel>[])
-                                  .cast<FeedModel>()
-                                  .toList();
-                              list.sort((a, b) {
-                                final scoreA = (a.upvoteCount ?? 0) - (a.downvoteCount ?? 0);
-                                final scoreB = (b.upvoteCount ?? 0) - (b.downvoteCount ?? 0);
-                                return scoreB.compareTo(scoreA);
-                              });
-                              return list.map<Widget>((x) => Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Theme.of(context).brightness == Brightness.dark
-                                              ? AppColor.cardDarkBorder
-                                              : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06),
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: _commentRow(x),
-                                      ),
-                                    ),
-                                  ))
-                                  .toList();
-                            })(),
-                    ),
-                  ),
                   SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
-        floatingActionButton: model != null
-            ? FloatingActionButton(
-                onPressed: () {
-                  state.setToldyaToReply = model;
-                  Navigator.of(context).pushNamed('/ComposeToldyaPage/toldya/$postId');
-                },
-                backgroundColor: Theme.of(context).primaryColor,
-                child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-              )
-            : null,
       ),
     );
   }
@@ -344,78 +262,6 @@ class _PredictionDetailBody extends StatelessWidget {
             AppLocalizations.of(context)!.maxPredictionTokens(maxPoints.toString()),
             style: TextStyle(fontSize: 12, color: ToldyaDesign.textSecondary),
           ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: AnimatedBounceButton(
-                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
-                  child: Material(
-                    color: ToldyaDesign.yes,
-                    borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        _openPredictionSheet(context, authState, 0);
-                      },
-                      borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                      child: Container(
-                        height: ToldyaDesign.buttonHeight,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                          boxShadow: ToldyaDesign.yesButtonShadow,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.predictYesLabel,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: AnimatedBounceButton(
-                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                    child: InkWell(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        _openPredictionSheet(context, authState, 1);
-                      },
-                      borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                      child: Container(
-                        height: ToldyaDesign.buttonHeight,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
-                          border: Border.all(color: ToldyaDesign.no, width: 2),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.predictNoLabel,
-                          style: TextStyle(
-                            color: ToldyaDesign.no,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
           SizedBox(height: 24),
           // 5. Son Tahminler başlığı
           Text(
@@ -426,72 +272,10 @@ class _PredictionDetailBody extends StatelessWidget {
           _RecentPredictionsList(
             likeList: model.likeList ?? [],
             unlikeList: model.unlikeList ?? [],
-            emptyCta: closed || balance == 0 ? null : () {
-              ToldyaBottomSheet().openRetoldyabottomSheet(
-                AppIcon.evetCommentFlag,
-                context,
-                type: ToldyaType.Detail,
-                model: model,
-                scaffoldKey: scaffoldKey,
-              );
-            },
+            emptyCta: null,
           ),
         ],
       ),
-    );
-  }
-
-  void _openPredictionSheet(BuildContext context, AuthState authState, int flag) {
-    final closed = arePredictionsClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          duration: Duration(seconds: 2),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-        ),
-      );
-      return;
-    }
-    final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
-    if (userAlreadyPredicted(model, authState.userId)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            AppLocalizations.of(context)!.predictionAlreadyParticipated,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          duration: Duration(seconds: 3),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-      return;
-    }
-    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            AppLocalizations.of(context)!.predictionOneSideOnly,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          duration: Duration(seconds: 4),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-      commentFlag,
-      context,
-      type: ToldyaType.Detail,
-      model: model,
-      scaffoldKey: scaffoldKey,
     );
   }
 }

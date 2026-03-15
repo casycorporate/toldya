@@ -266,7 +266,7 @@ class _FeedPage extends State<FeedPage> {
                           },
                           icon: Icon(
                             Icons.history,
-                            color: statu == Statu.statusLive ? Colors.white70 : AppColor.primary,
+                            color: statu == Statu.statusLive ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9) : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                     ],

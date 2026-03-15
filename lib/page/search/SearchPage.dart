@@ -418,7 +418,7 @@ class _CompactPredictionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
           border: Border.all(color: MockupDesign.cardBorder),
         ),
-        child: PredictionCardMockup(model: model, scaffoldKey: scaffoldKey),
+        child: PredictionCardMockup(model: model, scaffoldKey: scaffoldKey, enableVote: false),
       ),
     );
   }

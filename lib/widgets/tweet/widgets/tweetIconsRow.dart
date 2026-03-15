@@ -30,6 +30,7 @@ class ToldyaIconsRow extends StatelessWidget {
   final bool isTweetDetail;
   final ToldyaType type;
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final bool enableVote;
 
   const ToldyaIconsRow(
       {Key? key,
@@ -39,7 +40,8 @@ class ToldyaIconsRow extends StatelessWidget {
       required this.size,
       this.isTweetDetail = false,
       required this.type,
-      required this.scaffoldKey})
+      required this.scaffoldKey,
+      this.enableVote = true})
       : super(key: key);
 
   Widget _likeCommentsIcons(BuildContext context, FeedModel model) {
@@ -94,7 +96,7 @@ class ToldyaIconsRow extends StatelessWidget {
                   count: k_m_b_generator(sumOfVote(model.likeList ?? [])),
                   icon: Icons.thumb_up_rounded,
                   color: evetColor,
-                  onPressed: () => _onVotePressed(context, authState, AppIcon.evetCommentFlag),
+                  onPressed: enableVote ? () => _onVotePressed(context, authState, AppIcon.evetCommentFlag) : null,
                 ),
               ),
               SizedBox(width: 12),
@@ -105,7 +107,7 @@ class ToldyaIconsRow extends StatelessWidget {
                   count: isTweetDetail ? '' : k_m_b_generator(sumOfVote(model.unlikeList ?? [])),
                   icon: Icons.thumb_down_rounded,
                   color: hayirColor,
-                  onPressed: () => _onVotePressed(context, authState, AppIcon.hayirCommentFlag),
+                  onPressed: enableVote ? () => _onVotePressed(context, authState, AppIcon.hayirCommentFlag) : null,
                 ),
               ),
             ],
@@ -164,14 +166,15 @@ class ToldyaIconsRow extends StatelessWidget {
     required String count,
     required IconData icon,
     required Color color,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
   }) {
     return AnimatedBounceButton(
+      enabled: onPressed != null,
       child: Material(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () {
+          onTap: onPressed == null ? null : () {
             HapticFeedback.lightImpact();
             onPressed();
           },

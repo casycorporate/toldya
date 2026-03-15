@@ -5,7 +5,6 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 class ForgetPasswordPage extends StatefulWidget{
   final VoidCallback? loginCallback;
@@ -102,7 +101,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
               child: Icon(Icons.keyboard_arrow_left, color: theme.colorScheme.onSurface),
             ),
             Text(AppLocalizations.of(context)!.back,
-                style: GoogleFonts.sawarabiMincho(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))
           ],
         ),
       ),
@@ -117,7 +116,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
       textAlign: TextAlign.center,
       text: TextSpan(
         text: 't',
-        style: GoogleFonts.portLligatSans(fontSize: 30, fontWeight: FontWeight.w700, color: onS),
+        style: theme.textTheme.displaySmall?.copyWith(fontSize: 30, fontWeight: FontWeight.w700, color: onS),
         children: [
           TextSpan(text: 'old', style: TextStyle(color: primary, fontSize: 30)),
           TextSpan(text: 'ya', style: TextStyle(color: onS, fontSize: 30)),
@@ -132,17 +131,17 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
       ),
       child: TextField(
         focusNode: _focusNode,
         controller: controller,
         keyboardType: TextInputType.emailAddress,
-        style: GoogleFonts.sawarabiMincho(fontSize: 16, color: theme.colorScheme.onSurface),
+        style: theme.textTheme.bodyLarge?.copyWith(fontSize: 16, color: theme.colorScheme.onSurface),
         obscureText: isPassword,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           border: InputBorder.none,
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
@@ -170,7 +169,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage>{
           ),
           child: Text(
             'Şifre sıfırlama bağlantısı gönder',
-            style: GoogleFonts.sawarabiMincho(fontSize: 18, fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
+            style: theme.textTheme.titleMedium?.copyWith(fontSize: 18, fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
           ),
         ),
       ),

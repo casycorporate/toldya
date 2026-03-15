@@ -36,6 +36,7 @@ class Toldya extends StatelessWidget {
   final ToldyaType type;
   final bool isDisplayOnProfile;
   final GlobalKey<ScaffoldState>? scaffoldKey;
+  final bool enableVote;
 
   const Toldya({
     Key? key,
@@ -44,6 +45,7 @@ class Toldya extends StatelessWidget {
     this.type = ToldyaType.Toldya,
     this.isDisplayOnProfile = false,
     this.scaffoldKey,
+    this.enableVote = true,
   }) : super(key: key);
 
   void onLongPressedToldya(BuildContext context) {
@@ -146,6 +148,7 @@ class Toldya extends StatelessWidget {
                         iconEnableColor: ToldyaColor.ceriseRed,
                         size: 20,
                         scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
+                        enableVote: enableVote,
                       ),
                     ),
             ],

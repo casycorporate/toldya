@@ -295,7 +295,7 @@ class ToldyaBottomSheet {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: isEvet ? evetGreen.withOpacity(0.3) : hayirGray,
+                    color: isEvet ? evetGreen.withValues(alpha: 0.3) : hayirGray,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isEvet ? evetBorder : Colors.white24,
@@ -315,7 +315,7 @@ class ToldyaBottomSheet {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: !isEvet ? hayirBorder.withOpacity(0.25) : hayirGray,
+                    color: !isEvet ? hayirBorder.withValues(alpha: 0.25) : hayirGray,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: !isEvet ? hayirBorder : Colors.white24,

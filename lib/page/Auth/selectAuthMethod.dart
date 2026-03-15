@@ -4,7 +4,6 @@ import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/Auth/signup.dart';
 import 'package:toldya/state/authState.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../homePage.dart';
 import 'signin.dart';
@@ -51,7 +50,7 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
           child: Text(
             AppLocalizations.of(context)!.login,
-            style: GoogleFonts.sawarabiMincho(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onPrimary,
@@ -91,7 +90,7 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
           child: Text(
             AppLocalizations.of(context)!.signUp,
-            style: GoogleFonts.sawarabiMincho(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary,
@@ -141,7 +140,7 @@ class _WelcomePageState extends State<WelcomePage> {
           textAlign: TextAlign.center,
           text: TextSpan(
             text: 't',
-            style: GoogleFonts.portLligatSans(
+            style: theme.textTheme.displaySmall?.copyWith(
               fontSize: 42,
               fontWeight: FontWeight.w700,
               color: onSurface,
@@ -162,10 +161,10 @@ class _WelcomePageState extends State<WelcomePage> {
         Text(
           AppLocalizations.of(context)!.tagline,
           textAlign: TextAlign.center,
-          style: GoogleFonts.sawarabiMincho(
+          style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w400,
-            color: theme.colorScheme.onSurface.withOpacity(0.75),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
             height: 1.4,
           ),
         ),

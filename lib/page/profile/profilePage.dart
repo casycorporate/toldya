@@ -998,54 +998,6 @@ class _ProfilePredictionCard extends StatelessWidget {
     Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
   }
 
-  void _onVoteTap(BuildContext context, int commentFlag) {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final closed = arePredictionsClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        duration: Duration(seconds: 2),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ));
-      return;
-    }
-    if (userAlreadyPredicted(model, authState.userId)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          AppLocalizations.of(context)!.predictionAlreadyParticipated,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        duration: Duration(seconds: 3),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-      ));
-      return;
-    }
-    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          AppLocalizations.of(context)!.predictionOneSideOnly,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        ),
-        duration: Duration(seconds: 4),
-        backgroundColor: ToldyaDesign.yes,
-      ));
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-      commentFlag,
-      context,
-      type: ToldyaType.Detail,
-      model: model,
-      scaffoldKey: scaffoldKey,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final totalYes = sumOfVote(model.likeList ?? []);
@@ -1154,68 +1106,62 @@ class _ProfilePredictionCard extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Material(
-                      color: ToldyaDesign.progressYes.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () => _onVoteTap(context, AppIcon.evetCommentFlag),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.trending_up_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              SizedBox(width: 6),
-                              Text(
-                                AppLocalizations.of(context)!.yesPercent(total > 0 ? (percent * 100).round() : 50),
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
+              IgnorePointer(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: ToldyaDesign.progressYes.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.trending_up_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimary),
+                            SizedBox(width: 6),
+                            Text(
+                              AppLocalizations.of(context)!.yesPercent(total > 0 ? (percent * 100).round() : 50),
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Material(
-                      color: ToldyaDesign.progressNo.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () => _onVoteTap(context, AppIcon.hayirCommentFlag),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.trending_down_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimary),
-                              SizedBox(width: 6),
-                              Text(
-                                AppLocalizations.of(context)!.noPercent(total > 0 ? ((1 - percent) * 100).round() : 50),
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: ToldyaDesign.progressNo.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.trending_down_rounded, size: 20, color: Theme.of(context).colorScheme.onPrimary),
+                            SizedBox(width: 6),
+                            Text(
+                              AppLocalizations.of(context)!.noPercent(total > 0 ? ((1 - percent) * 100).round() : 50),
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

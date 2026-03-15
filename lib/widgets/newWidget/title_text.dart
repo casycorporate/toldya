@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class TitleText extends StatelessWidget {
   final String text;
@@ -13,16 +12,17 @@ class TitleText extends StatelessWidget {
     Key? key,
     this.fontSize = 18,
     this.color,
-    this.fontWeight = FontWeight.w800,
+    this.fontWeight = FontWeight.w600,
     this.textAlign = TextAlign.left,
     this.overflow = TextOverflow.visible,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final effectiveColor = color ?? theme.colorScheme.onSurface;
     return Text(
       text,
-      style: GoogleFonts.sawarabiMincho(
+      style: theme.textTheme.titleLarge?.copyWith(
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: effectiveColor,

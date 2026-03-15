@@ -67,7 +67,7 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     var state = Provider.of<AppState>(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final barColor = isDark ? AppColor.surfaceDark : theme.cardColor;
+    final barColor = theme.scaffoldBackgroundColor;
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 10,
@@ -79,7 +79,7 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: theme.dividerColor.withOpacity(isDark ? 0.25 : 0.2),
+              color: theme.dividerColor.withValues(alpha: isDark ? 0.25 : 0.2),
               width: 1,
             ),
           ),
@@ -112,9 +112,9 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
   Widget _navIcon(BuildContext context, AppState state, int index, List<String> labels) {
     final isActive = state.pageIndex == index;
     final theme = Theme.of(context);
-    final Color activeColor = Colors.white;
+    final Color activeColor = theme.colorScheme.primary;
     final Color inactiveColor =
-        theme.colorScheme.onSurface.withOpacity(0.6);
+        theme.colorScheme.onSurface.withValues(alpha: 0.6);
     final color = isActive ? activeColor : inactiveColor;
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -127,11 +127,9 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            height: 1.2,
+          style: theme.textTheme.labelSmall?.copyWith(
             color: color,
+            height: 1.2,
           ),
         ),
       ],

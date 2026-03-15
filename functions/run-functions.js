@@ -21,13 +21,14 @@ if (!process.env.DATABASE_URL) {
 
 const {
   runLockPredictionsLogic,
+  runClosePredictionsLogic,
   runOracleResolutionLogic,
   runDistributeRewardsLogic,
   runStashDripLogic,
 } = require("./index");
 
 async function main() {
-  console.log("=== Fonksiyonlar çalıştırılıyor ===\n");
+  console.log("=== Fonksiyonlar çalıştırılıyor (saatlik job ile aynı sıra) ===\n");
 
   try {
     const lockResult = await runLockPredictionsLogic();
@@ -37,22 +38,29 @@ async function main() {
   }
 
   try {
+    const closeResult = await runClosePredictionsLogic();
+    console.log("2. runClosePredictionsLogic:", closeResult);
+  } catch (e) {
+    console.error("runClosePredictionsLogic hata:", e.message);
+  }
+
+  try {
     const resolveResult = await runOracleResolutionLogic();
-    console.log("2. runOracleResolutionLogic:", resolveResult);
+    console.log("3. runOracleResolutionLogic:", resolveResult);
   } catch (e) {
     console.error("runOracleResolutionLogic hata:", e.message);
   }
 
   try {
     const distResult = await runDistributeRewardsLogic();
-    console.log("3. runDistributeRewardsLogic:", distResult);
+    console.log("4. runDistributeRewardsLogic:", distResult);
   } catch (e) {
     console.error("runDistributeRewardsLogic hata:", e.message);
   }
 
   try {
     const dripResult = await runStashDripLogic();
-    console.log("4. runStashDripLogic:", dripResult);
+    console.log("5. runStashDripLogic:", dripResult);
   } catch (e) {
     console.error("runStashDripLogic hata:", e.message);
   }

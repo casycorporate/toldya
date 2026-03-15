@@ -52,7 +52,7 @@ class ConversationInformation extends StatelessWidget {
                       context,
                       icon: AppIcon.blueTick,
                       istwitterIcon: true,
-                      iconColor: AppColor.primary,
+                      iconColor: Theme.of(context).colorScheme.primary,
                       size: 18,
                       paddingIcon: 3,
                     )
@@ -97,17 +97,17 @@ class ConversationInformation extends StatelessWidget {
           ),
           SettingRowWidget(
             AppLocalizations.of(context)!.blockUser(user.userName ?? ''),
-            textColor: ToldyaColor.dodgetBlue,
+            textColor: Theme.of(context).colorScheme.primary,
             showDivider: false,
           ),
           SettingRowWidget(
             AppLocalizations.of(context)!.reportUser(user.userName ?? ''),
-            textColor: ToldyaColor.dodgetBlue,
+            textColor: Theme.of(context).colorScheme.primary,
             showDivider: false,
           ),
           SettingRowWidget(
             AppLocalizations.of(context)!.deleteConversationTitle,
-            textColor: ToldyaColor.ceriseRed,
+            textColor: Theme.of(context).colorScheme.error,
             showDivider: false,
           ),
         ],

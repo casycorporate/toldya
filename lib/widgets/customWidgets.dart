@@ -19,15 +19,15 @@ import 'newWidget/ImageGridItem.dart';
 Widget customTitleText(String title, {BuildContext? context}) {
   final color = context != null
       ? Theme.of(context).colorScheme.onSurface
-      : const Color(0xFFE6EAF0);
+      : AppColors.textPrimary;
+  final textTheme = context != null ? Theme.of(context).textTheme : null;
   return Text(
     title,
-    style: TextStyle(
+    style: (textTheme?.headlineMedium ?? TextStyle(
       color: color,
-      fontFamily: 'HelveticaNeue',
-      fontWeight: FontWeight.w900,
+      fontWeight: FontWeight.w600,
       fontSize: 20,
-    ),
+    )).copyWith(color: color),
   );
 }
 

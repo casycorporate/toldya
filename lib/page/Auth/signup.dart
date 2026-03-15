@@ -11,7 +11,6 @@ import 'package:toldya/page/Auth/widget/bezierContainer.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class Signup extends StatefulWidget {
@@ -141,16 +140,16 @@ class _SignupState extends State<Signup> {
           children: <Widget>[
             Text(
               AppLocalizations.of(context)!.alreadyHaveAccount,
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.85),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
               ),
             ),
             SizedBox(width: 10),
             Text(
               AppLocalizations.of(context)!.signIn,
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -170,7 +169,7 @@ class _SignupState extends State<Signup> {
       textAlign: TextAlign.center,
       text: TextSpan(
         text: 't',
-        style: GoogleFonts.portLligatSans(
+        style: Theme.of(context).textTheme.displaySmall?.copyWith(
           fontSize: 30,
           fontWeight: FontWeight.w700,
           color: onSurface,
@@ -200,7 +199,7 @@ class _SignupState extends State<Signup> {
             ),
             Text(
               AppLocalizations.of(context)!.back,
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface,
@@ -223,14 +222,14 @@ class _SignupState extends State<Signup> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.3),
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
       child: TextField(
         controller: controller,
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-        style: GoogleFonts.sawarabiMincho(
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           fontSize: 16,
           color: theme.colorScheme.onSurface,
         ),
@@ -277,7 +276,7 @@ class _SignupState extends State<Signup> {
           ),
           child: Text(
             AppLocalizations.of(context)!.signUpNow,
-            style: GoogleFonts.sawarabiMincho(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onPrimary,
