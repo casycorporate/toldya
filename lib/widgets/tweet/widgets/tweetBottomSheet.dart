@@ -794,8 +794,22 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         return;
       }
 
-      // Bir tahminde yalnızca tek tarafa (Evet veya Hayır) tahmin yapılabilir
+      // Bir tahminde yalnızca bir kez tahmin yapılabilir
       final userId = authState.userId;
+      if (userAlreadyPredicted(widget.model, userId)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.predictionAlreadyParticipated,
+              ),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.orange.shade800,
+            ),
+          );
+        }
+        return;
+      }
       if (userAlreadyPredictedOtherSide(widget.model, userId, widget.commentFlag)) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -882,6 +896,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             errorMessage = l10n.loginRequired;
           } else if (e.code == 'deadline-exceeded') {
             errorMessage = l10n.predictionTimeout;
+          } else if (code == 'already-participated') {
+            errorMessage = l10n.predictionAlreadyParticipated;
           } else if (code == 'insufficient-balance' || code.contains('insufficient')) {
             errorMessage = l10n.tokenInsufficient;
           } else if (code.contains('limit')) {

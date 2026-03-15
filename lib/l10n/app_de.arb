@@ -71,6 +71,7 @@
   "maxPredictionTokens": "Maximal: {maxVal} Token",
   "@maxPredictionTokens": {"placeholders": {"maxVal": {"type": "String"}}},
   "predictionOneSideOnly": "Du hast bei dieser Vorhersage bereits die andere Seite gewählt. Pro Vorhersage kannst du nur eine Seite (Ja oder Nein) wählen.",
+  "predictionAlreadyParticipated": "Du hast an dieser Vorhersage bereits teilgenommen. Eine erneute Vorhersage ist nicht möglich.",
   "predictionSubmitted": "Vorhersage gesendet.",
   "confirmPrediction": "Vorhersage bestätigen",
   "confirmPredictionMessage": "Möchtest du wirklich {amount} Token für diese Vorhersage verwenden?",

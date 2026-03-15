@@ -31,14 +31,13 @@ class EmptyStateContent extends StatelessWidget {
               Icon(
                 Icons.inbox_outlined,
                 size: 100,
-                color: Colors.white.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
               SizedBox(height: 32),
               Text(
                 displayTitle,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -46,8 +45,8 @@ class EmptyStateContent extends StatelessWidget {
               SizedBox(height: 16),
               Text(
                 displaySubtitle,
-                style: TextStyle(
-                  color: Colors.white54,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                   fontSize: 16,
                   fontWeight: FontWeight.normal,
                   height: 1.4,
@@ -108,7 +107,7 @@ class EmptyStateScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+            icon: Icon(Icons.history, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
             onPressed: onHistoryPressed ?? () {},
           ),
         ],

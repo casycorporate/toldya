@@ -71,6 +71,7 @@
   "maxPredictionTokens": "Maximum: {maxVal} tokens",
   "@maxPredictionTokens": {"placeholders": {"maxVal": {"type": "String"}}},
   "predictionOneSideOnly": "You have already chosen the other side of this prediction. You can only choose one side (Yes or No) per prediction.",
+  "predictionAlreadyParticipated": "You have already participated in this prediction. You cannot predict again on the same prediction.",
   "predictionSubmitted": "Prediction submitted.",
   "confirmPrediction": "Confirm prediction",
   "confirmPredictionMessage": "Are you sure you want to use {amount} tokens on this prediction?",

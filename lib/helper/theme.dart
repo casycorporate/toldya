@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Tasarım: Minimalist 2024–2025, flat/hafif depth. 8px grid, dark öncelikli.
 /// Doküman: docs/ui_redesign_prompts.md
@@ -104,7 +105,7 @@ class AppColor {
   static final Color darkGrey = Color(0xff657786);
   static final Color lightGrey = Color(0xffAAB8C2);
   static final Color extraLightGrey = Color(0xffE1E8ED);
-  static final Color extraExtraLightGrey = Color(0xfF5F8FA);
+  static final Color extraExtraLightGrey = Color(0xFFF5F8FA);
   static final Color white = Color(0xFFffffff);
   /// Dark theme surface (#1C1C1E benzeri minimalist brief)
   static final Color surfaceDark = Color(0xFF1C1C1E);
@@ -172,9 +173,9 @@ class MockupDesign {
   static const double avatarBorderWidth = 2.0;
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           blurRadius: 8,
-          offset: Offset(0, 2),
+          offset: const Offset(0, 2),
           spreadRadius: 0,
         ),
       ];
@@ -223,57 +224,107 @@ class AppTheme {
     ),
   );
 
-  static final ThemeData _darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    primarySwatch: Colors.blue,
-    scaffoldBackgroundColor: ToldyaDesign.background,
-    primaryColor: ToldyaDesign.yes,
-    cardColor: ToldyaDesign.card,
-    unselectedWidgetColor: ToldyaDesign.textSecondary,
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: ToldyaDesign.card,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: ToldyaDesign.background,
-      foregroundColor: ToldyaDesign.textPrimary,
-      iconTheme: IconThemeData(color: ToldyaDesign.textPrimary, size: 24),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      titleTextStyle: TextStyle(
-        color: ToldyaDesign.textPrimary,
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-    iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(
-        minimumSize: Size(44, 44),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    ),
-    tabBarTheme: TabBarThemeData(
-      labelStyle: titleStyle.copyWith(color: ToldyaDesign.yes, fontSize: 14),
-      unselectedLabelColor: ToldyaDesign.textSecondary,
-      unselectedLabelStyle: titleStyle.copyWith(color: ToldyaDesign.textSecondary, fontSize: 14),
-      labelColor: ToldyaDesign.yes,
-      labelPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-      indicatorColor: ToldyaDesign.yes,
-      indicatorSize: TabBarIndicatorSize.label,
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: ToldyaDesign.yes,
-      foregroundColor: Colors.white,
-      elevation: 2,
-    ),
-    colorScheme: ColorScheme.dark(
+  /// Tüm sayfalarda aynı font: Sawarabi Mincho (theme üzerinden).
+  static TextTheme _darkTextTheme() {
+    final base = ThemeData.dark().textTheme;
+    final t = GoogleFonts.sawarabiMinchoTextTheme(base);
+    return TextTheme(
+      displayLarge: t.displayLarge?.copyWith(color: ToldyaDesign.textPrimary),
+      displayMedium: t.displayMedium?.copyWith(color: ToldyaDesign.textPrimary),
+      displaySmall: t.displaySmall?.copyWith(color: ToldyaDesign.textPrimary),
+      headlineLarge: t.headlineLarge?.copyWith(color: ToldyaDesign.textPrimary),
+      headlineMedium: t.headlineMedium?.copyWith(color: ToldyaDesign.textPrimary),
+      headlineSmall: t.headlineSmall?.copyWith(color: ToldyaDesign.textPrimary),
+      titleLarge: t.titleLarge?.copyWith(color: ToldyaDesign.textPrimary),
+      titleMedium: t.titleMedium?.copyWith(color: ToldyaDesign.textPrimary),
+      titleSmall: t.titleSmall?.copyWith(color: ToldyaDesign.textPrimary),
+      bodyLarge: t.bodyLarge?.copyWith(color: ToldyaDesign.textPrimary),
+      bodyMedium: t.bodyMedium?.copyWith(color: ToldyaDesign.textPrimary),
+      bodySmall: t.bodySmall?.copyWith(color: ToldyaDesign.textSecondary),
+      labelLarge: t.labelLarge?.copyWith(color: ToldyaDesign.textPrimary),
+      labelMedium: t.labelMedium?.copyWith(color: ToldyaDesign.textSecondary),
+      labelSmall: t.labelSmall?.copyWith(color: ToldyaDesign.textSecondary),
+    );
+  }
+
+  static final ThemeData _darkTheme = _buildDarkTheme();
+
+  static ThemeData _buildDarkTheme() {
+    final colorScheme = ColorScheme.dark(
       primary: ToldyaDesign.yes,
-      secondary: AppNeon.cyan,
-      surface: ToldyaDesign.card,
-      error: ToldyaDesign.no,
       onPrimary: Colors.white,
+      primaryContainer: ToldyaDesign.yes.withValues(alpha: 0.2),
+      onPrimaryContainer: ToldyaDesign.yesHighlight,
+      secondary: AppNeon.cyan,
       onSecondary: Colors.white,
+      surface: ToldyaDesign.card,
       onSurface: ToldyaDesign.textPrimary,
+      surfaceContainerHighest: ToldyaDesign.progressBackground,
+      outline: ToldyaDesign.textSecondary,
+      error: ToldyaDesign.no,
       onError: Colors.white,
-    ),
-  );
+    );
+    final textTheme = _darkTextTheme();
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      primarySwatch: Colors.orange,
+      scaffoldBackgroundColor: ToldyaDesign.background,
+      primaryColor: ToldyaDesign.yes,
+      cardColor: ToldyaDesign.card,
+      unselectedWidgetColor: ToldyaDesign.textSecondary,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: ToldyaDesign.card,
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: ToldyaDesign.background,
+        foregroundColor: ToldyaDesign.textPrimary,
+        iconTheme: IconThemeData(color: ToldyaDesign.textPrimary, size: 24),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: ToldyaDesign.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelStyle: textTheme.labelLarge?.copyWith(color: ToldyaDesign.yes, fontSize: 14),
+        unselectedLabelColor: ToldyaDesign.textSecondary,
+        unselectedLabelStyle: textTheme.labelLarge?.copyWith(color: ToldyaDesign.textSecondary, fontSize: 14),
+        labelColor: ToldyaDesign.yes,
+        labelPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        indicatorColor: ToldyaDesign.yes,
+        indicatorSize: TabBarIndicatorSize.label,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: ToldyaDesign.yes,
+        foregroundColor: Colors.white,
+        elevation: 2,
+      ),
+      colorScheme: colorScheme,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: ToldyaDesign.progressBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusMedium)),
+        labelStyle: TextStyle(color: ToldyaDesign.textSecondary),
+        hintStyle: TextStyle(color: ToldyaDesign.textSecondary),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: ToldyaDesign.card,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(color: ToldyaDesign.textPrimary),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 }

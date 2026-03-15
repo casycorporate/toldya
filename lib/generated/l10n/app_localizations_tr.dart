@@ -226,6 +226,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek taraf (Evet veya Hayır) seçebilirsiniz.';
 
   @override
+  String get predictionAlreadyParticipated =>
+      'Bu tahmine zaten katıldınız. Aynı tahmine tekrar tahmin yapılamaz.';
+
+  @override
   String get predictionSubmitted => 'Tahmin gönderildi.';
 
   @override

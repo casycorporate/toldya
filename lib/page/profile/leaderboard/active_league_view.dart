@@ -35,11 +35,11 @@ class _LeagueTile extends StatelessWidget {
     Color? bgColor;
     Widget? zoneIcon;
     if (zone == _Zone.promotion) {
-      bgColor = AppNeon.green.withOpacity(0.12);
-      zoneIcon = Icon(Icons.arrow_upward, size: 16, color: AppNeon.green);
+      bgColor = ToldyaDesign.yes.withValues(alpha: 0.12);
+      zoneIcon = Icon(Icons.arrow_upward, size: 16, color: ToldyaDesign.yes);
     } else if (zone == _Zone.demotion) {
-      bgColor = AppNeon.red.withOpacity(0.12);
-      zoneIcon = Icon(Icons.arrow_downward, size: 16, color: AppNeon.red);
+      bgColor = ToldyaDesign.no.withValues(alpha: 0.12);
+      zoneIcon = Icon(Icons.arrow_downward, size: 16, color: ToldyaDesign.no);
     }
     const accentBorder = Color(0xFFFF6B6B);
 
@@ -55,10 +55,10 @@ class _LeagueTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 12),
           margin: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 4),
           decoration: BoxDecoration(
-            color: bgColor ?? MockupDesign.card.withOpacity(0.6),
+            color: bgColor ?? MockupDesign.card.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
             border: Border.all(
-              color: isCurrentUser ? accentBorder : MockupDesign.cardBorder.withOpacity(0.5),
+              color: isCurrentUser ? accentBorder : MockupDesign.cardBorder.withValues(alpha: 0.5),
               width: isCurrentUser ? 2 : 1,
             ),
           ),
@@ -75,7 +75,7 @@ class _LeagueTile extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: rank <= 3 ? AppNeon.green : MockupDesign.textPrimary.withOpacity(0.8),
+                        color: rank <= 3 ? ToldyaDesign.yes : MockupDesign.textPrimary.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -116,21 +116,21 @@ class _LeagueTile extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppNeon.green.withOpacity(0.18),
+                  color: ToldyaDesign.yes.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppNeon.green.withOpacity(0.4), width: 1),
+                  border: Border.all(color: ToldyaDesign.yes.withValues(alpha: 0.4), width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.emoji_events, size: 16, color: AppNeon.green),
+                    Icon(Icons.emoji_events, size: 16, color: ToldyaDesign.yes),
                     SizedBox(width: 4),
                     Text(
                       '$weeklyXp',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
-                        color: AppNeon.green,
+                        color: ToldyaDesign.yes,
                       ),
                     ),
                   ],
@@ -246,7 +246,7 @@ class _ActiveLeagueViewState extends State<ActiveLeagueView> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.emoji_events, color: const Color(0xFFFF6B6B), size: 28),
+                          Icon(Icons.emoji_events, color: ToldyaDesign.yes, size: 28),
                           SizedBox(width: 8),
                           Text(
                             tierName,

@@ -265,6 +265,15 @@ class PredictionCardMockup extends StatelessWidget {
       ));
       return;
     }
+    if (userAlreadyPredicted(model, authState.userId)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(l10n.predictionAlreadyParticipated),
+        duration: const Duration(seconds: 3),
+        backgroundColor: ToldyaDesign.card,
+      ));
+      return;
+    }
     if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -420,11 +429,23 @@ class PredictionCardMockup extends StatelessWidget {
       ));
       return;
     }
+    if (userAlreadyPredicted(model, authState.userId)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          AppLocalizations.of(context)!.predictionAlreadyParticipated,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 3),
+        backgroundColor: ToldyaDesign.card,
+      ));
+      return;
+    }
     if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek taraf (Evet veya Hayır) seçebilirsiniz.',
+          AppLocalizations.of(context)!.predictionOneSideOnly,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 4),

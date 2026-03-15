@@ -49,14 +49,14 @@ class ReplyVoteButtons extends StatelessWidget {
                 Icon(
                   Icons.thumb_up_alt_outlined,
                   size: 16,
-                  color: isUp ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: isUp ? theme.primaryColor : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: 2),
                 Text(
                   '$up',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isUp ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: isUp ? theme.primaryColor : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -87,14 +87,14 @@ class ReplyVoteButtons extends StatelessWidget {
                 Icon(
                   Icons.thumb_down_alt_outlined,
                   size: 16,
-                  color: isDown ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: isDown ? theme.primaryColor : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: 2),
                 Text(
                   '$down',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDown ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: isDown ? theme.primaryColor : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],

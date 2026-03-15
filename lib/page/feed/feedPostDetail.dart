@@ -19,7 +19,6 @@ import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class FeedPostDetail extends StatefulWidget {
@@ -67,7 +66,6 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
         appBar: AppBar(
           leading: IconButton(
             icon: Icon(Icons.arrow_back_rounded),
-            color: Colors.white,
             onPressed: () {
               Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
               if (Navigator.canPop(context)) Navigator.of(context).pop();
@@ -75,8 +73,8 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
           ),
           title: Text(
             AppLocalizations.of(context)!.predictionDetail,
-            style: TextStyle(
-              color: Colors.grey.shade400,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -84,11 +82,10 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
           centerTitle: true,
           elevation: 0,
           backgroundColor: Colors.transparent,
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
           actions: [
             IconButton(
               icon: Icon(Icons.share_outlined),
-              color: Colors.white,
               onPressed: () async {
                 await Utility.createLinkToShare(context, 'toldya/$postId');
               },
@@ -137,7 +134,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                                   child: Text(
                                     AppLocalizations.of(context)!.noCommentsYet,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -162,7 +159,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                                         border: Border.all(
                                           color: Theme.of(context).brightness == Brightness.dark
                                               ? AppColor.cardDarkBorder
-                                              : Colors.black.withOpacity(0.06),
+                                              : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06),
                                         ),
                                       ),
                                       child: ClipRRect(
@@ -229,12 +226,16 @@ class _PredictionDetailBody extends StatelessWidget {
             UrlText(
               text: model.description,
               onHashTagPressed: (_) {},
-              style: GoogleFonts.sawarabiMincho(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontSize: 23,
                 fontWeight: FontWeight.w700,
                 color: ToldyaDesign.textPrimary,
               ),
-              urlStyle: TextStyle(fontSize: 23, color: ToldyaDesign.yes, fontWeight: FontWeight.w700),
+              urlStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 23,
+                color: ToldyaDesign.yes,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           SizedBox(height: 16),
           // 2. Kullanıcı & bilgi satırı: güncel profil (getuserDetail) + formatHandle
@@ -252,7 +253,7 @@ class _PredictionDetailBody extends StatelessWidget {
                     onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${model.userId}'),
                     child: CircleAvatar(
                       radius: 22,
-                      backgroundColor: Colors.grey.shade800,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: ClipOval(
                         child: customProfileImage(context, author?.profilePic, userId: author?.userId ?? model.userId, height: 44),
                       ),
@@ -272,7 +273,7 @@ class _PredictionDetailBody extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -287,7 +288,7 @@ class _PredictionDetailBody extends StatelessWidget {
                         if (model.topic != null && (model.topic ?? '').isNotEmpty)
                           Text(
                             topicLabel,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],
@@ -295,7 +296,7 @@ class _PredictionDetailBody extends StatelessWidget {
                   ),
                   Text(
                     kapanisText.isNotEmpty ? AppLocalizations.of(context)!.closingAt(kapanisText) : '',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
                     textAlign: TextAlign.end,
                   ),
                 ],
@@ -370,7 +371,7 @@ class _PredictionDetailBody extends StatelessWidget {
                         child: Text(
                           AppLocalizations.of(context)!.predictYesLabel,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
@@ -448,25 +449,39 @@ class _PredictionDetailBody extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
           content: Text(
             closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           duration: Duration(seconds: 2),
-          backgroundColor: Colors.black87,
+          backgroundColor: Theme.of(context).colorScheme.surface,
         ),
       );
       return;
     }
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
+    if (userAlreadyPredicted(model, authState.userId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            AppLocalizations.of(context)!.predictionAlreadyParticipated,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+          duration: Duration(seconds: 3),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+      return;
+    }
     if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
             AppLocalizations.of(context)!.predictionOneSideOnly,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           duration: Duration(seconds: 4),
-          backgroundColor: Colors.orange.shade800,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -502,20 +517,20 @@ class _RecentPredictionsList extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark ? MockupDesign.card : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? MockupDesign.cardBorder : Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? MockupDesign.cardBorder : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               AppLocalizations.of(context)!.noPredictionsYet,
-              style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 4),
             Text(
               AppLocalizations.of(context)!.noPredictionsYetHint,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],
@@ -526,13 +541,13 @@ class _RecentPredictionsList extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark ? MockupDesign.card : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06)),
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
         itemCount: top.length,
-        separatorBuilder: (_, __) => Divider(height: 1, color: Colors.white10),
+        separatorBuilder: (_, __) => Divider(height: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
         itemBuilder: (context, i) {
           final e = top[i];
           return FutureBuilder(
@@ -548,7 +563,7 @@ class _RecentPredictionsList extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.grey.shade800,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: ClipOval(
                         child: customProfileImage(context, user?.profilePic, userId: user?.userId, height: 40),
                       ),
@@ -560,7 +575,7 @@ class _RecentPredictionsList extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -578,7 +593,7 @@ class _RecentPredictionsList extends StatelessWidget {
                         ),
                         Text(
                           '—',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.outline),
                         ),
                       ],
                     ),

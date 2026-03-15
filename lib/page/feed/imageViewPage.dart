@@ -65,12 +65,12 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                       alignment: Alignment.topLeft,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
+                        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.85),
                       ),
                       child: Wrap(
                         children: <Widget>[
                           BackButton(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ],
                       )),
@@ -93,21 +93,21 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                         scaffoldKey: GlobalKey<ScaffoldState>(),
                       ),
                       Container(
-                        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
+                        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.85),
                         padding:
                             EdgeInsets.only(right: 10, left: 10, bottom: 10),
                         child: TextField(
                           controller: _textEditingController,
                           maxLines: null,
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
-                            fillColor: Colors.blue,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.all(
                                 Radius.circular(30.0),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.outline,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -115,23 +115,23 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                                 Radius.circular(30.0),
                               ),
                               borderSide: BorderSide(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                             suffixIcon: IconButton(
                               onPressed: () {
                                 _submitButton();
                               },
-                              icon: Icon(Icons.send, color: Colors.white),
+                              icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
                             ),
-                            focusColor: Colors.black,
+                            focusColor: Theme.of(context).colorScheme.primary,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 10,
                             ),
                             hintText: AppLocalizations.of(context)!.commentHint,
                             hintStyle: TextStyle(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                           ),
                         ),
@@ -208,7 +208,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.commentFailed),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

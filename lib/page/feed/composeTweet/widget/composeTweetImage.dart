@@ -35,7 +35,7 @@ class ComposeToldyaImage extends StatelessWidget {
                   child: Container(
                     padding: EdgeInsets.all(0),
                     decoration: BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.black54),
+                        shape: BoxShape.circle, color: Theme.of(context).colorScheme.scrim),
                     child: IconButton(
                       padding: EdgeInsets.all(0),
                       iconSize: 20,

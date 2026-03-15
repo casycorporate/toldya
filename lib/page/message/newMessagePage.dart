@@ -97,13 +97,13 @@ class _NewMessagePageState extends State<NewMessagePage> {
                     hintText: AppLocalizations.of(context)!.searchPeopleOrGroupsHint,
                     hintStyle: TextStyle(
                       fontSize: 18,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     prefixIcon: customIcon(
                       context,
                       icon: AppIcon.search,
                       istwitterIcon: true,
-                      iconColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      iconColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       size: 25,
                       paddingIcon: 5,
                     ),

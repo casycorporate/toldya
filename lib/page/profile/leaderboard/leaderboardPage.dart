@@ -70,9 +70,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         iconTheme: IconThemeData(color: titleColor),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppNeon.green,
-          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
-          indicatorColor: AppNeon.green,
+          labelColor: ToldyaDesign.yes,
+          unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          indicatorColor: ToldyaDesign.yes,
           indicatorWeight: 3,
           labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           tabs: [
@@ -247,7 +247,7 @@ class _LeaderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scoreColor = isPredictor ? AppNeon.green : AppNeon.orange;
+    final scoreColor = ToldyaDesign.yes;
     final displayName = user.displayName ?? user.userName ?? '';
     final handle = user.userName ?? '';
     final handleText = handle.startsWith('@') ? handle : '@$handle';
@@ -265,9 +265,9 @@ class _LeaderTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 12),
           margin: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 4),
           decoration: BoxDecoration(
-            color: MockupDesign.card.withOpacity(0.6),
+            color: MockupDesign.card.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
-            border: Border.all(color: MockupDesign.cardBorder.withOpacity(0.5), width: 1),
+            border: Border.all(color: MockupDesign.cardBorder.withValues(alpha: 0.5), width: 1),
           ),
           child: Row(
             children: [
@@ -278,7 +278,7 @@ class _LeaderTile extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: rank <= 3 ? scoreColor : theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: rank <= 3 ? scoreColor : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -313,7 +313,7 @@ class _LeaderTile extends StatelessWidget {
                           Icon(
                             Icons.local_fire_department,
                             size: 16,
-                            color: Colors.orange,
+                            color: ToldyaDesign.yes,
                           ),
                         ],
                       ],

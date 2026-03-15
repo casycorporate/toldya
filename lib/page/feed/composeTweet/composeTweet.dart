@@ -116,7 +116,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.closingTimeMinOneHour),
-            backgroundColor: Colors.orange,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         return;
@@ -184,7 +184,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.errorTryAgain),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -636,7 +636,7 @@ class _ComposeRetoldya
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
-          urlStyle: TextStyle(color: Colors.blue, fontWeight: FontWeight.w400),
+          urlStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w400),
         ),
       ],
     );
@@ -727,7 +727,7 @@ class _ComposeToldya
                 border: Border(
                   left: BorderSide(
                     width: 2.0,
-                    color: Colors.grey.shade400,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
               ),
@@ -745,7 +745,7 @@ class _ComposeToldya
                       ),
                       urlStyle: TextStyle(
                         fontSize: 16,
-                        color: Colors.blue,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -755,7 +755,7 @@ class _ComposeToldya
                     text:
                         '${viewState.model.user?.userName ?? viewState.model.user?.displayName ?? ""} tahminine yanıt',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -891,7 +891,7 @@ class _TextField extends StatelessWidget {
                       : 'Bu tahmine yorum yap',
               hintStyle: TextStyle(
                 fontSize: 18,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               )),
         ),
         Consumer<ComposeToldyaState>(
@@ -899,8 +899,8 @@ class _TextField extends StatelessWidget {
             final color = state.isOverLimit
                 ? theme.colorScheme.error
                 : state.isNearLimit
-                    ? Colors.orange
-                    : theme.colorScheme.onSurface.withOpacity(0.7);
+                    ? Theme.of(context).colorScheme.primary
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7);
             return Padding(
               padding: EdgeInsets.only(top: 4),
               child: Align(

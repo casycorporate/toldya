@@ -61,11 +61,11 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                 ),
               )
-            : BackButton(color: Colors.white),
+            : BackButton(color: Theme.of(context).colorScheme.onSurface),
         title: Text(
           AppLocalizations.of(context)!.notificationsTitle,
-          style: TextStyle(
-            color: Colors.white,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 21,
             fontWeight: FontWeight.w600,
           ),
@@ -214,10 +214,10 @@ class _FollowNotificationTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor.withOpacity(0.9),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.06), width: 1),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   offset: const Offset(0, 10),
                   blurRadius: 24,
                   spreadRadius: -8,
@@ -229,7 +229,7 @@ class _FollowNotificationTile extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade800, width: 1),
+                    border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest, width: 1),
                   ),
                   child: customProfileImage(context, user.profilePic, userId: user.userId, height: 40),
                 ),
@@ -241,8 +241,8 @@ class _FollowNotificationTile extends StatelessWidget {
                     children: [
                       Text(
                         '$name ${l10n.notificationStartedFollowingYou}',
-                        style: TextStyle(
-                          color: Colors.white,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           height: 1.2,
@@ -324,15 +324,15 @@ class NotificationTile extends StatelessWidget {
               top: (_avatarSize - 22) / 2,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 alignment: Alignment.center,
                 child: Text(
                   '+$extraCount',
-                  style: TextStyle(
-                    color: Colors.white70,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -352,7 +352,7 @@ class NotificationTile extends StatelessWidget {
                 color: Theme.of(context).scaffoldBackgroundColor,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                   width: 0.5,
                 ),
               ),
@@ -389,7 +389,7 @@ class NotificationTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: borderColor ?? Colors.grey.shade800,
+                  color: borderColor ?? Theme.of(context).colorScheme.surfaceContainerHighest,
                   width: _avatarBorderWidth,
                 ),
               ),
@@ -446,12 +446,12 @@ class NotificationTile extends StatelessWidget {
           color: Theme.of(context).cardColor.withOpacity(0.9),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: Colors.white.withOpacity(0.06),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35),
+              color: Colors.black.withValues(alpha: 0.35),
               offset: const Offset(0, 10),
               blurRadius: 24,
               spreadRadius: -8,
@@ -470,8 +470,8 @@ class NotificationTile extends StatelessWidget {
                 children: [
                   Text(
                     titleText,
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
@@ -483,8 +483,8 @@ class NotificationTile extends StatelessWidget {
                       description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
                         fontSize: 13,
                         height: 1.4,
                       ),

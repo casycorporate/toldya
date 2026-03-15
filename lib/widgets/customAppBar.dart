@@ -61,7 +61,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             hintText: AppLocalizations.of(context)!.searchHintShort,
             hintStyle: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 16,
             ),
             fillColor: theme.colorScheme.surface,

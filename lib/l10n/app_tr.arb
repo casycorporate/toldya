@@ -71,6 +71,7 @@
   "maxPredictionTokens": "Maksimum: {maxVal} token",
   "@maxPredictionTokens": {"placeholders": {"maxVal": {"type": "String"}}},
   "predictionOneSideOnly": "Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek taraf (Evet veya Hayır) seçebilirsiniz.",
+  "predictionAlreadyParticipated": "Bu tahmine zaten katıldınız. Aynı tahmine tekrar tahmin yapılamaz.",
   "predictionSubmitted": "Tahmin gönderildi.",
   "confirmPrediction": "Tahmini onayla",
   "confirmPredictionMessage": "Bu tahmine {amount} token kullanmak istediğinize emin misiniz?",

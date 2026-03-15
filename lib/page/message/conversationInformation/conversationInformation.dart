@@ -63,7 +63,7 @@ class ConversationInformation extends StatelessWidget {
             user.userName ?? '',
             context: context,
             style: onPrimarySubTitleText.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: 15,
             ),
           ),

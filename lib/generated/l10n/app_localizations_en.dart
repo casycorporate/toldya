@@ -225,6 +225,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You have already chosen the other side of this prediction. You can only choose one side (Yes or No) per prediction.';
 
   @override
+  String get predictionAlreadyParticipated =>
+      'You have already participated in this prediction. You cannot predict again on the same prediction.';
+
+  @override
   String get predictionSubmitted => 'Prediction submitted.';
 
   @override

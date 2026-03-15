@@ -144,11 +144,11 @@ class _EarnCard extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Colors.black.withOpacity(0.06),
+          color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -231,7 +231,7 @@ class _TokenPackCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Colors.black.withOpacity(0.06),
+              color: Theme.of(context).brightness == Brightness.dark ? AppColor.cardDarkBorder : Theme.of(context).colorScheme.scrim.withValues(alpha: 0.06),
             ),
           ),
           child: Row(

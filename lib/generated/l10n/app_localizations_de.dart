@@ -229,6 +229,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Du hast bei dieser Vorhersage bereits die andere Seite gewählt. Pro Vorhersage kannst du nur eine Seite (Ja oder Nein) wählen.';
 
   @override
+  String get predictionAlreadyParticipated =>
+      'Du hast an dieser Vorhersage bereits teilgenommen. Eine erneute Vorhersage ist nicht möglich.';
+
+  @override
   String get predictionSubmitted => 'Vorhersage gesendet.';
 
   @override

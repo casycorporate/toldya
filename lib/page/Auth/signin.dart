@@ -129,7 +129,7 @@ class _SignInState extends State<SignIn> {
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.85),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
               ),
             ),
             SizedBox(width: 10),
@@ -167,7 +167,7 @@ class _SignInState extends State<SignIn> {
             'veya',
             style: GoogleFonts.sawarabiMincho(
               fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           Expanded(
@@ -244,7 +244,7 @@ class _SignInState extends State<SignIn> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.3),
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -259,7 +259,7 @@ class _SignInState extends State<SignIn> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             fontSize: 16,
           ),
           border: InputBorder.none,
@@ -304,7 +304,7 @@ class _SignInState extends State<SignIn> {
             color: theme.colorScheme.primary,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.35),
+                color: theme.colorScheme.primary.withValues(alpha: 0.35),
                 offset: Offset(0, 6),
                 blurRadius: 16,
                 spreadRadius: 0,

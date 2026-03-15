@@ -117,7 +117,7 @@ class _TooltipInfo extends StatelessWidget {
           decoration: BoxDecoration(
             color: MockupDesign.background,
             borderRadius: BorderRadius.circular(radiusSmall),
-            border: Border.all(color: Colors.white.withOpacity(0.06), width: 1),
+            border: Border.all(color: ToldyaDesign.textPrimary.withValues(alpha: 0.06), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class _TooltipInfo extends StatelessWidget {
                   Text(
                     'EVET',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: ToldyaDesign.textPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
@@ -145,7 +145,7 @@ class _TooltipInfo extends StatelessWidget {
                   Text(
                     'HAYIR',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: ToldyaDesign.textPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
@@ -156,7 +156,7 @@ class _TooltipInfo extends StatelessWidget {
               Text(
                 '${k_m_b_generator(totalPoints)} Token participation',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: ToldyaDesign.textPrimary,
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
                 ),
@@ -201,7 +201,7 @@ class _TooltipArrowPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = Colors.white.withOpacity(0.08)
+        ..color = ToldyaDesign.textPrimary.withValues(alpha: 0.08)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
@@ -261,7 +261,7 @@ class CountdownWithCircle extends StatelessWidget {
     required this.progress,
   }) : super(key: key);
 
-  static const Color _countdownColor = Color(0xFF9CA3AF);
+  static const Color _countdownColor = ToldyaDesign.textSecondary;
 
   @override
   Widget build(BuildContext context) {
@@ -317,7 +317,7 @@ class _CountdownRingPainter extends CustomPainter {
     final startAngle = -pi / 2 + gapAtTop / 2;
 
     final paintOuter = Paint()
-      ..color = color.withOpacity(0.35)
+      ..color = color.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -346,7 +346,7 @@ class _CountdownRingPainter extends CustomPainter {
     final innerRadius = outerRadius - 8;
     final innerSweep = sweepAngle * 0.7;
     final paintInner = Paint()
-      ..color = color.withOpacity(0.85)
+      ..color = color.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;

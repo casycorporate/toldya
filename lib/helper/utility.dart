@@ -62,6 +62,14 @@ bool arePredictionsClosed(int? statu, String? endDate) {
   }
 }
 
+/// Kullanıcı bu tahminde (Evet veya Hayır fark etmeksizin) zaten tahmin yaptıysa true.
+bool userAlreadyPredicted(FeedModel model, String? userId) {
+  if (userId == null || userId.isEmpty) return false;
+  final inLike = (model.likeList ?? []).any((e) => e.userId == userId);
+  final inUnlike = (model.unlikeList ?? []).any((e) => e.userId == userId);
+  return inLike || inUnlike;
+}
+
 /// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten tahmin yaptıysa true.
 /// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek tahmin kuralı ihlali.
 bool userAlreadyPredictedOtherSide(FeedModel model, String? userId, int commentFlag) {

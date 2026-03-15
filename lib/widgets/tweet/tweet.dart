@@ -15,7 +15,6 @@ import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:toldya/widgets/tweet/widgets/parentTweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetIconsRow.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../customWidgets.dart';
@@ -84,7 +83,7 @@ class Toldya extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     border: Border(
-                      left: BorderSide(width: 3.0, color: Colors.grey.shade400),
+                      left: BorderSide(width: 3.0, color: Theme.of(context).colorScheme.outline),
                     ),
                   ),
                 ),
@@ -143,7 +142,7 @@ class Toldya extends StatelessWidget {
                         type: type,
                         model: model,
                         isTweetDetail: type == ToldyaType.Detail,
-                        iconColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
+                        iconColor: Theme.of(context).colorScheme.outline,
                         iconEnableColor: ToldyaColor.ceriseRed,
                         size: 20,
                         scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
@@ -213,12 +212,12 @@ class _ToldyaBody extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppNeon.orange.withOpacity(0.8),
+                      color: ToldyaDesign.yes.withValues(alpha: 0.8),
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppNeon.orange.withOpacity(0.2),
+                        color: ToldyaDesign.yes.withValues(alpha: 0.2),
                         blurRadius: 8,
                         spreadRadius: 0,
                       ),
@@ -348,7 +347,7 @@ class _ToldyaBody extends StatelessWidget {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.12),
+                      color: ToldyaDesign.yes.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -356,7 +355,7 @@ class _ToldyaBody extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColor.primary,
+                        color: ToldyaDesign.yes,
                       ),
                     ),
                   ),
@@ -370,8 +369,8 @@ class _ToldyaBody extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: model.statu == Statu.statusRejectedByAi
-                              ? Colors.red.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.15)
+                              : ToldyaDesign.yes.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -380,7 +379,7 @@ class _ToldyaBody extends StatelessWidget {
                             Icon(
                               model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
                               size: 14,
-                              color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                              color: model.statu == Statu.statusRejectedByAi ? Theme.of(context).colorScheme.error : ToldyaDesign.yes,
                             ),
                             SizedBox(width: 4),
                             Text(
@@ -388,7 +387,7 @@ class _ToldyaBody extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                                color: model.statu == Statu.statusRejectedByAi ? Theme.of(context).colorScheme.error : ToldyaDesign.yes,
                               ),
                             ),
                           ],
@@ -399,7 +398,7 @@ class _ToldyaBody extends StatelessWidget {
                         Expanded(
                           child: Text(
                             model.aiModerationReason!,
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.outline),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -417,13 +416,13 @@ class _ToldyaBody extends StatelessWidget {
                         onHashTagPressed: (tag) {
                           cprint(tag);
                         },
-                        style: GoogleFonts.sawarabiMincho(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontSize: descriptionFontSize,
                           fontWeight: descriptionFontWeight,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         urlStyle: TextStyle(
-                            color: AppNeon.cyan,
+                            color: Theme.of(context).colorScheme.primary,
                             fontSize: descriptionFontSize,
                             fontWeight: descriptionFontWeight),
                       ),
@@ -632,8 +631,8 @@ class _ToldyaDetailBody extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: model.statu == Statu.statusRejectedByAi
-                              ? Colors.red.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.15)
+                              : ToldyaDesign.yes.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -642,7 +641,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                             Icon(
                               model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
                               size: 14,
-                              color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                              color: model.statu == Statu.statusRejectedByAi ? Theme.of(context).colorScheme.error : ToldyaDesign.yes,
                             ),
                             SizedBox(width: 4),
                             Text(
@@ -650,7 +649,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                                color: model.statu == Statu.statusRejectedByAi ? Theme.of(context).colorScheme.error : ToldyaDesign.yes,
                               ),
                             ),
                           ],
@@ -661,7 +660,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                         Expanded(
                           child: Text(
                             model.aiModerationReason!,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
                           ),
                         ),
                       ],
@@ -685,7 +684,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                           fontWeight: descriptionFontWeight,
                         ),
                         urlStyle: TextStyle(
-                          color: Colors.blue,
+                          color: Theme.of(context).colorScheme.primary,
                           fontSize: descriptionFontSize,
                           fontWeight: descriptionFontWeight,
                         ),
@@ -710,13 +709,13 @@ class _CountdownChip extends StatelessWidget {
     final text = getEndTime(endDate ?? '');
     if (text.isEmpty) return SizedBox.shrink();
     final isUrgent = text == 'bitti' || text.contains('sn') || text.contains('dk');
-    final color = isUrgent ? AppNeon.red : Theme.of(context).primaryColor;
+    final color = isUrgent ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

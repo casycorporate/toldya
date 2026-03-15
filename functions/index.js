@@ -894,21 +894,15 @@ const submitPredictionHandler = functions.runWith({ enforceAppCheck: false }).ht
       throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık tahmin kapatıldı.");
     }
 
-    // Bir tahminde kullanıcı yalnızca tek tarafa (Evet veya Hayır) tahmin yapabilir
+    // Bir tahminde kullanıcı yalnızca bir kez tahmin yapabilir (Evet veya Hayır, tek seçim)
     const likeList = Array.isArray(tweet.likeList) ? tweet.likeList : [];
     const unlikeList = Array.isArray(tweet.unlikeList) ? tweet.unlikeList : [];
     const inLike = likeList.some((e) => (e && (e.userId || e)) === userId);
     const inUnlike = unlikeList.some((e) => (e && (e.userId || e)) === userId);
-    if (side === FEED_RESULT_LIKE && inUnlike) {
+    if (inLike || inUnlike) {
       throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Bu tahminde zaten Hayır tarafını seçtiniz. Bir tahminde yalnızca tek taraf seçebilirsiniz."
-      );
-    }
-    if (side === FEED_RESULT_UNLIKE && inLike) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Bu tahminde zaten Evet tarafını seçtiniz. Bir tahminde yalnızca tek taraf seçebilirsiniz."
+        "already-participated",
+        "Bu tahmine zaten katıldınız. Aynı tahmine tekrar tahmin yapılamaz."
       );
     }
 

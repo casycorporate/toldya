@@ -520,6 +520,12 @@ abstract class AppLocalizations {
   /// **'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek taraf (Evet veya Hayır) seçebilirsiniz.'**
   String get predictionOneSideOnly;
 
+  /// No description provided for @predictionAlreadyParticipated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tahmine zaten katıldınız. Aynı tahmine tekrar tahmin yapılamaz.'**
+  String get predictionAlreadyParticipated;
+
   /// No description provided for @predictionSubmitted.
   ///
   /// In tr, this message translates to:

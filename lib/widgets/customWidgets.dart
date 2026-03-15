@@ -19,7 +19,7 @@ import 'newWidget/ImageGridItem.dart';
 Widget customTitleText(String title, {BuildContext? context}) {
   final color = context != null
       ? Theme.of(context).colorScheme.onSurface
-      : Colors.black87;
+      : const Color(0xFFE6EAF0);
   return Text(
     title,
     style: TextStyle(
@@ -47,7 +47,10 @@ Widget heading(String heading,
   );
 }
 
-Widget userImage(String path, {double height = 100}) {
+Widget userImage(String path, {double height = 100, BuildContext? context}) {
+  final borderColor = context != null
+      ? Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)
+      : const Color(0xFF2A2F38);
   return Container(
     child: Container(
       width: height,
@@ -55,7 +58,7 @@ Widget userImage(String path, {double height = 100}) {
       alignment: FractionalOffset.topCenter,
       decoration: BoxDecoration(
         boxShadow: shadow,
-        border: Border.all(color: Colors.white, width: 1),
+        border: Border.all(color: borderColor, width: 1),
         borderRadius: BorderRadius.circular(height / 2),
         image: DecorationImage(image: NetworkImage(path)),
       ),
@@ -73,13 +76,13 @@ Widget customIcon(
   Color? iconColor,
   double paddingIcon = 10,
 }) {
-  final color = iconColor ?? Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
+  final color = iconColor ?? Theme.of(context).colorScheme.outline;
   return Padding(
     padding: EdgeInsets.only(bottom: istwitterIcon ? paddingIcon : 0),
     child: Icon(
       icon,
       size: size,
-      color: isEnable ? Theme.of(context).primaryColor : color,
+      color: isEnable ? Theme.of(context).colorScheme.primary : color,
     ),
   );
 }
@@ -168,7 +171,7 @@ Widget customImage(
       height: height,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4), width: isBorder ? 2 : 0),
       ),
       child: ClipOval(
         child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
@@ -178,7 +181,7 @@ Widget customImage(
   return Container(
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4), width: isBorder ? 2 : 0),
     ),
     child: CircleAvatar(
       maxRadius: height / 2,
@@ -205,7 +208,7 @@ Widget customProfileImage(
       height: height,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4), width: isBorder ? 2 : 0),
       ),
       child: ClipOval(
         child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
@@ -217,7 +220,7 @@ Widget customProfileImage(
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4), width: isBorder ? 2 : 0),
       ),
       child: CircleAvatar(
         maxRadius: height / 2,
@@ -233,7 +236,7 @@ Widget customProfileImage(
     height: height,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4), width: isBorder ? 2 : 0),
     ),
     child: ClipOval(
       child: CachedNetworkImage(
@@ -243,7 +246,7 @@ Widget customProfileImage(
         fit: BoxFit.cover,
         placeholder: (_, __) => Container(
           color: Theme.of(context).cardColor,
-          child: Icon(Icons.person, size: height * 0.5, color: Colors.grey),
+          child: Icon(Icons.person, size: height * 0.5, color: Theme.of(context).colorScheme.outline),
         ),
         errorWidget: (_, __, ___) => Image.asset(
           placeholderPath,
@@ -325,7 +328,7 @@ Widget customNetworkImage(String path, {BoxFit fit = BoxFit.contain}) {
     ),
     placeholderFadeInDuration: Duration(milliseconds: 500),
     placeholder: (context, url) => Container(
-      color: Color(0xffeeeeee),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
     ),
     errorWidget: (context, url, error) => Icon(Icons.error),
   );
@@ -369,24 +372,24 @@ Widget customAlert(BuildContext context,
     title: Text(AppLocalizations.of(context)!.alert,
         style: TextStyle(
             fontSize: getDimention(context, 25),
-            color: onSurface.withOpacity(0.8))),
+            color: onSurface.withValues(alpha: 0.8))),
     content: customText(title,
         context: context,
-        style: TextStyle(color: onSurface.withOpacity(0.7))),
+        style: TextStyle(color: onSurface.withValues(alpha: 0.7))),
     actions: <Widget>[
       TextButton(
         onPressed: () {
           if (Navigator.canPop(context)) Navigator.pop(context);
         },
         child: Text(cancelText ?? l10n.cancel,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
       ),
       TextButton(
         onPressed: () {
           if (Navigator.canPop(context)) Navigator.pop(context);
           onPressedOk();
         },
-        child: Text(okText ?? l10n.confirm, style: TextStyle(color: Theme.of(context).primaryColor)),
+        child: Text(okText ?? l10n.confirm, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
       )
     ],
   );

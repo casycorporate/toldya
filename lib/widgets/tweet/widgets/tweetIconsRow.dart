@@ -121,10 +121,23 @@ class ToldyaIconsRow extends StatelessWidget {
         content: Text(
           closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficientForVote,
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
         duration: Duration(seconds: 2),
-        backgroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+      ));
+      return;
+    }
+    if (userAlreadyPredicted(model, authState.userId)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          AppLocalizations.of(context)!.predictionAlreadyParticipated,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.orange.shade800,
       ));
       return;
     }
@@ -134,10 +147,10 @@ class ToldyaIconsRow extends StatelessWidget {
         content: Text(
           AppLocalizations.of(context)!.predictionOneSideOnly,
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
         ),
         duration: Duration(seconds: 4),
-        backgroundColor: Colors.orange.shade800,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ));
       return;
     }
@@ -155,7 +168,7 @@ class ToldyaIconsRow extends StatelessWidget {
   }) {
     return AnimatedBounceButton(
       child: Material(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () {
@@ -167,7 +180,7 @@ class ToldyaIconsRow extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.4), width: 1),
+              border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -191,7 +204,7 @@ class ToldyaIconsRow extends StatelessWidget {
                         count,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: color.withOpacity(0.9),
+                          color: color.withValues(alpha: 0.9),
                           fontSize: 12,
                         ),
                       ),
@@ -235,13 +248,13 @@ class ToldyaIconsRow extends StatelessWidget {
               IconButton(
                 onPressed: onPressed,
                 icon: sysIcon != null
-                    ? Icon(sysIcon, color: iconColor ?? Colors.grey, size: size)
+                    ? Icon(sysIcon, color: iconColor ?? Theme.of(context).colorScheme.outline, size: size)
                     : customIcon(
                         context,
                         size: size,
                         icon: icon ?? Icons.help_outline,
                         istwitterIcon: true,
-                        iconColor: iconColor ?? Colors.grey,
+                        iconColor: iconColor ?? Theme.of(context).colorScheme.outline,
                       ),
               ),
               // customText(

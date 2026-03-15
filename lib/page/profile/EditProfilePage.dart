@@ -199,7 +199,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? AppNeon.cyan : Colors.transparent,
+                          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                           width: isSelected ? 2 : 1,
                         ),
                       ),

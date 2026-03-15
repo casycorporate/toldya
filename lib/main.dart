@@ -17,7 +17,6 @@ import 'package:provider/provider.dart';
 import 'state/authState.dart';
 import 'state/chats/chatState.dart';
 import 'state/feedState.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'state/notificationState.dart';
 
 /// Navigator key for FCM deep linking (NotificationService uses this).
@@ -100,11 +99,7 @@ class _MyAppState extends State<MyApp> {
             navigatorKey: navigatorKey,
             navigatorObservers: [_NavObserver()],
             title: 'Toldya',
-            theme: AppTheme.apptheme.copyWith(
-              textTheme: GoogleFonts.sawarabiMinchoTextTheme(
-                Theme.of(context).textTheme,
-              ),
-            ),
+            theme: AppTheme.apptheme,
             debugShowCheckedModeBanner: false,
             routes: Routes.route(),
             onGenerateRoute: (settings) => Routes.onGenerateRoute(settings),
