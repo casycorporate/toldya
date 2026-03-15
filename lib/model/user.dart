@@ -26,7 +26,7 @@ class UserModel {
   String? tier;
   /// Son günlük bonus alım zamanı (ISO string)
   String? lastDailyClaimAt;
-  /// Bahisçi skoru: Ne kadar isabetli tahminlere oynadı
+  /// Tahminci skoru: Ne kadar isabetli tahminlere katıldı
   int? rank;
   /// Tahminci skoru: Ne kadar tahmini başarıyla sonuçlandırdı
   int? predictorScore;

@@ -92,7 +92,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 children: [
                   Icon(Icons.emoji_events, size: 18),
                   SizedBox(width: 8),
-                  Text(AppLocalizations.of(context)!.bettors),
+                  Text(AppLocalizations.of(context)!.predictionParticipants),
                 ],
               ),
             ),
@@ -115,7 +115,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           final isLeagueLoading = state.isBusy || state.userlist == null;
           final topPredictors = List<UserModel>.from(list)
             ..sort((a, b) => (b.predictorScore ?? 0).compareTo(a.predictorScore ?? 0));
-          final topBettors = List<UserModel>.from(list)
+          final topParticipants = List<UserModel>.from(list)
             ..sort((a, b) => (b.rank ?? 0).compareTo(a.rank ?? 0));
           final currentUserId = Provider.of<AuthState>(context, listen: false).userId ?? '';
 
@@ -128,9 +128,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 emptyText: AppLocalizations.of(context)!.noPredictorScoreYet,
               ),
               _LeaderList(
-                users: topBettors.take(50).toList(),
-                scoreKey: 'bettor',
-                emptyText: AppLocalizations.of(context)!.noBettorScoreYet,
+                users: topParticipants.take(50).toList(),
+                scoreKey: 'participant',
+                emptyText: AppLocalizations.of(context)!.noParticipantScoreYet,
               ),
               _LeagueTab(
                 userlist: list,

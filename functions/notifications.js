@@ -7,7 +7,7 @@
  * RTDB yapısı (mevcut):
  * - profile/{userId}           → fcmToken, displayName, ...
  * - toldya/{toldyaId}          → statu (0=Live, 5=Locked, 2=Ok), feedResult, userId (creator), description, likeList, unlikeList
- * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni bahis)
+ * - notification/{userId}/{toldyaId} → submitPrediction yazınca type: Like/UnLike (tahmin sahibine yeni katılım)
  * - followers/{followedUserId}/{followerId} → takip edildiğinde 1 yazılır (isteğe bağlı; yoksa bu tetikleyici atlanır)
  */
 
@@ -90,7 +90,7 @@ async function sendFcm(token, title, body, data) {
 }
 
 /**
- * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda bahis yapan herkese bildirim.
+ * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda tahmin yapan herkese bildirim.
  * Tetikleyici: toldya/{toldyaId} onUpdate
  */
 exports.onPredictionResolved = functions.database
@@ -141,24 +141,24 @@ exports.onPredictionResolved = functions.database
   });
 
 /**
- * Yeni bahis: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
- * tahmin sahibine "Tahminine bahis yapıldı" bildirimi.
+ * Yeni tahmin katılımı: notification/{userId}/{toldyaId} oluşturulduğunda (submitPrediction tarafından)
+ * tahmin sahibine "Tahminine katılım yapıldı" bildirimi.
  * Tetikleyici: notification/{userId}/{toldyaId} onCreate
  */
-exports.onBetCreated = functions.database
+const onPredictionCreatedHandler = functions.database
   .ref("notification/{userId}/{toldyaId}")
   .onCreate(async (snap, context) => {
     const ownerId = context.params.userId;
     const toldyaId = context.params.toldyaId;
     const data = snap.val();
     const type = data && data.type ? String(data.type) : "";
-    const isBet = type.includes("Like") || type.includes("UnLike");
-    if (!isBet) {
-      console.log("[onBetCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
+    const isPrediction = type.includes("Like") || type.includes("UnLike");
+    if (!isPrediction) {
+      console.log("[onPredictionCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
       return null;
     }
 
-    console.log("[onBetCreated] tetiklendi: ownerId=" + ownerId + ", toldyaId=" + toldyaId);
+    console.log("[onPredictionCreated] tetiklendi: ownerId=" + ownerId + ", toldyaId=" + toldyaId);
     try {
       const toldyaSnap = await getDb().ref("toldya").child(toldyaId).once("value");
       const toldya = toldyaSnap.val();
@@ -166,23 +166,25 @@ exports.onBetCreated = functions.database
         ? String(toldya.description).trim().substring(0, 50) + (toldya.description.length > 50 ? "…" : "")
         : "Tahmin";
 
-      const notifTitle = "Tahminine Bahis Yapıldı!";
-      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine token yatırdı.`;
+      const notifTitle = "Tahminine katılım yapıldı!";
+      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine katıldı.`;
       const dataPayload = { type: "prediction_result", id: toldyaId };
 
       const token = await getFcmToken(ownerId);
       if (token) {
         const ok = await sendFcm( token, notifTitle, notifBody, dataPayload );
-        console.log("[onBetCreated] tahmin sahibine gönderildi: ownerId=" + ownerId + ", toldyaId=" + toldyaId + ", ok=" + ok);
+        console.log("[onPredictionCreated] tahmin sahibine gönderildi: ownerId=" + ownerId + ", toldyaId=" + toldyaId + ", ok=" + ok);
       } else {
-        console.log("[onBetCreated] tahmin sahibi (" + ownerId + ") FCM token yok, bildirim gönderilmedi");
+        console.log("[onPredictionCreated] tahmin sahibi (" + ownerId + ") FCM token yok, bildirim gönderilmedi");
       }
       return null;
     } catch (e) {
-      console.error("[onBetCreated] error", toldyaId, e.message || e);
+      console.error("[onPredictionCreated] error", toldyaId, e.message || e);
       return null;
     }
   });
+exports.onPredictionCreated = onPredictionCreatedHandler;
+exports.onBetCreated = onPredictionCreatedHandler; // backward compatibility
 
 /**
  * Yeni tahmin + meydan okuma: toldya/{toldyaId} onCreate.

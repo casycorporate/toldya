@@ -7,18 +7,16 @@ import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/topicMap.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:toldya/helper/utility.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
-import 'package:toldya/widgets/tweet/prediction_shared_ui.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:provider/provider.dart';
 
 /// Mockup’a uygun tahmin kartı: soru üstte, countdown belirgin, progress + Evet/Hayır.
@@ -39,31 +37,16 @@ class PredictionCardMockup extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
-    final evetColor = (model.likeList ?? []).any((e) => e.userId == authState.userId)
-        ? AppNeon.green
-        : AppNeon.green.withOpacity(0.8);
-    final hayirColor = (model.unlikeList ?? []).any((e) => e.userId == authState.userId)
-        ? AppNeon.red
-        : AppNeon.red.withOpacity(0.8);
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
 
-    final isLive = !isBettingClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
-
-    final isTrend = total >= 10 && isLive;
+    final isOpen = !arePredictionsClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
     final countdownLong = getCountdownLong(model.endDate);
 
     final yesPct = total > 0 ? (percent * 100).round().clamp(0, 100) : 50;
     final noPct = 100 - yesPct;
 
-    return InkWell(
-      onTap: () {
-        Provider.of<FeedState>(context, listen: false)
-            .getpostDetailFromDatabase(model.key ?? '', model: model);
-        Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -93,7 +76,7 @@ class PredictionCardMockup extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: ToldyaDesign.textPrimary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -102,7 +85,7 @@ class PredictionCardMockup extends StatelessWidget {
                                 topicLabel,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey,
+                                  color: ToldyaDesign.textSecondary,
                                 ),
                               ),
                             ],
@@ -113,36 +96,21 @@ class PredictionCardMockup extends StatelessWidget {
                   },
                 ),
               ),
-              if (isLive || isTrend) ...[
+              if (isOpen) ...[
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isLive ? AppNeon.green.withOpacity(0.15) : AppNeon.orange.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isLive ? AppNeon.green : AppNeon.orange,
-                      width: 1,
-                    ),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: ToldyaDesign.statusBadge, width: 1),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isLive ? 'LIVE' : 'TREND',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: isLive ? AppNeon.green : AppNeon.orange,
-                        ),
-                      ),
-                      if (countdownLong.isNotEmpty) ...[
-                        SizedBox(height: 2),
-                        Text(
-                          'Kalan: $countdownLong',
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                      ],
-                    ],
+                  child: Text(
+                    AppLocalizations.of(context)!.statusOpen,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: ToldyaDesign.statusBadge,
+                    ),
                   ),
                 ),
                 SizedBox(width: 6),
@@ -186,11 +154,11 @@ class PredictionCardMockup extends StatelessWidget {
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: ToldyaDesign.textPrimary,
               ),
               urlStyle: TextStyle(
                 fontSize: 17,
-                color: AppNeon.cyan,
+                color: ToldyaDesign.yes,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -198,18 +166,22 @@ class PredictionCardMockup extends StatelessWidget {
           // Oran çubuğu + altında % YES / % NO
           SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: yesPct.clamp(1, 99),
-                  child: Container(height: 10, color: evetColor),
-                ),
-                Expanded(
-                  flex: noPct.clamp(1, 99),
-                  child: Container(height: 10, color: hayirColor),
-                ),
-              ],
+            borderRadius: BorderRadius.circular(ToldyaDesign.progressBarRadius),
+            child: Container(
+              height: ToldyaDesign.progressBarHeight,
+              color: ToldyaDesign.progressBackground,
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: yesPct.clamp(1, 99),
+                    child: Container(color: ToldyaDesign.progressYes),
+                  ),
+                  Expanded(
+                    flex: noPct.clamp(1, 99),
+                    child: Container(color: ToldyaDesign.progressNo),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(height: 4),
@@ -217,99 +189,161 @@ class PredictionCardMockup extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '%$yesPct YES',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: evetColor,
-                ),
-              ),
-              Text(
-                '%$noPct NO',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: hayirColor,
-                ),
-              ),
-            ],
-          ),
-          // Alt satır: Token Bahis (sol) + BAHİS YAP (sağ)
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                '${k_m_b_generator(total)} Token Bahis',
+                '${AppLocalizations.of(context)!.yes} $yesPct%',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                  color: ToldyaDesign.yes,
                 ),
               ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: closed
-                      ? () {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            content: Text(
-                              'Kapandığı için seçim yapılamaz',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            duration: Duration(seconds: 2),
-                            backgroundColor: Colors.black87,
-                          ));
-                        }
-                      : () {
-                          Provider.of<FeedState>(context, listen: false)
-                              .getpostDetailFromDatabase(model.key ?? '', model: model);
-                          Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
-                        },
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    height: 36,
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: closed ? Colors.grey[700] : const Color(0xFF2E7D32),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      closed ? 'Bitti' : 'BAHİS YAP',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+              Text(
+                '${AppLocalizations.of(context)!.no} $noPct%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: ToldyaDesign.no,
                 ),
               ),
             ],
           ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _VoteButton(
+                  label: AppLocalizations.of(context)!.yes,
+                  isYes: true,
+                  closed: closed,
+                  onTap: () => _onVoteTap(context, 0),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _VoteButton(
+                  label: AppLocalizations.of(context)!.no,
+                  isYes: false,
+                  closed: closed,
+                  onTap: () => _onVoteTap(context, 1),
+                ),
+              ),
+            ],
+          ),
+          if (countdownLong.isNotEmpty) ...[
+            SizedBox(height: 10),
+            Text(
+              countdownLong,
+              style: TextStyle(
+                fontSize: 12,
+                color: ToldyaDesign.textSecondary,
+              ),
+            ),
+          ],
         ],
-      ),
-    );
+      );
   }
 
-  Widget _statusTag(String label, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.7)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (label == 'LIVE') Icon(Icons.circle, size: 5, color: color),
-          if (label == 'LIVE') SizedBox(width: 4),
-          if (label == 'TREND') Icon(Icons.thumb_up_alt_outlined, size: 10, color: color),
-          if (label == 'TREND') SizedBox(width: 3),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+  static const int _kDefaultPredictionPoints = 10;
+
+  void _onVoteTap(BuildContext context, int commentFlag) {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
+    final closed = arePredictionsClosed(model.statu, model.endDate);
+    if (closed) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(l10n.predictionsClosed),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.black87,
+      ));
+      return;
+    }
+    if (authState.userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(l10n.loginRequired),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(l10n.predictionOneSideOnly),
+        duration: const Duration(seconds: 3),
+        backgroundColor: ToldyaDesign.card,
+      ));
+      return;
+    }
+    final balance = authState.userModel?.pegCount ?? 0;
+    final xp = authState.userModel?.xp ?? 0;
+    final totalPool = sumOfVote(model.likeList ?? []) + sumOfVote(model.unlikeList ?? []);
+    final maxPoints = [balance, Tokenomics.maxPredictionByRank(balance, xp), Tokenomics.maxPredictionByPool(totalPool)]
+        .reduce((a, b) => a < b ? a : b);
+    if (maxPoints <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(l10n.tokenInsufficient),
+        backgroundColor: ToldyaDesign.card,
+      ));
+      return;
+    }
+    final defaultAmount = _kDefaultPredictionPoints > maxPoints ? maxPoints : _kDefaultPredictionPoints;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ToldyaDesign.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          l10n.confirmPrediction,
+          style: TextStyle(color: ToldyaDesign.textPrimary, fontSize: 18),
+        ),
+        content: Text(
+          l10n.confirmPredictionMessage('$defaultAmount'),
+          style: TextStyle(color: ToldyaDesign.textSecondary, fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.cancel, style: TextStyle(color: ToldyaDesign.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final state = Provider.of<FeedState>(context, listen: false);
+              try {
+                await state.submitPrediction(
+                  authState,
+                  model,
+                  authState.userId ?? '',
+                  defaultAmount,
+                  commentFlag,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(l10n.predictionSubmitted),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                }
+              } on Exception catch (e) {
+                if (context.mounted) {
+                  final msg = e.toString().contains('insufficient') || e.toString().contains('INSUFFICIENT')
+                      ? l10n.tokenInsufficient
+                      : (e.toString().length > 80 ? '${e.toString().substring(0, 80)}...' : e.toString());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(msg),
+                      backgroundColor: ToldyaDesign.card,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(l10n.confirm),
+          ),
         ],
       ),
     );
@@ -325,13 +359,7 @@ class PredictionCardMockup extends StatelessWidget {
         padding: EdgeInsets.all(2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: AppNeon.orange.withOpacity(0.8), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppNeon.orange.withOpacity(0.2),
-              blurRadius: 6,
-            ),
-          ],
+          border: Border.all(color: ToldyaDesign.textSecondary.withOpacity(0.5), width: 1),
         ),
         child: ClipOval(
           child: Container(
@@ -347,8 +375,7 @@ class PredictionCardMockup extends StatelessWidget {
   Widget _countdownChip(BuildContext context) {
     final text = getEndTime(model.endDate ?? '');
     if (text.isEmpty) return SizedBox.shrink();
-    final isUrgent = text == 'bitti' || text.contains('sn') || text.contains('dk');
-    final color = isUrgent ? AppNeon.red : Theme.of(context).primaryColor;
+    final color = ToldyaDesign.textSecondary;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -379,54 +406,8 @@ class PredictionCardMockup extends StatelessWidget {
     );
   }
 
-  Widget _voteButton(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-    required bool closed,
-  }) {
-    return AnimatedBounceButton(
-      enabled: !closed,
-      child: Material(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onPressed();
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.4), width: 1),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 20, color: color),
-                SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _openBetSheet(BuildContext context, AuthState authState, int commentFlag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
+  void _openPredictionSheet(BuildContext context, AuthState authState, int commentFlag) {
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -439,15 +420,15 @@ class PredictionCardMockup extends StatelessWidget {
       ));
       return;
     }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek taraf (Evet veya Hayır) seçebilirsiniz.',
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 4),
-        backgroundColor: Colors.orange.shade800,
+        backgroundColor: ToldyaDesign.card,
       ));
       return;
     }
@@ -457,6 +438,57 @@ class PredictionCardMockup extends StatelessWidget {
       type: ToldyaType.Toldya,
       model: model,
       scaffoldKey: scaffoldKey,
+    );
+  }
+}
+
+class _VoteButton extends StatelessWidget {
+  final String label;
+  final bool isYes;
+  final bool closed;
+  final VoidCallback onTap;
+
+  const _VoteButton({
+    required this.label,
+    required this.isYes,
+    required this.closed,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBounceButton(
+      enabled: !closed,
+      child: Material(
+        color: isYes ? ToldyaDesign.yes : Colors.transparent,
+        borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        child: InkWell(
+          onTap: closed ? null : () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+          child: Container(
+            height: ToldyaDesign.buttonHeight,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+              border: isYes ? null : Border.all(color: ToldyaDesign.no, width: 2),
+              boxShadow: isYes ? ToldyaDesign.yesButtonShadow : null,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: isYes ? Colors.white : ToldyaDesign.no,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

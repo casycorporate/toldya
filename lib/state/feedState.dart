@@ -57,7 +57,7 @@ class FeedState extends AppState {
   dabase.Query? _feedQuery;
   String? _feedError;
 
-  /// Profile "Bahislerim" list: toldya posts by a specific user (loaded via loadToldyaListForUser).
+  /// Profile "Tahminlerim" list: toldya posts by a specific user (loaded via loadToldyaListForUser).
   List<FeedModel>? _profileUserToldyaList;
   String? _profileUserToldyaUserId;
   List<FeedModel>? get profileUserToldyaList => _profileUserToldyaList;
@@ -102,7 +102,8 @@ class FeedState extends AppState {
             x.user?.userId != userModel.userId) {
           return false;
         }
-        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
+        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked ||
+            x.statu == Statu.statusPending || x.statu == Statu.statusOk;
         if (!isPublished) return false;
         final fl = userModel.followingList;
         if (fl != null && fl.contains(x.user?.userId)) {
@@ -165,7 +166,8 @@ class FeedState extends AppState {
       if (userModel != null && inBlackList.contains(x.user?.userId)) {
         return false;
       }
-      final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
+      final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked ||
+          x.statu == Statu.statusPending || x.statu == Statu.statusOk;
       if (statu == Statu.statusLive && isPublished) {
         if (topic_val == topic.gundem) return true;
         if (userModel == null) return false;
@@ -224,7 +226,8 @@ class FeedState extends AppState {
             x.user?.userId != userModel.userId) {
           return false;
         }
-        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
+        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked ||
+            x.statu == Statu.statusPending || x.statu == Statu.statusOk;
         if (isPublished) {
           if (topic_val == topic.gundem) return true;
           if (topic_val == topic.followList) {
@@ -476,7 +479,7 @@ class FeedState extends AppState {
     }
   }
 
-  /// Load toldya posts for a given user (profile "Bahislerim"). Requires Firebase index on toldya: ".indexOn": ["userId"].
+  /// Load toldya posts for a given user (profile "Tahminlerim"). Requires Firebase index on toldya: ".indexOn": ["userId"].
   /// Call when opening a profile; use [profileUserToldyaList] for that user's posts.
   Future<void> loadToldyaListForUser(String? userId) async {
     if (userId == null || userId.isEmpty) {
@@ -713,75 +716,55 @@ class FeedState extends AppState {
     }
   }
 
-  /// Pari-Mutuel: Kazananlara token dağıtımı
-  /// Kazanç = (Kişisel Bahis / Kazanan Tarafın Toplam Bahsi) × (Toplam Havuz × (1 - komisyon))
-  Future<void> distributeWinnings(FeedModel model, AuthState authState) async {
-    if (model.distributionDone == true) return;
-    final winningList = model.feedResult == FeedResult.feedResultlike
-        ? (model.likeList ?? [])
-        : (model.unlikeList ?? []);
-    if (winningList.isEmpty) return;
-    final totalPool = sumOfVote(model.likeList ?? []) + sumOfVote(model.unlikeList ?? []);
-    if (totalPool == 0) return;
-    final distributablePool = (totalPool * (1 - AppIcon.commissionRate)).round();
-    final winningTotal = sumOfVote(winningList);
-    if (winningTotal == 0) return;
-    for (final element in winningList) {
-      final userPeg = element.pegCount ?? 0;
-      if (userPeg <= 0) continue;
-      final payout = ((userPeg / winningTotal) * distributablePool).round();
-      final user = await authState.getuserDetail(element.userId ?? '');
-      if (user != null) {
-        user.pegCount = (user.pegCount ?? 0) + payout;
-        authState.createUser(user);
-      }
-    }
-    if (model.userId != null) {
-      final predictor = await authState.getuserDetail(model.userId!);
-      if (predictor != null) {
-        predictor.predictorScore = (predictor.predictorScore ?? 0) + 1;
-        authState.createUser(predictor);
-      }
-    }
-    model.distributionDone = true;
-    await updateToldya(model);
+  /// V1: Dağıtım yalnızca sunucuda (runDistributeRewards) yapılır.
+  @Deprecated('Distribution is server-only via runDistributeRewards Cloud Function.')
+  Future<void> distributeRewards(FeedModel model, AuthState authState) async {
+    // No-op: Ödül dağıtımı runDistributeRewards Logic ile sunucuda yapılır.
   }
 
-  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
-  /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm bahis placeBet ile.
-  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  /// V1: Admin manuel sonuç (EVET/HAYIR). Sadece ADMIN_UID ile çağrılabilir. Dağıtım sunucuda scheduled ile yapılır.
+  Future<void> setToldyaResult(String toldyaId, int result) async {
+    await FirebaseFunctions.instance.httpsCallable('setToldyaResult').call({
+      'toldyaId': toldyaId,
+      'result': result,
+    });
+  }
+
+  /// (Kullanımdışı – kural: tahmin sadece submitPrediction Callable üzerinden.)
+  /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm tahmin submitPrediction ile.
+  @Deprecated('Use submitPrediction Callable for any prediction. No direct client write to toldya.')
   void addLikeToToldya(FeedModel model, String userId, int count) {
-    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
+    // No-op: Tüm tahmin işlemi submitPrediction Cloud Function üzerinden yapılmalı.
   }
 
-  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
-  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  /// (Kullanımdışı – kural: tahmin sadece submitPrediction Callable üzerinden.)
+  @Deprecated('Use submitPrediction Callable for any prediction. No direct client write to toldya.')
   void addunLikeToToldya(FeedModel model, String userId, int count) {
-    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
+    // No-op: Tüm tahmin işlemi submitPrediction Cloud Function üzerinden yapılmalı.
   }
 
-  /// Bahis işlemini backend (placeBet Callable) üzerinden yapar.
+  /// Tahmin işlemini backend (submitPrediction Callable) üzerinden yapar.
   /// Optimistic UI: önce yerel state güncellenir (bakiye + post likeList/unlikeList), sonra HTTP çağrısı yapılır.
   /// Başarısız olursa yerel state snapshot ile geri alınır ve hata fırlatılır.
-  Future<void> placeBet(AuthState authState, FeedModel model, String userId, int amount, int commentFlag) async {
-    debugPrint('[placeBet] Başlatılıyor...');
-    debugPrint('[placeBet] toldyaId: ${model.key}');
-    debugPrint('[placeBet] side: ${commentFlag == 0 ? 1 : 2} (commentFlag: $commentFlag)');
-    debugPrint('[placeBet] amount: $amount');
-    debugPrint('[placeBet] userId: $userId');
+  Future<void> submitPrediction(AuthState authState, FeedModel model, String userId, int amount, int commentFlag) async {
+    debugPrint('[submitPrediction] Başlatılıyor...');
+    debugPrint('[submitPrediction] toldyaId: ${model.key}');
+    debugPrint('[submitPrediction] side: ${commentFlag == 0 ? 1 : 2} (commentFlag: $commentFlag)');
+    debugPrint('[submitPrediction] amount: $amount');
+    debugPrint('[submitPrediction] userId: $userId');
 
     final currentUser = authState.user;
     if (currentUser == null) {
-      debugPrint('[placeBet] HATA: Kullanıcı giriş yapmamış!');
+      debugPrint('[submitPrediction] HATA: Kullanıcı giriş yapmamış!');
       throw FirebaseFunctionsException(
         code: "unauthenticated",
         message: "Giriş yapmanız gerekiyor.",
       );
     }
     if (amount <= 0) {
-      throw FirebaseFunctionsException(code: "invalid-argument", message: "Geçersiz bahis miktarı.");
+      throw FirebaseFunctionsException(code: "invalid-argument", message: "Geçersiz tahmin miktarı.");
     }
-    debugPrint('[placeBet] Kullanıcı doğrulandı: ${currentUser.uid}');
+    debugPrint('[submitPrediction] Kullanıcı doğrulandı: ${currentUser.uid}');
 
     // Snapshot: rollback için önceki bakiye ve listelerin kopyası (optimistic güncellemeden önce alınır)
     final previousPegCount = authState.userModel?.pegCount ?? 0;
@@ -789,12 +772,12 @@ class FeedState extends AppState {
     final previousLikeList = [for (final e in model.likeList ?? []) UserPegModel(userId: e.userId, pegCount: e.pegCount)];
     final previousUnlikeList = [for (final e in model.unlikeList ?? []) UserPegModel(userId: e.userId, pegCount: e.pegCount)];
 
-    // Optimistic update: UI anında güncellenir (balance azalır, post'a bahis eklenir)
+    // Optimistic update: UI anında güncellenir (balance azalır, post'a tahmin eklenir)
     authState.setBalanceOptimistic(previousPegCount - amount, previousStashCount);
-    _applyBetToFeedModel(model, userId, amount, commentFlag == 0);
-    _updateLocalFeedModelAfterBet(model.key, userId, amount, commentFlag == 0);
+    _applyPredictionToFeedModel(model, userId, amount, commentFlag == 0);
+    _updateLocalFeedModelAfterPrediction(model.key, userId, amount, commentFlag == 0);
     notifyListeners();
-    debugPrint('[placeBet] Optimistic update uygulandı');
+    debugPrint('[submitPrediction] Optimistic update uygulandı');
 
     try {
       final side = commentFlag == 0 ? 1 : 2; // 1 = Evet (like), 2 = Hayır (unlike)
@@ -806,8 +789,8 @@ class FeedState extends AppState {
         );
       }
 
-      final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/placeBet');
-      debugPrint('[placeBet] HTTP çağrılıyor: $uri');
+      final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/submitPrediction');
+      debugPrint('[submitPrediction] HTTP çağrılıyor: $uri');
 
       final response = await http
           .post(
@@ -827,7 +810,7 @@ class FeedState extends AppState {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              debugPrint('[placeBet] TIMEOUT: İstek zaman aşımına uğradı');
+              debugPrint('[submitPrediction] TIMEOUT: İstek zaman aşımına uğradı');
               throw FirebaseFunctionsException(
                 code: "deadline-exceeded",
                 message: "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
@@ -835,50 +818,81 @@ class FeedState extends AppState {
             },
           );
 
-      final body = jsonDecode(response.body) as Map<String, dynamic>? ?? {};
+      final responseBody = response.body.trim();
+      if (response.statusCode != 200 || responseBody.isEmpty) {
+        debugPrint('[submitPrediction] HTTP ${response.statusCode}, body length: ${response.body.length}');
+        _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+        throw FirebaseFunctionsException(
+          code: 'internal',
+          message: response.statusCode == 404
+              ? 'Tahmin servisi bulunamadı. Lütfen uygulamayı güncelleyin.'
+              : 'Sunucu yanıt veremedi (${response.statusCode}). Lütfen tekrar deneyin.',
+        );
+      }
+      if (!responseBody.startsWith('{')) {
+        debugPrint('[submitPrediction] Yanıt JSON değil (HTML veya hata sayfası): ${responseBody.length > 200 ? responseBody.substring(0, 200) : responseBody}');
+        _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+        throw FirebaseFunctionsException(
+          code: 'internal',
+          message: 'Sunucu beklenmeyen yanıt verdi. Lütfen daha sonra tekrar deneyin.',
+        );
+      }
+
+      Map<String, dynamic> body;
+      try {
+        body = jsonDecode(responseBody) as Map<String, dynamic>? ?? {};
+      } catch (e) {
+        debugPrint('[submitPrediction] JSON parse hatası: $e');
+        _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+        throw FirebaseFunctionsException(
+          code: 'internal',
+          message: 'Sunucu yanıtı işlenemedi. Lütfen tekrar deneyin.',
+        );
+      }
+
       if (body.containsKey('error')) {
         final err = body['error'] as Map<String, dynamic>? ?? {};
         final code = (err['status'] as String?)?.toLowerCase().replaceAll('_', '-') ?? 'unknown';
-        final message = err['message'] as String? ?? 'Bahis kabul edilemedi.';
-        debugPrint('[placeBet] Sunucu hatası: $code - $message');
+        final message = err['message'] as String? ?? 'Tahmin kabul edilemedi.';
+        debugPrint('[submitPrediction] Sunucu hatası: $code - $message');
         throw FirebaseFunctionsException(code: code, message: message);
       }
 
       final result = body['result'] as Map<String, dynamic>?;
       final data = result;
       if (data == null || data['ok'] != true) {
-        debugPrint('[placeBet] HATA: data null veya ok != true');
+        debugPrint('[submitPrediction] HATA: data null veya ok != true');
         throw FirebaseFunctionsException(
           code: "unknown",
-          message: "Bahis kabul edilemedi.",
+          message: "Tahmin kabul edilemedi.",
         );
       }
 
       final newBalance = (data['newBalance'] as num?)?.toInt() ?? 0;
       final newStashBalance = (data['newStashBalance'] as num?)?.toInt() ?? 0;
-      debugPrint('[placeBet] Yeni bakiye: $newBalance, stash: $newStashBalance');
+      debugPrint('[submitPrediction] Yeni bakiye: $newBalance, stash: $newStashBalance');
 
-      authState.updateBalanceFromBet(newBalance, newStashBalance);
+      authState.updateBalanceFromPrediction(newBalance, newStashBalance);
       notifyListeners();
-      debugPrint('[placeBet] Başarıyla tamamlandı!');
+      debugPrint('[submitPrediction] Başarıyla tamamlandı!');
     } on PlatformException catch (e) {
-      debugPrint('[placeBet] PlatformException: ${e.code} ${e.message}');
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      debugPrint('[submitPrediction] PlatformException: ${e.code} ${e.message}');
+      _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('[placeBet] FirebaseFunctionsException: ${e.code} ${e.message}');
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      debugPrint('[submitPrediction] FirebaseFunctionsException: ${e.code} ${e.message}');
+      _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     } catch (e, stackTrace) {
-      debugPrint('[placeBet] EXCEPTION: $e');
-      debugPrint('[placeBet] Stack trace: $stackTrace');
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      debugPrint('[submitPrediction] EXCEPTION: $e');
+      debugPrint('[submitPrediction] Stack trace: $stackTrace');
+      _rollbackSubmitPrediction(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     }
   }
 
   /// Optimistic güncelleme başarısız olduğunda snapshot ile bakiye ve post listelerini eski haline getirir.
-  void _rollbackPlaceBet(
+  void _rollbackSubmitPrediction(
     AuthState authState,
     FeedModel model,
     int previousPegCount,
@@ -908,7 +922,7 @@ class FeedState extends AppState {
       }
     }
     notifyListeners();
-    debugPrint('[placeBet] Rollback uygulandı');
+    debugPrint('[submitPrediction] Rollback uygulandı');
   }
 
   /// Yorum oylama (Katılıyorum / Katılmıyorum). [postId] ana tahmin key, [replyToldyaId] yorum key, [vote] 1 veya -1.
@@ -941,7 +955,7 @@ class FeedState extends AppState {
     }
   }
 
-  void _applyBetToFeedModel(FeedModel f, String userId, int amount, bool isLike) {
+  void _applyPredictionToFeedModel(FeedModel f, String userId, int amount, bool isLike) {
     if (isLike) {
       f.likeList ??= [];
       final idx = f.likeList!.indexWhere((e) => e.userId == userId);
@@ -962,12 +976,12 @@ class FeedState extends AppState {
   }
 
   /// Optimistic update: aynı post _feedlist ve _toldyaDetailModelList içinde varsa hepsinde likeList/unlikeList güncellenir (feed + detail senkron).
-  void _updateLocalFeedModelAfterBet(String? toldyaKey, String userId, int amount, bool isLike) {
+  void _updateLocalFeedModelAfterPrediction(String? toldyaKey, String userId, int amount, bool isLike) {
     if (toldyaKey == null) return;
     if (_feedlist != null) {
       for (final f in _feedlist!) {
         if (f.key == toldyaKey) {
-          _applyBetToFeedModel(f, userId, amount, isLike);
+          _applyPredictionToFeedModel(f, userId, amount, isLike);
           break;
         }
       }
@@ -975,7 +989,7 @@ class FeedState extends AppState {
     if (_toldyaDetailModelList != null) {
       for (final f in _toldyaDetailModelList!) {
         if (f.key == toldyaKey) {
-          _applyBetToFeedModel(f, userId, amount, isLike);
+          _applyPredictionToFeedModel(f, userId, amount, isLike);
         }
       }
     }
@@ -1147,8 +1161,13 @@ class FeedState extends AppState {
 
     _onCommentAdded(toldya);
     _feedlist ??= <FeedModel>[];
-    // Sadece listede aynı key yoksa ekle (getDataFromDatabase + onChildAdded aynı kaydı iki kez eklemesin)
-    final added = toldya.isValidToldya && !_feedlist!.any((x) => x.key == toldya.key);
+    // Ana gönderi (parentkey yok) ve yayında/kilitli/sonuç bekleniyor/sonuçlandı ise ekle; userName boş olsa da listeye al (V1: yeni tahmin hep görünsün)
+    final isRootPublished = toldya.parentkey == null &&
+        (toldya.statu == Statu.statusLive ||
+            toldya.statu == Statu.statusLocked ||
+            toldya.statu == Statu.statusPending ||
+            toldya.statu == Statu.statusOk);
+    final added = (toldya.isValidToldya || isRootPublished) && !_feedlist!.any((x) => x.key == toldya.key);
     if (added) {
       _feedlist!.add(toldya);
     }

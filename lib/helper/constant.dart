@@ -97,7 +97,7 @@ class AppIcon{
   static const double rankMultiplierTahminci = 0.25;
   static const double rankMultiplierUsta = 0.50;
   static const int poolThreshold = 1000;
-  static const int maxBetSmallPool = 100;
+  static const int maxPredictionSmallPool = 100;
   static const int dailyBonusAmount = 500;
 
   /// Cloud Functions base URL (doğrudan HTTP ile çağrı – GMS broker hatası bypass)
@@ -111,10 +111,10 @@ class Tokenomics {
     if (xp < AppIcon.xpUstaMin) return AppIcon.rankMultiplierTahminci;
     return AppIcon.rankMultiplierUsta;
   }
-  static int maxBetByRank(int balance, int xp) =>
+  static int maxPredictionByRank(int balance, int xp) =>
       (balance * rankMultiplierForXp(xp)).floor();
-  static int maxBetByPool(int totalPool) =>
-      totalPool < AppIcon.poolThreshold ? AppIcon.maxBetSmallPool : 0x7FFFFFFF;
+  static int maxPredictionByPool(int totalPool) =>
+      totalPool < AppIcon.poolThreshold ? AppIcon.maxPredictionSmallPool : 0x7FFFFFFF;
 }
 
 class Role{
@@ -187,7 +187,7 @@ class Statu{
   static final int statusOk=2;
   static final int statusDenied=3;
   static final int statusComplete=4;
-  /// Kapanış zamanı geçti, bahisler kapandı, sonuç bekleniyor
+  /// Kapanış zamanı geçti, tahminler kapandı, sonuç bekleniyor
   static final int statusLocked=5;
   /// Yapay zeka incelemesi bekliyor (henüz yayında değil)
   static final int statusPendingAiReview=6;

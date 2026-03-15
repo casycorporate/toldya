@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
@@ -42,8 +43,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
 
   File? _image;
   late TextEditingController _textEditingController;
-  /// Meydan okuma: seçilen tek kullanıcı (1v1)
-  UserModel? _challengeeUser;
+  /// V1: Kapanış zamanı (sadece yeni Toldya). En az 1 saat sonra.
+  DateTime? _closesAt;
 
   @override
   void dispose() {
@@ -66,6 +67,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     } else {
       model = feedState.toldyaToReplyModel ?? FeedModel();
       _textEditingController = TextEditingController();
+      if (widget.isToldya) {
+        _closesAt = DateTime.now().add(const Duration(hours: 24));
+      }
     }
     scrollcontroller = ScrollController();
     scrollcontroller..addListener(_scrollListener);
@@ -104,6 +108,19 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     if (_textEditingController.text.isEmpty ||
         _textEditingController.text.length > ComposeToldyaState.kToldyaMaxLength) {
       return;
+    }
+    if (widget.isToldya && !_isEditMode) {
+      final now = DateTime.now();
+      final minClose = now.add(const Duration(hours: 1));
+      if (_closesAt == null || _closesAt!.isBefore(minClose)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.closingTimeMinOneHour),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
     }
     var state = Provider.of<FeedState>(context, listen: false);
     kScreenloader.showLoader(context);
@@ -147,7 +164,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       if (widget.isToldya) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.postUnderReview),
+            content: Text(l10n.predictionPublished),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -175,9 +192,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   }
 
   /// Return Tweet model which is either a new Tweet , retweet model or comment model
-  /// If tweet is new tweet then `parentkey` and `childRetwetkey` should be null
-  /// IF tweet is a comment then it should have `parentkey`
-  /// IF tweet is a retweet then it should have `childRetwetkey`
+  /// V1: New Toldya → statu OPEN (0), endDate = _closesAt (en az 1 saat sonra).
   FeedModel createToldyaModel() {
     var state = Provider.of<FeedState>(context, listen: false);
     var authState = Provider.of<AuthState>(context, listen: false);
@@ -186,153 +201,306 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     authState.createUser(userModel);
     var myUser = userModel;
     var profilePic = myUser.profilePic ?? dummyProfilePic;
+    final displayName = myUser.displayName ?? (myUser.email ?? '').split('@')[0];
+    final userName = (authState.userModel?.userName?.trim().isNotEmpty == true)
+        ? authState.userModel!.userName!
+        : (displayName.isNotEmpty ? displayName : 'user');
     var commentedUser = UserModel(
-        displayName: myUser.displayName ?? (myUser.email ?? '').split('@')[0],
+        displayName: displayName,
         profilePic: profilePic,
         userId: myUser.userId,
         isVerified: authState.userModel?.isVerified ?? false,
-        userName: authState.userModel?.userName ?? '');
+        userName: userName);
     var tags = getHashTags(_textEditingController.text);
+    final isNewToldya = widget.isToldya && state.toldyaToReplyModel == null && !widget.isRetoldya;
     FeedModel reply = FeedModel(
-        statu: (widget.isToldya || (state.toldyaToReplyModel != null && !widget.isRetoldya))
-            ? Statu.statusPendingAiReview
-            : Statu.statusLive,
+        statu: Statu.statusLive,
         topic: widget.isToldya ? null : state.toldyaToReplyModel?.topic,
         description: _textEditingController.text,
         user: commentedUser,
-        createdAt: DateTime.now().toUtc().toString(),
-        endDate: null,
+        createdAt: DateTime.now().toUtc().toIso8601String(),
+        endDate: isNewToldya && _closesAt != null ? _closesAt!.toUtc().toIso8601String() : null,
         resolutionDate: null,
         oracleSource: null,
         oracleApiUrl: null,
         collateralAmount: null,
         tags: tags,
-        parentkey: widget.isToldya
-            ? null
-            : widget.isRetoldya
-                ? null
-                : state.toldyaToReplyModel?.key,
-        childRetoldyaKey: widget.isToldya
-            ? null
-            : widget.isRetoldya
-                ? model.key
-                : null,
+        parentkey: widget.isToldya ? null : widget.isRetoldya ? null : state.toldyaToReplyModel?.key,
+        childRetoldyaKey: widget.isToldya ? null : widget.isRetoldya ? model.key : null,
         userId: myUser.userId);
-    if (widget.isToldya && _challengeeUser?.userId != null) {
-      reply.challengeeUserId = _challengeeUser!.userId;
-    }
     return reply;
   }
 
-  Widget _buildChallengeeRow() {
+  static DateTime _minClosingTime() =>
+      DateTime.now().add(const Duration(hours: 1));
+
+  /// Preset: 1 hour from now.
+  DateTime _presetOneHourLater() => _minClosingTime();
+
+  /// Preset: tonight 21:00, or tomorrow 21:00 if already past.
+  DateTime _presetTonight2100() {
+    final now = DateTime.now();
+    var d = DateTime(now.year, now.month, now.day, 21, 0);
+    if (d.isBefore(_minClosingTime())) d = d.add(const Duration(days: 1));
+    return d;
+  }
+
+  /// Preset: tomorrow 12:00.
+  DateTime _presetTomorrow1200() {
+    final t = DateTime.now().add(const Duration(days: 1));
+    return DateTime(t.year, t.month, t.day, 12, 0);
+  }
+
+  /// Preset: tomorrow 21:00.
+  DateTime _presetTomorrow2100() {
+    final t = DateTime.now().add(const Duration(days: 1));
+    return DateTime(t.year, t.month, t.day, 21, 0);
+  }
+
+  void _applyPreset(DateTime value) {
+    final minClose = _minClosingTime();
+    setState(() {
+      _closesAt = value.isBefore(minClose) ? minClose : value;
+    });
+  }
+
+  String _formatClosingSummary(DateTime? dt) {
+    if (dt == null) return '';
+    final locale = Localizations.localeOf(context).toString();
+    final datePart = DateFormat('d MMM EEE', locale).format(dt);
+    final timePart = DateFormat('HH:mm', locale).format(dt);
+    return '$datePart • $timePart';
+  }
+
+  void _showCustomClosingTimeSheet() {
+    final now = DateTime.now();
+    final minClose = _minClosingTime();
+    DateTime selectedDate = _closesAt != null && _closesAt!.isAfter(now)
+        ? DateTime(_closesAt!.year, _closesAt!.month, _closesAt!.day)
+        : DateTime(minClose.year, minClose.month, minClose.day);
+    int selectedHour = _closesAt != null ? _closesAt!.hour : 21;
+    int selectedMinute = _closesAt != null ? _closesAt!.minute : 0;
+
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            DateTime combined = DateTime(
+                selectedDate.year, selectedDate.month, selectedDate.day,
+                selectedHour, selectedMinute);
+            if (combined.isBefore(minClose)) combined = minClose;
+
+            final dayOptions = List<DateTime>.generate(14, (i) => now.add(Duration(days: i)));
+            const timeSlots = [9, 12, 15, 18, 21];
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 12,
+                bottom: MediaQuery.of(ctx).viewPadding.bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.closingTimeLabel,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: dayOptions.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final d = dayOptions[i];
+                        final isToday = d.year == now.year && d.month == now.month && d.day == now.day;
+                        final isSelected = d.year == selectedDate.year &&
+                            d.month == selectedDate.month && d.day == selectedDate.day;
+                        final label = isToday
+                            ? l10n.todayLabel
+                            : i == 1
+                                ? l10n.tomorrowLabel
+                                : DateFormat('d MMM', locale).format(d);
+                        return Material(
+                          color: isSelected
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: () => setModalState(() => selectedDate = d),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  label,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    fontWeight: isSelected ? FontWeight.w600 : null,
+                                    color: isSelected
+                                        ? theme.colorScheme.onPrimaryContainer
+                                        : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: timeSlots.map((h) {
+                      final isSelected = selectedHour == h && selectedMinute == 0;
+                      final timeStr = '${h.toString().padLeft(2, '0')}:00';
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Material(
+                          color: isSelected
+                              ? theme.colorScheme.primaryContainer
+                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: () => setModalState(() {
+                              selectedHour = h;
+                              selectedMinute = 0;
+                            }),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              child: Text(
+                                timeStr,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: isSelected ? FontWeight.w600 : null,
+                                  color: isSelected
+                                      ? theme.colorScheme.onPrimaryContainer
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        DateTime result = DateTime(selectedDate.year, selectedDate.month,
+                            selectedDate.day, selectedHour, selectedMinute);
+                        if (result.isBefore(minClose)) result = minClose;
+                        setState(() => _closesAt = result);
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text(l10n.confirm),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Kapanış zamanı: hızlı preset’ler + özet + isteğe bağlı özel seçim.
+  Widget _buildClosingTimeRow() {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            AppLocalizations.of(context)!.challengeLabel,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            l10n.closingTimeLabel,
+            style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
-          if (_challengeeUser != null) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _presetChip(theme, l10n.closingPreset1Hour, () => _applyPreset(_presetOneHourLater())),
+              _presetChip(theme, l10n.closingPresetTonight, () => _applyPreset(_presetTonight2100())),
+              _presetChip(theme, l10n.closingPresetTomorrow12, () => _applyPreset(_presetTomorrow1200())),
+              _presetChip(theme, l10n.closingPresetTomorrow21, () => _applyPreset(_presetTomorrow2100())),
+              _presetChip(theme, l10n.closingPresetCustom, _showCustomClosingTimeSheet),
+            ],
+          ),
+          if (_closesAt != null) ...[
+            const SizedBox(height: 10),
             Text(
-              '@${_challengeeUser!.userName ?? ''}',
+              '${l10n.closingSelected} ${_formatClosingSummary(_closesAt)}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.primary,
               ),
             ),
-            SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => setState(() => _challengeeUser = null),
-              child: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurface),
-            ),
           ] else
-            TextButton.icon(
-              onPressed: _openChallengeePicker,
-              icon: Icon(Icons.person_add, size: 18),
-              label: Text(AppLocalizations.of(context)!.selectUser),
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                l10n.closingTimeHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
             ),
         ],
       ),
     );
   }
 
-  void _openChallengeePicker() {
-    final searchState = Provider.of<SearchState>(context, listen: false);
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final myId = authState.userId;
-    final followingIds = authState.profileUserModel?.followingList ?? [];
-    if (searchState.userlist == null) {
-      searchState.getDataFromDatabase();
-    }
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      builder: (ctx) => SafeArea(
-        child: Consumer<SearchState>(
-          builder: (ctx, searchState, _) {
-            // Sadece takip edilenler: AuthState.followingList + getuserDetail
-            final list = searchState
-                .getuserDetail(followingIds)
-                .where((u) => u.userId != null && u.userId != myId)
-                .toList();
-            final isLoading = searchState.isBusy && searchState.userlist == null;
-            if (isLoading) {
-              return Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    AppLocalizations.of(context)!.challengePickTitle,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                if (list.isEmpty)
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      followingIds.isEmpty
-                          ? AppLocalizations.of(context)!.followingListEmpty
-                          : AppLocalizations.of(context)!.followingListLoadingOrEmpty,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  )
-                else
-                  Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: list.length,
-                      itemBuilder: (ctx, i) {
-                        final u = list[i];
-                        return ListTile(
-                          leading: customProfileImage(context, u.profilePic,
-                              userId: u.userId, height: 40),
-                          title: Text(u.displayName ?? ''),
-                          subtitle: Text('@${u.userName ?? ''}'),
-                          onTap: () {
-                            setState(() => _challengeeUser = u);
-                            if (Navigator.canPop(ctx)) Navigator.pop(ctx);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            );
-          },
+  Widget _presetChip(ThemeData theme, String label, VoidCallback onTap) {
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
         ),
       ),
     );
@@ -374,7 +542,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.isToldya) _buildChallengeeRow(),
+                      if (widget.isToldya) _buildClosingTimeRow(),
                       widget.isRetoldya
                           ? _ComposeRetoldya(this)
                           : _ComposeToldya(this),
@@ -664,20 +832,21 @@ class _ComposeToldya
               )
             ],
           ),
-          Flexible(
-            child: Stack(
-              children: <Widget>[
-                ComposeToldyaImage(
-                  image: viewState._image,
-                  onCrossIconPressed: viewState._onCrossIconPressed,
-                ),
-                _UserList(
-                  list: Provider.of<SearchState>(context).userlist ?? [],
-                  textEditingController: viewState._textEditingController,
-                )
-              ],
+          if (!viewState.widget.isToldya)
+            Flexible(
+              child: Stack(
+                children: <Widget>[
+                  ComposeToldyaImage(
+                    image: viewState._image,
+                    onCrossIconPressed: viewState._onCrossIconPressed,
+                  ),
+                  _UserList(
+                    list: Provider.of<SearchState>(context).userlist ?? [],
+                    textEditingController: viewState._textEditingController,
+                  )
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

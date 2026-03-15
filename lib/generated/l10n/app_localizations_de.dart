@@ -130,6 +130,43 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dein Beitrag wird geprüft. Er erscheint im Feed nach Freigabe.';
 
   @override
+  String get closingTimeLabel => 'Schließzeit';
+
+  @override
+  String get closingTimeHint => 'Schließung mindestens 1 Stunde ab jetzt';
+
+  @override
+  String get closingTimeMinOneHour =>
+      'Die Schließzeit muss mindestens 1 Stunde nach der Erstellung liegen.';
+
+  @override
+  String get closingPreset1Hour => 'In 1 Stunde';
+
+  @override
+  String get closingPresetTonight => 'Heute 21:00';
+
+  @override
+  String get closingPresetTomorrow12 => 'Morgen 12:00';
+
+  @override
+  String get closingPresetTomorrow21 => 'Morgen 21:00';
+
+  @override
+  String get closingPresetCustom => 'Benutzerdefiniert';
+
+  @override
+  String get closingSelected => 'Gewählt:';
+
+  @override
+  String get todayLabel => 'Heute';
+
+  @override
+  String get tomorrowLabel => 'Morgen';
+
+  @override
+  String get predictionPublished => 'Deine Vorhersage ist live.';
+
+  @override
   String get commentAdded => 'Dein Kommentar wurde hinzugefügt.';
 
   @override
@@ -180,27 +217,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get userUnblocked => 'Nutzer entblockiert.';
 
   @override
-  String get pleaseSelectBetAmount => 'Bitte wähle einen Wetteinsatz!';
+  String get pleaseSelectPredictionAmount => 'Bitte wähle die Punkteanzahl!';
 
   @override
-  String maxBetTokens(String maxVal) {
-    return 'Maximaler Einsatz: $maxVal Token';
+  String maxPredictionTokens(String maxVal) {
+    return 'Maximal: $maxVal Token';
   }
 
   @override
-  String get betOnOneSideOnly =>
-      'Du hast bei dieser Vorhersage bereits auf die andere Seite gewettet. Pro Vorhersage kannst du nur auf eine Seite (Ja oder Nein) wetten.';
+  String get predictionOneSideOnly =>
+      'Du hast bei dieser Vorhersage bereits die andere Seite gewählt. Pro Vorhersage kannst du nur eine Seite (Ja oder Nein) wählen.';
 
   @override
-  String get betPlaced => 'Wette platziert.';
+  String get predictionSubmitted => 'Vorhersage gesendet.';
 
   @override
-  String get confirmBet => 'Wette bestätigen';
+  String get confirmPrediction => 'Vorhersage bestätigen';
 
   @override
-  String confirmBetMessage(String amount) {
-    return 'Möchtest du wirklich $amount Token auf diese Vorhersage setzen?';
+  String confirmPredictionMessage(String amount) {
+    return 'Möchtest du wirklich $amount Token für diese Vorhersage verwenden?';
   }
+
+  @override
+  String get closesIn => 'Schließt in';
+
+  @override
+  String get participants => 'Teilnehmer';
+
+  @override
+  String get predictionsClosed => 'Vorhersagen geschlossen.';
+
+  @override
+  String get statusOpen => 'OFFEN';
 
   @override
   String get messageSent => 'Gesendet';
@@ -331,7 +380,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get predictors => 'Vorhersager';
 
   @override
-  String get bettors => 'Wetter';
+  String get predictionParticipants => 'Teilnehmer';
 
   @override
   String get dataPreference => 'Dateneinstellung';
@@ -420,7 +469,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Abstimmung nicht möglich wegen unzureichender Token';
 
   @override
-  String get betErrorGeneric => 'Wette konnte nicht platziert werden.';
+  String get predictionErrorGeneric =>
+      'Vorhersage konnte nicht gesendet werden.';
 
   @override
   String gmsError(String message) {
@@ -508,7 +558,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loginRequired => 'Bitte melde dich an.';
 
   @override
-  String get betTimeout => 'Zeitüberschreitung. Bitte erneut versuchen.';
+  String get predictionTimeout => 'Zeitüberschreitung. Bitte erneut versuchen.';
 
   @override
   String get gmsUpdateMessage =>
@@ -967,7 +1017,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noPredictorScoreYet => 'Noch kein Vorhersage‑Score';
 
   @override
-  String get noBettorScoreYet => 'Noch kein Wett‑Score';
+  String get noParticipantScoreYet => 'Noch kein Teilnehmer-Score';
 
   @override
   String get followersTitle => 'Follower';
@@ -1059,11 +1109,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get noBetsYet => 'Noch keine Wetten.';
+  String get noPredictionsYet => 'Noch keine Vorhersagen.';
 
   @override
-  String get noBetsYetHint =>
-      'Platziere eine Wette über die Schaltflächen \"Mit Ja wetten\" oder \"Mit Nein wetten\" oben.';
+  String get noPredictionsYetHint =>
+      'Mache eine Vorhersage mit den Schaltflächen \"Ja vorhersagen\" oder \"Nein vorhersagen\" oben.';
 
   @override
   String get dailyBonusClaimed => 'Täglicher Bonus eingelöst.';
@@ -1194,7 +1244,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle, welcher Ort in deinem Trend-Tab angezeigt wird, um zu sehen, was an einem Ort trendet.';
 
   @override
-  String get myBetsTab => 'Meine Wetten';
+  String get myPredictionsTab => 'Meine Vorhersagen';
 
   @override
   String get myVotesTab => 'Meine Abstimmungen';
@@ -1359,7 +1409,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get unfollow => 'Entfolgen';
 
   @override
-  String get betAmountLabel => 'Wetteinsatz';
+  String get pointsUsedLabel => 'Verwendete Punkte';
 
   @override
   String get approvalPendingStatus => 'Auswahl ausstehend';
@@ -1370,13 +1420,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get betYesLabel => 'Mit Ja wetten';
+  String get predictYesLabel => 'Ja vorhersagen';
 
   @override
-  String get betNoLabel => 'Mit Nein wetten';
+  String get predictNoLabel => 'Nein vorhersagen';
 
   @override
-  String get recentBetsTitle => 'Letzte Wetten';
+  String get recentPredictionsTitle => 'Letzte Vorhersagen';
 
   @override
   String get conversationInformationTitle => 'Unterhaltungsinformationen';

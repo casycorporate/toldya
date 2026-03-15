@@ -23,7 +23,7 @@ class AppState extends ChangeNotifier {
   int get lastTabBeforeProfile => _lastTabBeforeProfile;
 
   set setpageIndex(int index) {
-    if (index == 3) {
+    if (index == 1) {
       _lastTabBeforeProfile = _pageIndex;
     } else {
       _lastTabBeforeProfile = index;

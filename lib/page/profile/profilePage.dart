@@ -154,8 +154,8 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   late TabController _tabController;
-  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Bahislerim sekmesinde)
-  int _bahislerimStatusFilter = 0;
+  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Tahminlerim sekmesinde)
+  int _tahminlerimStatusFilter = 0;
 
   void shareProfile(BuildContext context) async {
     var authstate = context.read<AuthState>();
@@ -203,8 +203,8 @@ class _ProfilePageState extends State<ProfilePage>
       });
     }
 
-    /// Bahislerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
-    final listForBahislerim = (state.profileUserToldyaUserId == id && state.profileUserToldyaList != null)
+    /// Tahminlerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
+    final listForTahminlerim = (state.profileUserToldyaUserId == id && state.profileUserToldyaList != null)
         ? state.profileUserToldyaList!
         : feedlist
             .where((x) =>
@@ -348,7 +348,7 @@ class _ProfilePageState extends State<ProfilePage>
                     labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                     unselectedLabelStyle: TextStyle(fontSize: 15),
                     tabs: <Widget>[
-                      Tab(text: AppLocalizations.of(context)!.myBetsTab),
+                      Tab(text: AppLocalizations.of(context)!.myPredictionsTab),
                       Tab(text: AppLocalizations.of(context)!.myVotesTab),
                     ],
                   ),
@@ -361,26 +361,26 @@ class _ProfilePageState extends State<ProfilePage>
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    /// Display all independent tweers list (bahislerim); kendi profilinde filtre chip'leri
+                    /// Display all independent tweets list (tahminlerim); kendi profilinde filtre chip'leri
                     isMyProfile
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _bahislerimFilterChips(context),
+                              _tahminlerimFilterChips(context),
                               Expanded(
                                 child: _tweetList(
                                   context,
                                   authstate,
-                                  listForBahislerim,
+                                  listForTahminlerim,
                                   false,
                                   false,
                                   id,
-                                  statusFilter: _bahislerimStatusFilter,
+                                  statusFilter: _tahminlerimStatusFilter,
                                 ),
                               ),
                             ],
                           )
-                        : _tweetList(context, authstate, listForBahislerim, false, false, id),
+                        : _tweetList(context, authstate, listForTahminlerim, false, false, id),
 
                     /// Display all reply tweet list (oy verdiklerim)
                     _tweetList(context, authstate, listForOyVerdiklerim, true, false, id),
@@ -527,7 +527,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  /// Rütbe ilerlemesi, Bahisçi/Tahminci kartları, Seviye ve Liderlik CTA (profil ağacında görünsün diye burada)
+  /// Rütbe ilerlemesi, Tahminci kartları, Seviye ve Liderlik CTA (profil ağacında görünsün diye burada)
   Widget _ProfileStatsSection(BuildContext context, {required UserModel user, required bool isMyProfile}) {
     final theme = Theme.of(context);
     final xp = user.xp ?? 0;
@@ -557,7 +557,7 @@ class _ProfilePageState extends State<ProfilePage>
                   context: context,
                   icon: Icons.emoji_events,
                   iconColor: theme.primaryColor,
-                  title: AppLocalizations.of(context)!.bettors,
+                  title: AppLocalizations.of(context)!.predictionParticipants,
                   value: user.rank ?? 0,
                 ),
               ),
@@ -588,25 +588,6 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
           ),
-          if (isMyProfile) ...[
-            SizedBox(height: 6),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
-                icon: Icon(Icons.leaderboard_outlined, size: 18, color: AppNeon.green),
-                label: Text(
-                  AppLocalizations.of(context)!.seeLeaderboard,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppNeon.green),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  foregroundColor: AppNeon.green,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -802,7 +783,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   /// 3. Filtre chip'leri: seçili = yeşil metin + hafif yeşil arka plan, diğerleri gri; altında kısa yeşil pill
-  Widget _bahislerimFilterChips(BuildContext context) {
+  Widget _tahminlerimFilterChips(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final labels = [l10n.filterActive, l10n.filterPending, l10n.filterCompleted, l10n.filterRejected, l10n.filterLocked];
     return Container(
@@ -812,9 +793,9 @@ class _ProfilePageState extends State<ProfilePage>
         scrollDirection: Axis.horizontal,
         child: Row(
           children: List.generate(5, (index) {
-            final selected = _bahislerimStatusFilter == index;
+            final selected = _tahminlerimStatusFilter == index;
             return GestureDetector(
-              onTap: () => setState(() => _bahislerimStatusFilter = index),
+              onTap: () => setState(() => _tahminlerimStatusFilter = index),
               behavior: HitTestBehavior.opaque,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -875,13 +856,13 @@ class _ProfilePageState extends State<ProfilePage>
               x.userId == id)
           .toList();
 
-      /// Bahislerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)
+      /// Tahminlerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)
       if (statusFilter != null && list.isNotEmpty) {
         list = list.where((x) {
           final s = parseStatu(x.statu);
           if (s == null) return false;
           switch (statusFilter) {
-            case 0: // Aktif: yayında veya kilitli, bahis açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
+            case 0: // Aktif: yayında veya kilitli, tahmin açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
               return s == Statu.statusLive || s == Statu.statusLocked;
             case 1: // Bekleyen: admin/AI incelemesi bekliyor (statu 1, 6)
               return s == Statu.statusPending || s == Statu.statusPendingAiReview;
@@ -889,7 +870,7 @@ class _ProfilePageState extends State<ProfilePage>
               return s == Statu.statusOk || s == Statu.statusComplete;
             case 3: // Reddedilen: admin/AI reddi (statu 3, 7)
               return s == Statu.statusDenied || s == Statu.statusRejectedByAi;
-            case 4: // Kilitli: bahisler kapandı, sonuç bekleniyor (statu 5)
+            case 4: // Kilitli: tahminler kapandı, sonuç bekleniyor (statu 5)
               return s == Statu.statusLocked;
             default:
               return false;
@@ -897,7 +878,7 @@ class _ProfilePageState extends State<ProfilePage>
         }).toList();
       }
     } else {
-      /// Display all reply Tweets (oy verdiklerim - kullanıcının bahis yaptığı tahminler)
+      /// Display all reply Tweets (oy verdiklerim - kullanıcının tahmin yaptığı tahminler)
       /// Sadece ilgili statülerdeki gönderiler: Live, Ok, Locked, Complete
       final profileUserId = authstate.profileUserModel?.userId;
       list = tweetsList
@@ -1019,7 +1000,7 @@ class _ProfilePredictionCard extends StatelessWidget {
 
   void _onVoteTap(BuildContext context, int commentFlag) {
     final authState = Provider.of<AuthState>(context, listen: false);
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -1032,11 +1013,11 @@ class _ProfilePredictionCard extends StatelessWidget {
       ));
       return;
     }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          AppLocalizations.of(context)!.betOnOneSideOnly,
+          AppLocalizations.of(context)!.predictionOneSideOnly,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 4),
@@ -1059,7 +1040,7 @@ class _ProfilePredictionCard extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     const cardColor = Color(0xFF2C2C2E);
 
@@ -1415,7 +1396,7 @@ class UserNameRowWidget extends StatelessWidget {
                   context: context,
                   icon: Icons.emoji_events,
                   iconColor: Theme.of(context).primaryColor,
-                  title: AppLocalizations.of(context)!.bettors,
+                  title: AppLocalizations.of(context)!.predictionParticipants,
                   value: user.rank ?? 0,
                 ),
               ),
@@ -1448,36 +1429,6 @@ class UserNameRowWidget extends StatelessWidget {
             ],
           ),
         ),
-        if (isMyProfile)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
-                icon: Icon(
-                  Icons.leaderboard_outlined,
-                  size: 18,
-                  color: Theme.of(context).primaryColor,
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.seeLeaderboard,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  foregroundColor: Theme.of(context).primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
-              ),
-            ),
-          ),
         Container(
           alignment: Alignment.center,
           child: Row(

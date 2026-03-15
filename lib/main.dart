@@ -42,7 +42,7 @@ void main() async {
   } catch (_) {}
 
   // App Check KAPALI: Bazı cihazlarda GMS "Unknown calling package name 'com.google.android.gms'"
-  // SecurityException veriyor. Sunucuda placeBet/claimDailyBonus için enforceAppCheck: false.
+  // SecurityException veriyor. Sunucuda submitPrediction/claimDailyBonus için enforceAppCheck: false.
   // Sorun giderildikten sonra aşağıdaki blok tekrar açılabilir.
   // if (kDebugMode) {
   //   await FirebaseAppCheck.instance.activate(

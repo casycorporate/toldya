@@ -295,8 +295,8 @@ class AuthState extends AppState {
     }
   }
 
-  /// Bahis sonrası sadece bakiye alanlarını günceller (backend zaten DB'yi güncelledi).
-  void updateBalanceFromBet(int newPegCount, int newStashBalance) {
+  /// Tahmin sonrası sadece bakiye alanlarını günceller (backend zaten DB'yi güncelledi).
+  void updateBalanceFromPrediction(int newPegCount, int newStashBalance) {
     if (_userModel != null) {
       _userModel!.pegCount = newPegCount;
       _userModel!.stashCount = newStashBalance;
@@ -304,7 +304,7 @@ class AuthState extends AppState {
     }
   }
 
-  /// Optimistic UI & rollback: bakiye alanlarını doğrudan günceller (placeBet anında veya geri alımda kullanılır).
+  /// Optimistic UI & rollback: bakiye alanlarını doğrudan günceller (submitPrediction anında veya geri alımda kullanılır).
   void setBalanceOptimistic(int pegCount, int stashCount) {
     if (_userModel != null) {
       _userModel!.pegCount = pegCount;

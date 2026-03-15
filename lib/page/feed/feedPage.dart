@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
-import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -151,54 +150,33 @@ class _FeedPage extends State<FeedPage> {
           },
           onFabPressed: () => Navigator.of(context).pushNamed('/CreateFeedPage/toldya'),
           onHomePressed: () {},
-          onSearchPressed: () {
-            Provider.of<AppState>(context, listen: false).setpageIndex = 1;
-          },
-          onNotificationsPressed: () {
-            Provider.of<AppState>(context, listen: false).setpageIndex = 2;
-          },
+          onSearchPressed: () {},
+          onNotificationsPressed: () => Navigator.pushNamed(context, '/NotificationFeedPage'),
           onProfilePressed: () {
-            Provider.of<AppState>(context, listen: false).setpageIndex = 3;
+            Provider.of<AppState>(context, listen: false).setpageIndex = 1;
           },
         );
       }
-      final List<String> _tabValues = topic.topicMap.values.toList();
-      _tabValues.insert(0, topic.gundem);
-      _tabValues.insert(1, topic.favList);
-      _tabValues.insert(2, topic.followList);
       final l10n = AppLocalizations.of(context)!;
-      final _tabLabels = _tabValues.map((String val) {
-        if (val == topic.gundem) return l10n.categoryFlow;
-        if (val == topic.favList) return l10n.categoryFavorite;
-        if (val == topic.followList) return l10n.categoryFollow;
-        if (val == 'sports') return l10n.categorySports;
-        if (val == 'economy') return l10n.categoryEconomy;
-        if (val == 'entertainment') return l10n.categoryEntertainment;
-        if (val == 'politics') return l10n.categoryPolitics;
-        return val;
-      }).toList();
       final feedStateForScroll = Provider.of<FeedState>(context, listen: false);
-      for (var i = 0; i < _tabValues.length && i < _scrollControllers.length; i++) {
-        if (!_scrollListenerAttached[i]) {
-          _scrollListenerAttached[i] = true;
-          final c = _scrollControllers[i];
-          c.addListener(() {
-            if (c.hasClients &&
-                feedStateForScroll.hasMoreFeed &&
-                !feedStateForScroll.isLoadingMore &&
-                c.position.pixels >= c.position.maxScrollExtent - 200) {
-              feedStateForScroll.loadMoreFeed();
-            }
-            if (c.hasClients) {
-              // Sadece idle timer'ı resetle; görünürlük, yukarıdaki NotificationListener tarafından yönetiliyor.
-              _resetIdleShowBarTimer();
-            }
-          });
-        }
+      if (!_scrollListenerAttached[0]) {
+        _scrollListenerAttached[0] = true;
+        final c = _scrollControllers[0];
+        c.addListener(() {
+          if (c.hasClients &&
+              feedStateForScroll.hasMoreFeed &&
+              !feedStateForScroll.isLoadingMore &&
+              c.position.pixels >= c.position.maxScrollExtent - 200) {
+            feedStateForScroll.loadMoreFeed();
+          }
+          if (c.hasClients) _resetIdleShowBarTimer();
+        });
       }
-      return DefaultTabController(
-      length: _tabValues.length,
-      child: Scaffold(
+      final hasData = feedState.feedlist != null;
+      final waitingForDb = feedState.feedlist == null;
+      final refreshing = hasData && feedState.isBusy;
+      final hasError = feedState.feedError != null;
+      return Scaffold(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
             ? MockupDesign.background
             : Theme.of(context).scaffoldBackgroundColor,
@@ -214,354 +192,202 @@ class _FeedPage extends State<FeedPage> {
             }
             return false;
           },
-          child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverOverlapAbsorber(
-                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                sliver: SliverAppBar(
+          child: RefreshIndicator(
+            color: Theme.of(context).primaryColor,
+            onRefresh: () async {
+              HapticFeedback.lightImpact();
+              feedState.clearFeedError();
+              feedState.getDataFromDatabase();
+            },
+            child: CustomScrollView(
+              controller: _scrollControllers[0],
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: <Widget>[
+                SliverAppBar(
                   floating: true,
                   snap: true,
-                centerTitle: false,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                leading: IconButton(
-                  icon: Icon(Icons.menu_rounded),
-                  color: Colors.white,
-                  onPressed: () {
-                    widget.scaffoldKey?.currentState?.openDrawer();
-                  },
-                ),
-                title: Container(
-                  height: 38,
-                  margin: EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
+                  centerTitle: true,
+                  title: Text(
+                    AppLocalizations.of(context)!.appTitle,
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
                   ),
-                  child: TextField(
-                    controller: textController,
-                    onChanged: (_) => setState(() {}),
-                    style: TextStyle(color: Colors.white, fontSize: 15),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: AppLocalizations.of(context)!.searchHint,
-                      hintStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 22,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      isDense: true,
-                    ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    color: Colors.white,
+                    onPressed: () => widget.scaffoldKey?.currentState?.openDrawer(),
                   ),
-                ),
-                backgroundColor: Theme.of(context).brightness == Brightness.dark
-                    ? MockupDesign.background
-                    : Theme.of(context).scaffoldBackgroundColor,
-                surfaceTintColor: Colors.transparent,
-                actions: [
-                  if (authstate.isbusy || authstate.userModel == null)
-                    SizedBox.shrink()
-                  else ...[
-                    Consumer<NotificationState>(
-                      builder: (context, notifState, _) {
-                        final unreadCount = notifState.unreadCount;
-                        final child = IconButton(
-                          icon: Icon(Icons.notifications_none, color: Colors.white, size: 24),
-                          onPressed: () => Navigator.pushNamed(context, '/NotificationFeedPage'),
-                          tooltip: AppLocalizations.of(context)!.notificationsTitle,
-                        );
-                        if (unreadCount <= 0) return child;
-                        return Badge(
-                          isLabelVisible: true,
-                          label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
-                          smallSize: 8,
-                          backgroundColor: Color(0xFFFF6B6B),
-                          child: child,
-                        );
-                      },
-                    ),
-                    if (authstate.userModel?.role == Role.adminRole)
-                      PopupMenuButton<Choice>(
-                        onSelected: (d) {
-                          switch (d.id) {
-                            case 'pending':
-                              statu = Statu.statusPending;
-                              break;
-                            case 'approved':
-                              statu = Statu.statusOk;
-                              break;
-                            case 'rejected':
-                              statu = Statu.statusDenied;
-                              break;
-                            case 'completed':
-                              statu = Statu.statusComplete;
-                              break;
-                            case 'pendingAi':
-                              statu = Statu.statusPendingAiReview;
-                              break;
-                            case 'rejectedAi':
-                              statu = Statu.statusRejectedByAi;
-                              break;
-                            case 'live':
-                            default:
-                              statu = Statu.statusLive;
-                              break;
-                          }
-                          setState(() {});
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      ? MockupDesign.background
+                      : Theme.of(context).scaffoldBackgroundColor,
+                  actions: [
+                    if (authstate.userModel != null && !authstate.isbusy) ...[
+                      Consumer<NotificationState>(
+                        builder: (context, notifState, _) {
+                          final unreadCount = notifState.unreadCount;
+                          final child = IconButton(
+                            icon: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+                            onPressed: () => Navigator.pushNamed(context, '/NotificationFeedPage'),
+                            tooltip: l10n.notificationsTitle,
+                          );
+                          if (unreadCount <= 0) return child;
+                          return Badge(
+                            isLabelVisible: true,
+                            label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                            smallSize: 8,
+                            backgroundColor: ToldyaDesign.no,
+                            child: child,
+                          );
                         },
-                        icon: Icon(Icons.more_vert, color: Colors.white),
-                        itemBuilder: (BuildContext context) {
-                          return choices.map((Choice choice) {
-                            return PopupMenuItem<Choice>(
-                              value: choice,
-                              child: Text(choice.label(context)),
-                            );
-                          }).toList();
-                        },
-                      )
-                    else
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            statu == Statu.statusLive
-                                ? statu = Statu.statusOk
-                                : statu = Statu.statusLive;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.history,
-                          color: statu == Statu.statusLive
-                              ? Colors.white70
-                              : AppColor.primary,
-                        ),
                       ),
-                  ],
-                ],
-                ),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SliverTabBarDelegate(
-                  TabBar(
-                    indicatorColor: AppNeon.green,
-                    indicatorWeight: 3,
-                    unselectedLabelColor: Colors.grey,
-                    labelColor: Colors.white,
-                    unselectedLabelStyle: GoogleFonts.sawarabiMincho(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    labelStyle: GoogleFonts.sawarabiMincho(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    isScrollable: true,
-                    labelPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-                    tabs: _tabLabels.map((String label) => Tab(text: label)).toList(),
-                  ),
-                ),
-              ),
-            ];
-          },
-          body: TabBarView(
-          children: _tabValues.asMap().entries.map((entry) {
-            final tabIndex = entry.key;
-            final name = entry.value;
-            return Consumer<FeedState>(builder: (context, state, child) {
-              final topicVal = (name == topic.gundem || name == topic.favList || name == topic.followList)
-                  ? name
-                  : topic.getKeyFromVal(name);
-              final tabList = state.getToldyaListByTopic(
-                authstate.userModel,
-                searchState.getUserInBlackList(authstate.userModel),
-                textController.text,
-                statu,
-                topic_val: topicVal,
-              );
-              final hasData = state.feedlist != null;
-              final waitingForDb = state.feedlist == null;
-              final refreshing = hasData && state.isBusy;
-              final hasError = state.feedError != null;
-              final l10n = AppLocalizations.of(context)!;
-              final scrollController = tabIndex < _scrollControllers.length
-                  ? _scrollControllers[tabIndex]
-                  : null;
-
-              return RefreshIndicator(
-                  color: Theme.of(context).primaryColor,
-                  child: CustomScrollView(
-                    key: PageStorageKey<String>(name),
-                    controller: scrollController,
-                    physics: BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    slivers: <Widget>[
-                      SliverOverlapInjector(
-                        handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                      ),
-                      SliverToBoxAdapter(child: SizedBox(height: 8)),
-                      if (refreshing)
-                        SliverToBoxAdapter(
-                          child: LinearProgressIndicator(
-                            backgroundColor: MockupDesign.background,
-                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
-                          ),
-                        ),
-                      if (hasError && tabList.isEmpty)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  l10n.errorTryAgain,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                                ),
-                                SizedBox(height: 16),
-                                TextButton.icon(
-                                  onPressed: () {
-                                    state.clearFeedError();
-                                    state.getDataFromDatabase();
-                                  },
-                                  icon: Icon(Icons.refresh),
-                                  label: Text(l10n.retry),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else if (waitingForDb)
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: fullHeight(context) - 135,
-                            child: FeedShimmer(),
-                          ),
-                        )
-                      else if (tabList.isEmpty)
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: fullHeight(context) - 135,
-                            child: EmptyStateContent(),
-                          ),
+                      if (authstate.userModel?.role == Role.adminRole)
+                        PopupMenuButton<Choice>(
+                          onSelected: (d) {
+                            switch (d.id) {
+                              case 'pending': statu = Statu.statusPending; break;
+                              case 'approved': statu = Statu.statusOk; break;
+                              case 'rejected': statu = Statu.statusDenied; break;
+                              case 'completed': statu = Statu.statusComplete; break;
+                              case 'pendingAi': statu = Statu.statusPendingAiReview; break;
+                              case 'rejectedAi': statu = Statu.statusRejectedByAi; break;
+                              default: statu = Statu.statusLive;
+                            }
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.more_vert, color: Colors.white),
+                          itemBuilder: (ctx) => choices.map((Choice choice) =>
+                              PopupMenuItem<Choice>(value: choice, child: Text(choice.label(ctx)))).toList(),
                         )
                       else
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final model = tabList[index];
-                              return Padding(
-                                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                                child: Container(
-                                  margin: EdgeInsets.only(bottom: 16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF2C2C2E),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  padding: EdgeInsets.all(16),
-                                  child: PredictionCardMockup(
-                                    model: model,
-                                    scaffoldKey: widget.scaffoldKey ?? GlobalKey<ScaffoldState>(),
-                                  ),
-                                ),
-                              );
-                            },
-                            childCount: tabList.length,
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              statu = statu == Statu.statusLive ? Statu.statusOk : Statu.statusLive;
+                            });
+                          },
+                          icon: Icon(
+                            Icons.history,
+                            color: statu == Statu.statusLive ? Colors.white70 : AppColor.primary,
                           ),
                         ),
-                      SliverToBoxAdapter(
-                        child: state.isLoadingMore
-                            ? Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      l10n.loading,
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : (!state.hasMoreFeed && tabList.isNotEmpty)
-                                ? Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    child: Center(
-                                      child: Text(
-                                        l10n.endOfResults,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : SizedBox.shrink(),
-                      ),
                     ],
+                  ],
+                ),
+                SliverToBoxAdapter(child: SizedBox(height: 8)),
+                if (refreshing)
+                  SliverToBoxAdapter(
+                    child: LinearProgressIndicator(
+                      backgroundColor: MockupDesign.background,
+                      valueColor: AlwaysStoppedAnimation<Color>(ToldyaDesign.statusBadge),
+                    ),
                   ),
-                  onRefresh: () async {
-                    HapticFeedback.lightImpact();
-                    var feedState = Provider.of<FeedState>(context, listen: false);
-                    feedState.clearFeedError();
-                    feedState.getDataFromDatabase();
-                    return Future.value(true);
-                  });
-            });
-          }).toList(),
-        ), // TabBarView
-      ), // NestedScrollView
+                if (hasError && mainList.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(l10n.errorTryAgain, textAlign: TextAlign.center,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            onPressed: () {
+                              feedState.clearFeedError();
+                              feedState.getDataFromDatabase();
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: Text(l10n.retry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (waitingForDb)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: fullHeight(context) - 135,
+                      child: FeedShimmer(),
+                    ),
+                  )
+                else if (mainList.isEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: fullHeight(context) - 135,
+                      child: EmptyStateContent(),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final model = mainList[index];
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: MockupDesign.card,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: PredictionCardMockup(
+                              model: model,
+                              scaffoldKey: widget.scaffoldKey ?? GlobalKey<ScaffoldState>(),
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: mainList.length,
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: feedState.isLoadingMore
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                l10n.loading,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : (!feedState.hasMoreFeed && mainList.isNotEmpty)
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Text(
+                                  l10n.endOfResults,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
     ), // NotificationListener
-  ), // Scaffold
-); // DefaultTabController
+  ); // Scaffold
     });
   }
-}
-
-/// Delegate for [SliverPersistentHeader] that builds a [TabBar] (for [NestedScrollView]).
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _SliverTabBarDelegate(this.tabBar);
-
-  final TabBar tabBar;
-
-  @override
-  double get minExtent => 48;
-
-  @override
-  double get maxExtent => 48;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      child: tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _SliverTabBarDelegate oldDelegate) =>
-      tabBar != oldDelegate.tabBar;
 }
 
 class Choice {

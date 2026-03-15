@@ -119,18 +119,52 @@ class AppColor {
 /// Uygulama dark mode kullanıyor mu (tek tema tercihi)
 bool get useDarkTheme => true;
 
+/// Modern fintech / prediction style — dark, soft neon accents, non‑betting.
+class ToldyaDesign {
+  ToldyaDesign._();
+  static const Color background = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121821);
+  static const Color textPrimary = Color(0xFFE6EAF0);
+  static const Color textSecondary = Color(0xFF8A93A5);
+  /// YES: modern orange accent
+  static const Color yes = Color(0xFFFF8A3D);
+  static const Color yesHighlight = Color(0xFFFFB36B);
+  /// NO: modern indigo accent
+  static const Color no = Color(0xFF5561FF);
+  static const Color noHighlight = Color(0xFF6A6FF5);
+  static const Color progressYes = Color(0xFFFF8A3D);
+  static const Color progressNo = Color(0xFF5561FF);
+  static const Color progressBackground = Color(0xFF2A2F38);
+  static const Color statusBadge = Color(0xFF22C55E);
+  static const double cardRadius = 16.0;
+  static const double cardPadding = 16.0;
+  static const double cardMarginBottom = 12.0;
+  static const double progressBarHeight = 6.0;
+  static const double progressBarRadius = 20.0;
+  static const double buttonRadius = 14.0;
+  static const double buttonHeight = 48.0;
+  static List<BoxShadow> get yesButtonShadow => [
+    BoxShadow(
+      color: yes.withValues(alpha: 0.25),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+      spreadRadius: 0,
+    ),
+  ];
+}
+
 /// Mockup’larla uyumlu tek tip değerler (kart, boşluk, radius)
 class MockupDesign {
   MockupDesign._();
-  // Renkler (dark) – logo mavisi vurgu
-  static const Color background = Color(0xFF1C1C1E);
-  static const Color card = Color(0xFF252530);
-  static const Color cardBorder = Color(0xFF2C2C38);
-  static const Color accentOrange = Color(0xFFFFA400);
+  // Renkler (dark) – ToldyaDesign ile uyumlu
+  static const Color background = Color(0xFF0B0F14);
+  static const Color card = Color(0xFF121821);
+  static const Color cardBorder = Color(0xFF2A2F38);
+  static const Color accentOrange = Color(0xFFFF8A3D);
   static const Color accentCyan = Color(0xFF00E5FF);
-  static const Color accentLogoBlue = Color(0xFF2563EB);
-  static const Color textPrimary = Color(0xFFE8E8ED);
-  static const Color textSecondary = Color(0xFFA0A0B0);
+  static const Color accentLogoBlue = Color(0xFF5561FF);
+  static const Color textPrimary = Color(0xFFE6EAF0);
+  static const Color textSecondary = Color(0xFF8A93A5);
   // Ölçüler
   static const double cardRadius = 16.0;
   static const double cardPadding = 16.0;
@@ -192,21 +226,21 @@ class AppTheme {
   static final ThemeData _darkTheme = ThemeData(
     brightness: Brightness.dark,
     primarySwatch: Colors.blue,
-    scaffoldBackgroundColor: AppColor.surfaceDark,
-    primaryColor: ToldyaColor.logoBlue,
-    cardColor: AppColor.cardDark,
-    unselectedWidgetColor: AppColor.textSecondaryDark,
+    scaffoldBackgroundColor: ToldyaDesign.background,
+    primaryColor: ToldyaDesign.yes,
+    cardColor: ToldyaDesign.card,
+    unselectedWidgetColor: ToldyaDesign.textSecondary,
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: AppColor.cardDark,
+      backgroundColor: ToldyaDesign.card,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColor.surfaceDark,
-      foregroundColor: AppColor.textPrimaryDark,
-      iconTheme: IconThemeData(color: AppColor.textPrimaryDark, size: 24),
+      backgroundColor: ToldyaDesign.background,
+      foregroundColor: ToldyaDesign.textPrimary,
+      iconTheme: IconThemeData(color: ToldyaDesign.textPrimary, size: 24),
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
-        color: AppColor.textPrimaryDark,
+        color: ToldyaDesign.textPrimary,
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
@@ -218,27 +252,27 @@ class AppTheme {
       ),
     ),
     tabBarTheme: TabBarThemeData(
-      labelStyle: titleStyle.copyWith(color: ToldyaColor.logoBlue, fontSize: 14),
-      unselectedLabelColor: AppColor.textSecondaryDark,
-      unselectedLabelStyle: titleStyle.copyWith(color: AppColor.textSecondaryDark, fontSize: 14),
-      labelColor: ToldyaColor.logoBlue,
+      labelStyle: titleStyle.copyWith(color: ToldyaDesign.yes, fontSize: 14),
+      unselectedLabelColor: ToldyaDesign.textSecondary,
+      unselectedLabelStyle: titleStyle.copyWith(color: ToldyaDesign.textSecondary, fontSize: 14),
+      labelColor: ToldyaDesign.yes,
       labelPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-      indicatorColor: ToldyaColor.logoBlue,
+      indicatorColor: ToldyaDesign.yes,
       indicatorSize: TabBarIndicatorSize.label,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: ToldyaColor.logoBlue,
+      backgroundColor: ToldyaDesign.yes,
       foregroundColor: Colors.white,
       elevation: 2,
     ),
     colorScheme: ColorScheme.dark(
-      primary: ToldyaColor.logoBlue,
+      primary: ToldyaDesign.yes,
       secondary: AppNeon.cyan,
-      surface: AppColor.cardDark,
-      error: AppNeon.red,
+      surface: ToldyaDesign.card,
+      error: ToldyaDesign.no,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onSurface: AppColor.textPrimaryDark,
+      onSurface: ToldyaDesign.textPrimary,
       onError: Colors.white,
     ),
   );

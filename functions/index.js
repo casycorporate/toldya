@@ -23,14 +23,16 @@ function getDb() {
 // 1) Yayın kontrolü: runAiModeration           → statu=6 → AI ile onay/red (0 veya 7)
 // 2) Kilit:          runLockPredictions        → endDate geçen Live tahminleri statu=5 (Locked)
 // 3) Sonuçlandırma:  runOracleResolution       → oracle API ile feedResult + statu=Ok
-// 4) Dağıtım:        runDistributeWinnings    → sonuçlanmış tahminlerde kazanç payı
+// 4) Dağıtım:        runDistributeRewards      → sonuçlanmış tahminlerde ödül payı
 // Schedule yok; Production'da zamanlanmış sürümler tekrar eklenir.
 
-// Statu değerleri (lib/helper/constant.dart ile uyumlu)
-const STATU_LIVE = 0;
-const STATU_LOCKED = 5;
-const STATU_PENDING_AI_REVIEW = 6;
-const STATU_REJECTED_BY_AI = 7;
+// Statu değerleri (lib/helper/constant.dart ile uyumlu) — V1 basit akış
+const STATU_LIVE = 0;       // OPEN: tahmin alınır
+const STATU_PENDING_RESULT = 1;  // PENDING_RESULT: kapanış zamanı geçti, admin sonuç girecek
+const STATU_OK = 2;        // RESOLVED: admin sonuç girdi (feedResult 1 veya 2)
+const STATU_LOCKED = 5;    // LOCKED: kapanışa 10 dk kala tahmin kapatıldı
+const STATU_PENDING_AI_REVIEW = 6;  // (V1'de kullanılmıyor – devre dışı)
+const STATU_REJECTED_BY_AI = 7;    // (V1'de kullanılmıyor – devre dışı)
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -56,7 +58,7 @@ const MODERATION_SYSTEM_PROMPT = `Sen bir sosyal tahmin platformu moderatörüs�
 1) Topluluk kurallarına uygun mu? (nefret, hakaret, yasadışı içerik yok)
 2) Net ve tutarlı bir tahmin mi? (Evet/Hayır ile sonuçlanabilir, belirsiz veya anlamsız değil)
 3) Tahmin hangi kategoriye girer? Sadece şunlardan birini seç: spor, eco, fun, politic (spor=spor/maç/sağlık, eco=ekonomi/şirket/piyasa, fun=eğlence/medya/sanat, politic=siyaset/hukuk/toplum)
-4) onay true ise: Tahmin metninden ve baglamdan bahis kapanis ve sonuclanma tarihlerini cikar. endDate = bahislerin alinmayacagi son an (ISO 8601 UTC, ornek: 2025-03-01T18:00:00.000Z). resolutionDate = sonucun ilan edilecegi an, endDate'ten en az 1 saat sonra (ISO 8601 UTC).
+4) onay true ise: Tahmin metninden ve baglamdan tahmin kapanis ve sonuclanma tarihlerini cikar. endDate = tahminlerin alinmayacagi son an (ISO 8601 UTC, ornek: 2025-03-01T18:00:00.000Z). resolutionDate = sonucun ilan edilecegi an, endDate'ten en az 1 saat sonra (ISO 8601 UTC).
 
 Yanıtını SADECE şu JSON formatında ver, başka metin yazma:
 {"onay": true veya false, "gerekce": "...", "kategori": "spor"|"eco"|"fun"|"politic", "endDate": "ISO8601 UTC veya bos", "resolutionDate": "ISO8601 UTC veya bos"}
@@ -306,36 +308,20 @@ async function runAiModerationLogic(apiKey) {
   return { processed: processedCount };
 }
 
-/**
- * Manuel tetikleme: AI moderasyonunu çalıştırır.
- * OpenRouter key: firebase functions:secrets:set OPENROUTER_API_KEY
- * Modeller: MODERATION_MODELS listesinden rastgele biri ile başlar; red (7) gelirse sırayla diğerleri denenir.
- */
-exports.runAiModeration = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .https.onRequest(async (req, res) => {
-    try {
-      const apiKey = process.env.OPENROUTER_API_KEY;
-      const result = await runAiModerationLogic(apiKey);
-      res.status(200).json({ ok: true, ...result });
-    } catch (e) {
-      console.error("runAiModeration error", e);
-      res.status(500).json({ ok: false, error: e.message });
-    }
-  });
-
 // Zamanlanmış: Her 30 dakikada bir tüm batch fonksiyonları çalışır (manuel HTTP çağrıları da durur).
 const SCHEDULE_CRON = "every 30 minutes";
 
-/**
- * Bitiş tarihi geçmiş ve hâlâ Live (0) olan tahminleri statusLocked (5) yapar.
- */
+/** V1: Kapanışa 10 dakika kala tahminleri kapat (statu → LOCKED). */
+const LOCK_MINUTES_BEFORE_CLOSE = 10;
+
 async function runLockPredictionsLogic() {
   const toldyaRef = getDb().ref("toldya");
   const snapshot = await toldyaRef.once("value");
   const toldyas = snapshot.val();
   if (!toldyas) return { locked: 0 };
 
+  const now = new Date();
+  const lockThreshold = new Date(now.getTime() + LOCK_MINUTES_BEFORE_CLOSE * 60 * 1000);
   const updates = {};
   for (const [key, tweet] of Object.entries(toldyas)) {
     if (!tweet) continue;
@@ -345,7 +331,7 @@ async function runLockPredictionsLogic() {
     if (!endDate) continue;
     try {
       const end = new Date(endDate);
-      if (end < new Date()) {
+      if (end <= lockThreshold) {
         updates[`toldya/${key}/statu`] = STATU_LOCKED;
       }
     } catch (e) {
@@ -357,6 +343,86 @@ async function runLockPredictionsLogic() {
     console.log(`Locked ${Object.keys(updates).length} predictions`);
   }
   return { locked: Object.keys(updates).length };
+}
+
+/** V1: Kapanış zamanı geçmiş LOCKED tahminleri PENDING_RESULT yap ve admin'e e-posta gönder. */
+async function runClosePredictionsLogic() {
+  const toldyaRef = getDb().ref("toldya");
+  const snapshot = await toldyaRef.once("value");
+  const toldyas = snapshot.val();
+  if (!toldyas) return { closed: 0 };
+
+  const now = new Date();
+  const updates = {};
+  const toEmail = [];
+  for (const [key, tweet] of Object.entries(toldyas)) {
+    if (!tweet) continue;
+    if (tweet.parentkey) continue;
+    if (tweet.statu !== STATU_LOCKED) continue;
+    const endDate = tweet.endDate;
+    if (!endDate) continue;
+    try {
+      const end = new Date(endDate);
+      if (end <= now) {
+        updates[`toldya/${key}/statu`] = STATU_PENDING_RESULT;
+        toEmail.push({ key, description: (tweet.description || "").substring(0, 80), endDate });
+      }
+    } catch (e) {
+      console.warn("Invalid endDate for tweet", key, e);
+    }
+  }
+  if (Object.keys(updates).length > 0) {
+    await getDb().ref().update(updates);
+    console.log(`Closed ${Object.keys(updates).length} predictions (PENDING_RESULT)`);
+  }
+  for (const item of toEmail) {
+    await sendAdminClosingEmail(item.key, item.description, item.endDate);
+  }
+  return { closed: Object.keys(updates).length };
+}
+
+/** Admin'e "Tahmin kapanış zamanı geldi, sonuç girin" e-postası. SENDGRID_API_KEY + ADMIN_EMAIL veya MAIL_WEBHOOK_URL gerekir. */
+async function sendAdminClosingEmail(toldyaId, description, endDate) {
+  const adminEmail = process.env.ADMIN_EMAIL || (functions.config().admin && functions.config().admin.email);
+  const sendgridKey = process.env.SENDGRID_API_KEY || (functions.config().sendgrid && functions.config().sendgrid.api_key);
+  const webhookUrl = process.env.MAIL_WEBHOOK_URL || (functions.config().mail && functions.config().mail.webhook_url);
+
+  const subject = `[Toldya] Sonuç girilmeli: ${(description || toldyaId).substring(0, 50)}`;
+  const body = `Tahmin kapanış zamanı geldi.\n\nToldya ID: ${toldyaId}\nMetin: ${description || "(yok)"}\nKapanış: ${endDate}\n\nSonuç girmek için: setToldyaResult callable (toldyaId, result: 1=EVET, 2=HAYIR) veya Firebase Console ile toldya/${toldyaId}/feedResult ve statu güncelleyin.`;
+
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: adminEmail || "admin@example.com", subject, text: body, toldyaId }),
+      });
+    } catch (e) {
+      console.warn("[sendAdminClosingEmail] webhook error", e.message);
+    }
+    return;
+  }
+  if (sendgridKey && adminEmail) {
+    try {
+      await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sendgridKey}`,
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: adminEmail }] }],
+          from: { email: process.env.SENDGRID_FROM || "noreply@toldya.app", name: "Toldya" },
+          subject,
+          content: [{ type: "text/plain", value: body }],
+        }),
+      });
+    } catch (e) {
+      console.warn("[sendAdminClosingEmail] SendGrid error", e.message);
+    }
+    return;
+  }
+  console.log("[sendAdminClosingEmail] No ADMIN_EMAIL/SENDGRID_API_KEY or MAIL_WEBHOOK_URL; skipping. Body:", body.substring(0, 200));
 }
 
 // --- Weekly Leagues (Haftalık Lig): tier, weeklyXp, yükselme/düşme ---
@@ -427,7 +493,7 @@ async function runLeagueAssignmentLogic() {
   const configRef = db.ref("leagues/config");
   await configRef.set({
     groupSize: LEAGUE_GROUP_SIZE,
-    tierNames: LEAGUE_TIER_NAMES,
+    tierNames: LEAGUE_TIERS,
     currentWeekId: weekId,
   });
 
@@ -459,17 +525,6 @@ async function runLeagueAssignmentLogic() {
   console.log(`[runLeagueAssignment] weekId=${weekId}, groups=${groupCount}, users=${entries.length}`);
   return { weekId, groups: groupCount, usersAssigned: entries.length };
 }
-
-/** Manuel tetikleme: Haftalık lig ataması. */
-exports.runLeagueAssignment = functions.https.onRequest(async (req, res) => {
-  try {
-    const result = await runLeagueAssignmentLogic();
-    res.status(200).json({ ok: true, ...result });
-  } catch (e) {
-    console.error("runLeagueAssignment error", e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
 
 /**
  * Haftalık lig sıfırlama: Tüm weeklyXp=0, sonraki hafta için tier bazlı 30’luk gruplar atar.
@@ -598,40 +653,18 @@ async function runWeeklyLeagueResetLogic() {
   return { weekId: nextWeekId, groups: groupCount, usersAssigned: keys.length / 3 };
 }
 
-/** Manuel tetikleme: Haftalık lig sıfırlama. */
-exports.runWeeklyLeagueReset = functions.https.onRequest(async (req, res) => {
-  try {
-    const result = await runWeeklyLeagueResetLogic();
-    res.status(200).json({ ok: true, ...result });
-  } catch (e) {
-    console.error("runWeeklyLeagueReset error", e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
 // Logic fonksiyonları script/manuel çalıştırma için export
 exports.runLockPredictionsLogic = runLockPredictionsLogic;
+exports.runClosePredictionsLogic = runClosePredictionsLogic;
 exports.runOracleResolutionLogic = runOracleResolutionLogic;
-exports.runDistributeWinningsLogic = runDistributeWinningsLogic;
+exports.runDistributeRewardsLogic = runDistributeRewardsLogic;
 exports.runStashDripLogic = runStashDripLogic;
 exports.runLeagueAssignmentLogic = runLeagueAssignmentLogic;
 exports.runWeeklyLeagueResetLogic = runWeeklyLeagueResetLogic;
 
-/** TEST: Manuel – Bitiş tarihi geçen tahminleri kilitler. (Production'da schedule'a çevrilecek.) */
-exports.runLockPredictions = functions.https.onRequest(async (req, res) => {
-  try {
-    const result = await runLockPredictionsLogic();
-    res.status(200).json({ ok: true, ...result });
-  } catch (e) {
-    console.error("runLockPredictions error", e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
 // FeedResult değerleri (lib/helper/constant.dart ile uyumlu)
 const FEED_RESULT_LIKE = 1;  // Evet
 const FEED_RESULT_UNLIKE = 2;  // Hayır
-const STATU_OK = 2;
 
 /**
  * Tahmin sonuçlandırma mantığı.
@@ -729,31 +762,16 @@ async function runOracleResolutionLogic(apiKey, model) {
   };
 }
 
-/** Tahmin sonuçlandırma: oracleApiUrl varsa harici API, yoksa OpenRouter AI. OPENROUTER_API_KEY secret gerekir (AI yolu için). */
-exports.runOracleResolution = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .https.onRequest(async (req, res) => {
-    try {
-      const apiKey = process.env.OPENROUTER_API_KEY || null;
-      const model = process.env.OPENROUTER_MODEL || null;
-      const result = await runOracleResolutionLogic(apiKey, model);
-      res.status(200).json({ ok: true, ...result });
-    } catch (e) {
-      console.error("runOracleResolution error", e);
-      res.status(500).json({ ok: false, error: e.message });
-    }
-  });
-
 const COMMISSION_RATE = 0.05;
 
-// --- Tokenomics: Rütbe ve bahis limitleri (lib/helper/constant.dart ile uyumlu) ---
+// --- Tokenomics: Rütbe ve tahmin limitleri (lib/helper/constant.dart ile uyumlu) ---
 const XP_CAYLAK_MAX = 500;
 const XP_USTA_MIN = 2000;
 const RANK_MULTIPLIER_CAYLAK = 0.10;
 const RANK_MULTIPLIER_TAHMINCI = 0.25;
 const RANK_MULTIPLIER_USTA = 0.50;
 const POOL_THRESHOLD = 1000;
-const MAX_BET_SMALL_POOL = 100;
+const MAX_PREDICTION_SMALL_POOL = 100;
 const DAILY_BONUS_AMOUNT = 500;
 const STASH_PAYOUT_RATIO = 0.3;  // Kazancin %30'u stash'e
 const STREAK_MIN = 3;           // 3+ ardışık galibiyette bonus
@@ -775,9 +793,9 @@ function getRankMultiplier(xp) {
 
 /**
  * Dağıtım mantığı: Sonuçlanmış (statu=Ok, feedResult set) ama dağıtım yapılmamış tahminler için
- * Pari-Mutuel kazanç dağıtımı.
+ * topluluk ödül dağıtımı.
  */
-async function runDistributeWinningsLogic() {
+async function runDistributeRewardsLogic() {
   const db = getDb();
   const toldyaRef = db.ref("toldya");
   const profileRef = db.ref("profile");
@@ -807,16 +825,16 @@ async function runDistributeWinningsLogic() {
     for (const el of winningList) {
       const userPeg = el.pegCount || 0;
       if (userPeg <= 0) continue;
-      const payout = Math.round((userPeg / winningTotal) * distributablePool);
+      const rewardAmount = Math.round((userPeg / winningTotal) * distributablePool);
       const userSnap = await profileRef.child(el.userId || "").once("value");
       if (userSnap.val()) {
         const user = userSnap.val();
         const currentStreak = user.currentStreak != null ? user.currentStreak : 0;
         const newStreak = currentStreak + 1;
         const multiplier = newStreak >= STREAK_MIN ? STREAK_MULTIPLIER : 1.0;
-        const multipliedPayout = Math.round(payout * multiplier);
-        const toSpendable = Math.round(multipliedPayout * (1 - STASH_PAYOUT_RATIO));
-        const toStash = multipliedPayout - toSpendable;
+        const multipliedReward = Math.round(rewardAmount * multiplier);
+        const toSpendable = Math.round(multipliedReward * (1 - STASH_PAYOUT_RATIO));
+        const toStash = multipliedReward - toSpendable;
         const newPeg = (user.pegCount || 0) + toSpendable;
         const newStash = (user.stashCount || 0) + toStash;
         profileUpdates[`profile/${el.userId}/pegCount`] = newPeg;
@@ -843,27 +861,16 @@ async function runDistributeWinningsLogic() {
     if (Object.keys(profileUpdates).length > 0) {
       profileUpdates[`toldya/${key}/distributionDone`] = true;
       await getDb().ref().update(profileUpdates);
-      console.log(`Distributed winnings for tweet ${key}`);
+      console.log(`Distributed rewards for tweet ${key}`);
       distributed++;
     }
   }
   return { distributed };
 }
 
-/** TEST: Manuel – Kazanç dağıtımı. (Production'da schedule'a çevrilecek.) */
-exports.runDistributeWinnings = functions.https.onRequest(async (req, res) => {
-  try {
-    const result = await runDistributeWinningsLogic();
-    res.status(200).json({ ok: true, ...result });
-  } catch (e) {
-    console.error("runDistributeWinnings error", e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-// --- Callable: placeBet – Bahis tek noktadan, limit ve bakiye kontrolü ---
+// --- Callable: submitPrediction – Tahmin tek noktadan, limit ve bakiye kontrolü ---
 // enforceAppCheck: false → App Check zorunluluğu kapalı (cihaz/GMS hatası geçene kadar)
-exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+const submitPredictionHandler = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
   try {
     if (!context.auth) {
       throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
@@ -875,7 +882,7 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     const amount = typeof data?.amount === "number" ? Math.floor(data.amount) : parseInt(data?.amount, 10);
 
     if (!toldyaId || (side !== FEED_RESULT_LIKE && side !== FEED_RESULT_UNLIKE) || !Number.isInteger(amount) || amount <= 0) {
-      throw new functions.https.HttpsError("invalid-argument", "Geçersiz bahis miktarı veya parametre.");
+      throw new functions.https.HttpsError("invalid-argument", "Geçersiz tahmin miktarı veya parametre.");
     }
 
     const tweetSnap = await getDb().ref(`toldya/${toldyaId}`).once("value");
@@ -884,10 +891,10 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
       throw new functions.https.HttpsError("not-found", "Tahmin bulunamadı.");
     }
     if (tweet.statu !== STATU_LIVE) {
-      throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık bahis kapatıldı.");
+      throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık tahmin kapatıldı.");
     }
 
-    // Bir tahminde kullanıcı yalnızca tek tarafa (Evet veya Hayır) bahis yapabilir
+    // Bir tahminde kullanıcı yalnızca tek tarafa (Evet veya Hayır) tahmin yapabilir
     const likeList = Array.isArray(tweet.likeList) ? tweet.likeList : [];
     const unlikeList = Array.isArray(tweet.unlikeList) ? tweet.unlikeList : [];
     const inLike = likeList.some((e) => (e && (e.userId || e)) === userId);
@@ -895,13 +902,13 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     if (side === FEED_RESULT_LIKE && inUnlike) {
       throw new functions.https.HttpsError(
         "failed-precondition",
-        "Bu tahminde zaten Hayır tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
+        "Bu tahminde zaten Hayır tarafını seçtiniz. Bir tahminde yalnızca tek taraf seçebilirsiniz."
       );
     }
     if (side === FEED_RESULT_UNLIKE && inLike) {
       throw new functions.https.HttpsError(
         "failed-precondition",
-        "Bu tahminde zaten Evet tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
+        "Bu tahminde zaten Evet tarafını seçtiniz. Bir tahminde yalnızca tek taraf seçebilirsiniz."
       );
     }
 
@@ -914,13 +921,13 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     const spendableBalance = profile.pegCount || 0;
     const xp = profile.xp || 0;
     const rankMultiplier = getRankMultiplier(xp);
-    const maxBetByRank = Math.floor(spendableBalance * rankMultiplier);
+    const maxPredictionByRank = Math.floor(spendableBalance * rankMultiplier);
 
-    if (amount > maxBetByRank) {
+    if (amount > maxPredictionByRank) {
       const pct = Math.round(rankMultiplier * 100);
       throw new functions.https.HttpsError(
         "resource-exhausted",
-        `En fazla bakiyenizin %${pct}'ini yatırabilirsiniz.`
+        `En fazla bakiyenizin %${pct}'ini kullanabilirsiniz.`
       );
     }
     if (amount > spendableBalance) {
@@ -928,11 +935,11 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     }
 
     const totalPool = sumOfVote(tweet.likeList) + sumOfVote(tweet.unlikeList);
-    const maxBetForPool = totalPool < POOL_THRESHOLD ? MAX_BET_SMALL_POOL : Number.MAX_SAFE_INTEGER;
-    if (amount > maxBetForPool) {
+    const maxPredictionForPool = totalPool < POOL_THRESHOLD ? MAX_PREDICTION_SMALL_POOL : Number.MAX_SAFE_INTEGER;
+    if (amount > maxPredictionForPool) {
       throw new functions.https.HttpsError(
         "resource-exhausted",
-        `Havuz henüz küçük, maksimum ${MAX_BET_SMALL_POOL} token yatırılabilir.`
+        `Havuz henüz küçük, maksimum ${MAX_PREDICTION_SMALL_POOL} token kullanılabilir.`
       );
     }
 
@@ -959,7 +966,7 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
     if (listKey === "likeList") updates[`toldya/${toldyaId}/likeCount`] = likeCount;
     else updates[`toldya/${toldyaId}/unlikeCount`] = unlikeCount;
 
-    // Bildirim: sadece başkası bahis yaptığında yaz (sahip kendi tahminine bahis yapınca bildirim gitmesin)
+    // Bildirim: sadece başkası tahmin yaptığında yaz (sahip kendi tahminine tahmin yapınca bildirim gitmesin)
     if (userId !== notifUserId) {
       updates[`notification/${notifUserId}/${toldyaId}`] = {
         type: side === FEED_RESULT_LIKE ? "NotificationType.Like" : "NotificationType.UnLike",
@@ -979,13 +986,53 @@ exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(as
       ok: true,
       newBalance,
       newStashBalance,
-      message: "Bahis kabul edildi.",
+      message: "Tahmin kabul edildi.",
     };
   } catch (err) {
     if (err instanceof functions.https.HttpsError) throw err;
-    console.error("placeBet error:", err);
-    throw new functions.https.HttpsError("internal", err.message || "Bahis işlenirken hata oluştu.");
+    console.error("submitPrediction error:", err);
+    throw new functions.https.HttpsError("internal", err.message || "Tahmin işlenirken hata oluştu.");
   }
+});
+exports.submitPrediction = submitPredictionHandler;
+
+// --- Callable: setToldyaResult – V1 Admin manuel sonuç (EVET/HAYIR). Sadece ADMIN_UID ile çağrılabilir. ---
+exports.setToldyaResult = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
+  }
+  const adminUid = process.env.ADMIN_UID || (functions.config().admin && functions.config().admin.uid);
+  if (adminUid && context.auth.uid !== adminUid) {
+    throw new functions.https.HttpsError("permission-denied", "Sadece admin sonuç girebilir.");
+  }
+  const rawToldyaId = data?.toldyaId;
+  const toldyaId = safeString(String(rawToldyaId || "")).trim();
+  const result = data?.result;
+  if (!toldyaId || (result !== FEED_RESULT_LIKE && result !== FEED_RESULT_UNLIKE)) {
+    throw new functions.https.HttpsError("invalid-argument", "Geçersiz toldyaId veya result (1=EVET, 2=HAYIR).");
+  }
+
+  const tweetSnap = await getDb().ref(`toldya/${toldyaId}`).once("value");
+  const tweet = tweetSnap.val();
+  if (!tweet || tweet.parentkey) {
+    throw new functions.https.HttpsError("not-found", "Tahmin bulunamadı.");
+  }
+  if (tweet.statu !== STATU_PENDING_RESULT && tweet.statu !== STATU_LOCKED) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Bu tahmin henüz sonuç bekliyor durumunda değil (statu 1 veya 5 olmalı)."
+    );
+  }
+  if (tweet.feedResult != null) {
+    throw new functions.https.HttpsError("failed-precondition", "Bu tahminin sonucu zaten girilmiş.");
+  }
+
+  await getDb().ref().update({
+    [`toldya/${toldyaId}/feedResult`]: result,
+    [`toldya/${toldyaId}/statu`]: STATU_OK,
+  });
+  console.log(`[setToldyaResult] toldyaId=${toldyaId} result=${result === FEED_RESULT_LIKE ? "EVET" : "HAYIR"}`);
+  return { ok: true, toldyaId, result: result === FEED_RESULT_LIKE ? "EVET" : "HAYIR" };
 });
 
 // --- Callable: voteReply – Yorum oylama (Katılıyorum / Katılmıyorum), sadece reply için ---
@@ -1163,105 +1210,3 @@ async function runStashDripLogic() {
 
   return { dripped: processedCount };
 }
-
-/**
- * MANUEL TETİKLEME: Stash sızdırma işlemini çalıştırır.
- * 
- * KULLANIM:
- * - HTTP GET veya POST ile çağrılır.
- * - URL: https://[region]-[project].cloudfunctions.net/runStashDrip
- * - Yanıt: { "ok": true, "dripped": 5 } (5 kullanıcıya token aktarıldı)
- * 
- * NOT: Bu fonksiyon sadece manuel tetikleme için tasarlanmıştır.
- * Otomatik zamanlanmış çalışma için production'da schedule eklenebilir.
- */
-exports.runStashDrip = functions.https.onRequest(async (req, res) => {
-  try {
-    const result = await runStashDripLogic();
-    res.status(200).json({ ok: true, ...result });
-  } catch (e) {
-    console.error("runStashDrip error", e);
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-// --- Zamanlanmış: Her 10 dakikada bir çalışan sürümler ---
-exports.scheduledAiModeration = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .pubsub.schedule(SCHEDULE_CRON)
-  .onRun(async () => {
-    try {
-      const apiKey = process.env.OPENROUTER_API_KEY;
-      const result = await runAiModerationLogic(apiKey);
-      console.log("[scheduledAiModeration] done", result);
-    } catch (e) {
-      console.error("[scheduledAiModeration] error", e);
-    }
-  });
-
-exports.scheduledLockPredictions = functions.pubsub
-  .schedule(SCHEDULE_CRON)
-  .onRun(async () => {
-    try {
-      const result = await runLockPredictionsLogic();
-      console.log("[scheduledLockPredictions] done", result);
-    } catch (e) {
-      console.error("[scheduledLockPredictions] error", e);
-    }
-  });
-
-exports.scheduledOracleResolution = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .pubsub.schedule(SCHEDULE_CRON)
-  .onRun(async () => {
-    try {
-      const apiKey = process.env.OPENROUTER_API_KEY || null;
-      const model = process.env.OPENROUTER_MODEL || null;
-      const result = await runOracleResolutionLogic(apiKey, model);
-      console.log("[scheduledOracleResolution] done", result);
-    } catch (e) {
-      console.error("[scheduledOracleResolution] error", e);
-    }
-  });
-
-exports.scheduledDistributeWinnings = functions.pubsub
-  .schedule(SCHEDULE_CRON)
-  .onRun(async () => {
-    try {
-      const result = await runDistributeWinningsLogic();
-      console.log("[scheduledDistributeWinnings] done", result);
-    } catch (e) {
-      console.error("[scheduledDistributeWinnings] error", e);
-    }
-  });
-
-exports.scheduledStashDrip = functions.pubsub
-  .schedule(SCHEDULE_CRON)
-  .onRun(async () => {
-    try {
-      const result = await runStashDripLogic();
-      console.log("[scheduledStashDrip] done", result);
-    } catch (e) {
-      console.error("[scheduledStashDrip] error", e);
-    }
-  });
-
-/** Pazar 23:59 UTC: Haftalık lig sıfırlama (weeklyXp=0, sonraki hafta grupları atanır). */
-const WEEKLY_LEAGUE_CRON = "59 23 * * 0";
-exports.scheduledWeeklyLeagueReset = functions.pubsub
-  .schedule(WEEKLY_LEAGUE_CRON)
-  .onRun(async () => {
-    try {
-      const result = await runWeeklyLeagueResetLogic();
-      console.log("[scheduledWeeklyLeagueReset] done", result);
-    } catch (e) {
-      console.error("[scheduledWeeklyLeagueReset] error", e);
-    }
-  });
-
-// --- FCM Bildirim (Realtime Database Triggers) - notifications.js ---
-const notifications = require("./notifications");
-exports.onPredictionResolved = notifications.onPredictionResolved;
-exports.onBetCreated = notifications.onBetCreated;
-exports.onToldyaCreated = notifications.onToldyaCreated;
-exports.onFollowerCreated = notifications.onFollowerCreated;

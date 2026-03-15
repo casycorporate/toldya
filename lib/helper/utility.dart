@@ -46,20 +46,25 @@ int sumOfVote(List<UserPegModel> list){
 
 }
 
-/// Bahisler kapanış tarihinde veya statu kapalıysa true
-bool isBettingClosed(int? statu, String? endDate) {
+/// Tahminler kapanış tarihinde veya statu kapalıysa true.
+/// V1: Kapanışa 10 dakika kala da true (yeni seçim alınmaz).
+bool arePredictionsClosed(int? statu, String? endDate) {
   if (statu != null && statu != 0) return true; // Statu.statusLive = 0
   if (endDate == null || endDate.isEmpty) return false;
   try {
-    return DateTime.now().toUtc().isAfter(DateTime.parse(endDate).toUtc());
+    final close = DateTime.parse(endDate).toUtc();
+    final now = DateTime.now().toUtc();
+    const lockMinutes = 10;
+    final lockAt = close.subtract(const Duration(minutes: lockMinutes));
+    return now.isAfter(lockAt) || now.isAfter(close);
   } catch (_) {
     return false;
   }
 }
 
-/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten bahis yaptıysa true.
-/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek bahis kuralı ihlali.
-bool userAlreadyBetOnOtherSide(FeedModel model, String? userId, int commentFlag) {
+/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten tahmin yaptıysa true.
+/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek tahmin kuralı ihlali.
+bool userAlreadyPredictedOtherSide(FeedModel model, String? userId, int commentFlag) {
   if (userId == null || userId.isEmpty) return false;
   if (commentFlag == 0) return (model.unlikeList ?? []).any((e) => e.userId == userId);
   return (model.likeList ?? []).any((e) => e.userId == userId);
@@ -79,13 +84,13 @@ String getStatuLabel(int? statu) {
   if (statu == null) return '';
   switch (statu) {
     case 0: return 'Yayında';
-    case 1: return 'Beklemede';
-    case 2: return 'Onaylanan';
+    case 1: return 'Sonuç bekleniyor';
+    case 2: return 'Sonuçlandı';
     case 3: return 'Reddedilen';
     case 4: return 'Tamamlanan';
     case 5: return 'Kilitli';
     case 6: return 'İncelemede';
-    case 7: return 'AI reddi';
+    case 7: return 'Reddedildi';
     default: return 'Durum $statu';
   }
 }

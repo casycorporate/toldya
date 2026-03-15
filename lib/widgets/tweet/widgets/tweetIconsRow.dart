@@ -50,17 +50,9 @@ class ToldyaIconsRow extends StatelessWidget {
       final percent = sumOfVote(model.likeList ?? []) / total;
       return percent.isNaN ? 0.5 : percent;
     }
-    final closed = isBettingClosed(model.statu, model.endDate);
-    final evetColor = model.feedResult == FeedResult.feedResultlike
-        ? Color(0xFF2E7D32)
-        : (model.likeList ?? []).any((e) => e.userId == authState.userId)
-            ? Color(0xFF4CAF50)
-            : Color(0xFF81C784);
-    final hayirColor = model.feedResult == FeedResult.feedResultunLike
-        ? Color(0xFFC62828)
-        : (model.unlikeList ?? []).any((e) => e.userId == authState.userId)
-            ? Color(0xFFE53935)
-            : Color(0xFFE57373);
+    final closed = arePredictionsClosed(model.statu, model.endDate);
+    final evetColor = ToldyaDesign.yes;
+    final hayirColor = ToldyaDesign.no;
     return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -88,7 +80,7 @@ class ToldyaIconsRow extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              backgroundColor: hayirColor.withOpacity(0.25),
+              backgroundColor: ToldyaDesign.progressNo,
               progressColor: evetColor,
             ),
           ),
@@ -122,7 +114,7 @@ class ToldyaIconsRow extends StatelessWidget {
   }
 
   void _onVotePressed(BuildContext context, AuthState authState, int commentFlag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -136,11 +128,11 @@ class ToldyaIconsRow extends StatelessWidget {
       ));
       return;
     }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          AppLocalizations.of(context)!.betOnOneSideOnly,
+          AppLocalizations.of(context)!.predictionOneSideOnly,
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white),
         ),

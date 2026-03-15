@@ -19,7 +19,6 @@ import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
-import 'package:toldya/widgets/reply_vote_buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -44,15 +43,8 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
     return Toldya(
       model: model,
       type: ToldyaType.Reply,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ReplyVoteButtons(postId: postId, model: model),
-          SizedBox(width: 4),
-          ToldyaBottomSheet().toldyaOptionIcon(context,
-              scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
-        ],
-      ),
+      trailing: ToldyaBottomSheet().toldyaOptionIcon(context,
+          scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
     );
   }
 
@@ -201,7 +193,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
   }
 }
 
-/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, bahis, son bahisler.
+/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, tahmin, son tahminler.
 class _PredictionDetailBody extends StatelessWidget {
   final FeedModel model;
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -215,12 +207,12 @@ class _PredictionDetailBody extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
-    final evetColor = AppNeon.green;
-    final hayirColor = AppNeon.red;
+    final closed = arePredictionsClosed(model.statu, model.endDate);
+    final evetColor = ToldyaDesign.yes;
+    final hayirColor = ToldyaDesign.no;
     final balance = authState.userModel?.pegCount ?? 0;
     final xp = authState.userModel?.xp ?? 0;
-    final maxBet = [balance, Tokenomics.maxBetByRank(balance, xp), Tokenomics.maxBetByPool(total)].reduce((a, b) => a < b ? a : b);
+    final maxPoints = [balance, Tokenomics.maxPredictionByRank(balance, xp), Tokenomics.maxPredictionByPool(total)].reduce((a, b) => a < b ? a : b);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
     final authorUserId = model.userId ?? model.user?.userId ?? '';
@@ -240,9 +232,9 @@ class _PredictionDetailBody extends StatelessWidget {
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 23,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: ToldyaDesign.textPrimary,
               ),
-              urlStyle: TextStyle(fontSize: 23, color: AppNeon.cyan, fontWeight: FontWeight.w700),
+              urlStyle: TextStyle(fontSize: 23, color: ToldyaDesign.yes, fontWeight: FontWeight.w700),
             ),
           SizedBox(height: 16),
           // 2. Kullanıcı & bilgi satırı: güncel profil (getuserDetail) + formatHandle
@@ -335,46 +327,51 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 6),
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(ToldyaDesign.progressBarRadius),
             child: SizedBox(
-              height: 14,
+              height: ToldyaDesign.progressBarHeight,
               child: LinearProgressIndicator(
                 value: percent,
-                backgroundColor: hayirColor,
-                valueColor: AlwaysStoppedAnimation<Color>(evetColor),
-                minHeight: 14,
+                backgroundColor: ToldyaDesign.progressNo,
+                valueColor: AlwaysStoppedAnimation<Color>(ToldyaDesign.progressYes),
+                minHeight: ToldyaDesign.progressBarHeight,
               ),
             ),
           ),
           SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)!.maxBetTokens(maxBet.toString()),
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+            AppLocalizations.of(context)!.maxPredictionTokens(maxPoints.toString()),
+            style: TextStyle(fontSize: 12, color: ToldyaDesign.textSecondary),
           ),
           SizedBox(height: 16),
-          // 4. Ana eylem butonları: Evet / Hayır, 56px, stadium, tam renk (bounce + haptic)
           Row(
             children: [
               Expanded(
                 child: AnimatedBounceButton(
                   enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
                   child: Material(
-                    color: evetColor,
-                    borderRadius: BorderRadius.circular(28),
+                    color: ToldyaDesign.yes,
+                    borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
                     child: InkWell(
                       onTap: () {
                         HapticFeedback.mediumImpact();
-                        _openBet(context, authState, 0);
+                        _openPredictionSheet(context, authState, 0);
                       },
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
                       child: Container(
-                        height: 56,
+                        height: ToldyaDesign.buttonHeight,
                         alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+                          boxShadow: ToldyaDesign.yesButtonShadow,
+                        ),
                         child: Text(
-                          AppLocalizations.of(context)!.betYesLabel,
+                          AppLocalizations.of(context)!.predictYesLabel,
                           style: TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
                         ),
@@ -388,22 +385,26 @@ class _PredictionDetailBody extends StatelessWidget {
                 child: AnimatedBounceButton(
                   enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
                   child: Material(
-                    color: hayirColor,
-                    borderRadius: BorderRadius.circular(28),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
                     child: InkWell(
                       onTap: () {
                         HapticFeedback.mediumImpact();
-                        _openBet(context, authState, 1);
+                        _openPredictionSheet(context, authState, 1);
                       },
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
                       child: Container(
-                        height: 56,
+                        height: ToldyaDesign.buttonHeight,
                         alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(ToldyaDesign.buttonRadius),
+                          border: Border.all(color: ToldyaDesign.no, width: 2),
+                        ),
                         child: Text(
-                          AppLocalizations.of(context)!.betNoLabel,
+                          AppLocalizations.of(context)!.predictNoLabel,
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                            color: ToldyaDesign.no,
+                            fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
                         ),
@@ -415,13 +416,13 @@ class _PredictionDetailBody extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24),
-          // 5. Son Bahisler başlığı
+          // 5. Son Tahminler başlığı
           Text(
-            AppLocalizations.of(context)!.recentBetsTitle,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+            AppLocalizations.of(context)!.recentPredictionsTitle,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ToldyaDesign.textPrimary),
           ),
           SizedBox(height: 12),
-          _RecentBetsList(
+          _RecentPredictionsList(
             likeList: model.likeList ?? [],
             unlikeList: model.unlikeList ?? [],
             emptyCta: closed || balance == 0 ? null : () {
@@ -439,8 +440,8 @@ class _PredictionDetailBody extends StatelessWidget {
     );
   }
 
-  void _openBet(BuildContext context, AuthState authState, int flag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
+  void _openPredictionSheet(BuildContext context, AuthState authState, int flag) {
+    final closed = arePredictionsClosed(model.statu, model.endDate);
     if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -456,12 +457,12 @@ class _PredictionDetailBody extends StatelessWidget {
       return;
     }
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+    if (userAlreadyPredictedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
-            AppLocalizations.of(context)!.betOnOneSideOnly,
+            AppLocalizations.of(context)!.predictionOneSideOnly,
             style: TextStyle(color: Colors.white),
           ),
           duration: Duration(seconds: 4),
@@ -480,18 +481,18 @@ class _PredictionDetailBody extends StatelessWidget {
   }
 }
 
-class _RecentBetsList extends StatelessWidget {
+class _RecentPredictionsList extends StatelessWidget {
   final List<UserPegModel> likeList;
   final List<UserPegModel> unlikeList;
   final VoidCallback? emptyCta;
 
-  const _RecentBetsList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
+  const _RecentPredictionsList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final combined = <_BetEntry>[
-      ...likeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
-      ...unlikeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
+    final combined = <_PredictionEntry>[
+      ...likeList.map((e) => _PredictionEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
+      ...unlikeList.map((e) => _PredictionEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
     ];
     combined.sort((a, b) => b.pegCount.compareTo(a.pegCount));
     final top = combined.take(10).toList();
@@ -507,13 +508,13 @@ class _RecentBetsList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              AppLocalizations.of(context)!.noBetsYet,
+              AppLocalizations.of(context)!.noPredictionsYet,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 4),
             Text(
-              AppLocalizations.of(context)!.noBetsYetHint,
+              AppLocalizations.of(context)!.noPredictionsYetHint,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               textAlign: TextAlign.center,
             ),
@@ -540,7 +541,7 @@ class _RecentBetsList extends StatelessWidget {
               final user = snapshot.data;
               final name = user?.displayName ?? user?.userName ?? e.userId;
               final displayName = name.length > 1 ? name : AppLocalizations.of(context)!.user;
-              final tokenColor = e.isYes ? AppNeon.green : AppNeon.red;
+              final tokenColor = e.isYes ? ToldyaDesign.yes : ToldyaDesign.no;
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
@@ -592,9 +593,9 @@ class _RecentBetsList extends StatelessWidget {
   }
 }
 
-class _BetEntry {
+class _PredictionEntry {
   final String userId;
   final int pegCount;
   final bool isYes;
-  _BetEntry({required this.userId, required this.pegCount, required this.isYes});
+  _PredictionEntry({required this.userId, required this.pegCount, required this.isYes});
 }

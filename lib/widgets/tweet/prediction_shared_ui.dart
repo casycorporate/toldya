@@ -5,14 +5,14 @@ import 'package:toldya/helper/utility.dart';
 /// Ana sayfa ve tahmin detayda ortak: EVET/HAYIR bar + donut tooltip
 class YesNoProgressWithTooltip extends StatelessWidget {
   final double yesPercent;
-  final int totalStaked;
+  final int totalPoints;
   final Color yesColor;
   final Color noColor;
 
   const YesNoProgressWithTooltip({
     Key? key,
     required this.yesPercent,
-    required this.totalStaked,
+    required this.totalPoints,
     required this.yesColor,
     required this.noColor,
   }) : super(key: key);
@@ -21,7 +21,7 @@ class YesNoProgressWithTooltip extends StatelessWidget {
   Widget build(BuildContext context) {
     final yes = (yesPercent * 100).round().clamp(0, 100);
     final no = 100 - yes;
-    const barHeight = 26.0;
+    const barHeight = 6.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -50,19 +50,8 @@ class YesNoProgressWithTooltip extends StatelessWidget {
         ),
         SizedBox(height: 6),
         Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(barHeight / 2),
-            boxShadow: [
-              BoxShadow(
-                color: yesColor.withOpacity(0.3),
-                blurRadius: 8,
-                spreadRadius: 0,
-                offset: Offset(0, 0),
-              ),
-            ],
-          ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(barHeight / 2),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
               height: barHeight,
               child: Row(
@@ -83,7 +72,7 @@ class YesNoProgressWithTooltip extends StatelessWidget {
         SizedBox(height: 3),
         _TooltipInfo(
           yesPercent: yesPercent,
-          totalStaked: totalStaked,
+          totalPoints: totalPoints,
           yesColor: yesColor,
           noColor: noColor,
         ),
@@ -94,14 +83,14 @@ class YesNoProgressWithTooltip extends StatelessWidget {
 
 class _TooltipInfo extends StatelessWidget {
   final double yesPercent;
-  final int totalStaked;
+  final int totalPoints;
   final Color yesColor;
   final Color noColor;
 
   const _TooltipInfo({
     Key? key,
     required this.yesPercent,
-    required this.totalStaked,
+    required this.totalPoints,
     required this.yesColor,
     required this.noColor,
   }) : super(key: key);
@@ -165,7 +154,7 @@ class _TooltipInfo extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                '${k_m_b_generator(totalStaked)} Token bahis',
+                '${k_m_b_generator(totalPoints)} Token participation',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,
@@ -272,8 +261,7 @@ class CountdownWithCircle extends StatelessWidget {
     required this.progress,
   }) : super(key: key);
 
-  static const Color _countdownRed = Color(0xFFE53935);
-  static const Color _countdownGlow = Color(0xFFFF1744);
+  static const Color _countdownColor = Color(0xFF9CA3AF);
 
   @override
   Widget build(BuildContext context) {
@@ -287,8 +275,8 @@ class CountdownWithCircle extends StatelessWidget {
           child: CustomPaint(
             painter: _CountdownRingPainter(
               progress: progress,
-              color: _countdownRed,
-              glowColor: _countdownGlow,
+              color: _countdownColor,
+              glowColor: _countdownColor,
             ),
           ),
         ),
@@ -296,22 +284,9 @@ class CountdownWithCircle extends StatelessWidget {
         Text(
           countdownText,
           style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: _countdownRed,
-            letterSpacing: 0.8,
-            shadows: [
-              Shadow(
-                color: _countdownGlow.withOpacity(0.8),
-                blurRadius: 8,
-                offset: Offset(0, 0),
-              ),
-              Shadow(
-                color: _countdownGlow.withOpacity(0.4),
-                blurRadius: 14,
-                offset: Offset(0, 0),
-              ),
-            ],
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: _countdownColor,
           ),
         ),
       ],

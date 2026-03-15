@@ -22,7 +22,7 @@ if (!process.env.DATABASE_URL) {
 const {
   runLockPredictionsLogic,
   runOracleResolutionLogic,
-  runDistributeWinningsLogic,
+  runDistributeRewardsLogic,
   runStashDripLogic,
 } = require("./index");
 
@@ -44,10 +44,10 @@ async function main() {
   }
 
   try {
-    const distResult = await runDistributeWinningsLogic();
-    console.log("3. runDistributeWinningsLogic:", distResult);
+    const distResult = await runDistributeRewardsLogic();
+    console.log("3. runDistributeRewardsLogic:", distResult);
   } catch (e) {
-    console.error("runDistributeWinningsLogic hata:", e.message);
+    console.error("runDistributeRewardsLogic hata:", e.message);
   }
 
   try {

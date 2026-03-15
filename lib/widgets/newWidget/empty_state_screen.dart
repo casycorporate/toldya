@@ -62,7 +62,7 @@ class EmptyStateContent extends StatelessWidget {
   }
 }
 
-/// Modern, minimalist empty state for Toldya social betting app.
+/// Modern, minimalist empty state for Toldya social prediction app.
 /// Dark mode, readable, with FAB and BottomAppBar.
 class EmptyStateScreen extends StatelessWidget {
   const EmptyStateScreen({
@@ -84,7 +84,7 @@ class EmptyStateScreen extends StatelessWidget {
   final VoidCallback? onNotificationsPressed;
   final VoidCallback? onProfilePressed;
 
-  static const Color _background = Color(0xFF1C1C1E);
+  static const Color _background = Color(0xFF0B0F14);
 
   @override
   Widget build(BuildContext context) {

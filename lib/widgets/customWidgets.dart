@@ -213,17 +213,45 @@ Widget customProfileImage(
     );
   }
   final isAsset = effectivePath.startsWith('assets/');
+  if (isAsset) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      ),
+      child: CircleAvatar(
+        maxRadius: height / 2,
+        backgroundColor: Theme.of(context).cardColor,
+        backgroundImage: AssetImage(effectivePath),
+      ),
+    );
+  }
+  // Ağ resimleri: 412/403 vb. hatalarda placeholder göster (App Check / token sorunlarında exception engellenir)
+  final placeholderPath = DefaultProfilePics.assetForUser(userId);
   return Container(
+    width: height,
+    height: height,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
       border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
     ),
-    child: CircleAvatar(
-      maxRadius: height / 2,
-      backgroundColor: Theme.of(context).cardColor,
-      backgroundImage: isAsset
-          ? AssetImage(effectivePath)
-          : customAdvanceNetworkImage(effectivePath),
+    child: ClipOval(
+      child: CachedNetworkImage(
+        imageUrl: effectivePath,
+        width: height,
+        height: height,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => Container(
+          color: Theme.of(context).cardColor,
+          child: Icon(Icons.person, size: height * 0.5, color: Colors.grey),
+        ),
+        errorWidget: (_, __, ___) => Image.asset(
+          placeholderPath,
+          width: height,
+          height: height,
+          fit: BoxFit.cover,
+        ),
+      ),
     ),
   );
 }

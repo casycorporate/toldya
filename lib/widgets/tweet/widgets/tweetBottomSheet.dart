@@ -123,48 +123,37 @@ class ToldyaBottomSheet {
     if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
+  /// V1: Admin sonucu setToldyaResult callable ile sunucuya gönderir. Dağıtım sunucuda scheduled ile yapılır.
   Future<void> _sendApproval(BuildContext context, FeedModel model, int statu,
       ConfirmWinner selectedRadio, GlobalKey<ScaffoldState> scaffoldKey) async {
-    var state = Provider.of<FeedState>(context, listen: false);
-    var authState = Provider.of<AuthState>(context, listen: false);
-    model.feedResult = selectedRadio.index;
-    model.statu = statu;
-    if (statu == Statu.statusOk) {
-      await state.distributeWinnings(model, authState);
-      if (ConfirmWinner.Like == selectedRadio) {
-        model.likeList?.forEach((element) {
-          authState.getuserDetail(element.userId ?? '').then((user) {
-            if (user != null) {
-              user.rank = (user.rank ?? 0) + calculateRank(model.likeList ?? [], element.pegCount ?? 0);
-              authState.createUser(user);
-            }
-          });
-        });
-      } else {
-        model.unlikeList?.forEach((element) {
-          authState.getuserDetail(element.userId ?? '').then((user) {
-            if (user != null) {
-              user.rank = (user.rank ?? 0) + calculateRank(model.unlikeList ?? [], element.pegCount ?? 0);
-              authState.createUser(user);
-            }
-          });
-        });
+    if (selectedRadio == ConfirmWinner.None) return;
+    final result = selectedRadio == ConfirmWinner.Like ? 1 : 2;
+    final state = Provider.of<FeedState>(context, listen: false);
+    try {
+      await state.setToldyaResult(model.key!, result);
+      if (context.mounted && Navigator.canPop(context)) Navigator.of(context).pop(context);
+      if (context.mounted) {
+        customSnackBar(
+            scaffoldKey,
+            AppLocalizations.of(context)!.approvalSelectedForPost(
+                selectedRadio == ConfirmWinner.Like
+                    ? AppLocalizations.of(context)!.yes
+                    : AppLocalizations.of(context)!.no));
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (context.mounted) {
+        customSnackBar(scaffoldKey, AppLocalizations.of(context)!.errorGeneric);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? e.code), backgroundColor: Colors.red),
+        );
       }
     }
-    state.updateToldya(model);
-    if (context.mounted && Navigator.canPop(context)) if (Navigator.canPop(context)) Navigator.of(context).pop();
-
-    customSnackBar(
-        scaffoldKey,
-        statu == Statu.statusPending
-            ? AppLocalizations.of(context)!.approvalPendingStatus
-            : AppLocalizations.of(context)!.approvalSelectedForPost(
-                selectedRadio.toString().split('.').last));
   }
 
   bool _shouldShowDispute(FeedModel model, bool isMyToldya, bool isAdmin) {
     if (isMyToldya || isAdmin) return false;
-    return model.statu == Statu.statusPending || model.statu == Statu.statusOk;
+    return (model.statu == Statu.statusPending || model.statu == Statu.statusLocked) &&
+        (model.feedResult == null || model.feedResult == 0);
   }
 
   bool _hasDisputed(FeedModel model, String? userId) {
@@ -780,11 +769,11 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       
       // Miktar kontrolü
       if (_period <= 0) {
-        debugPrint('[HATA] Bahis miktarı 0 veya negatif!');
+        debugPrint('[HATA] Tahmin miktarı 0 veya negatif!');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount),
+              content: Text(AppLocalizations.of(context)!.pleaseSelectPredictionAmount),
               duration: Duration(seconds: 3),
             ),
           );
@@ -793,11 +782,11 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       }
       
       if (_period > maxVal) {
-        debugPrint('[HATA] Bahis miktarı maksimumdan fazla! $_period > $maxVal');
+        debugPrint('[HATA] Tahmin miktarı maksimumdan fazla! $_period > $maxVal');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.maxBetTokens('$maxVal')),
+              content: Text(AppLocalizations.of(context)!.maxPredictionTokens('$maxVal')),
               duration: Duration(seconds: 3),
             ),
           );
@@ -805,14 +794,14 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         return;
       }
 
-      // Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapılabilir
+      // Bir tahminde yalnızca tek tarafa (Evet veya Hayır) tahmin yapılabilir
       final userId = authState.userId;
-      if (userAlreadyBetOnOtherSide(widget.model, userId, widget.commentFlag)) {
+      if (userAlreadyPredictedOtherSide(widget.model, userId, widget.commentFlag)) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context)!.betOnOneSideOnly,
+                AppLocalizations.of(context)!.predictionOneSideOnly,
               ),
               duration: Duration(seconds: 4),
               backgroundColor: Colors.orange.shade800,
@@ -826,18 +815,18 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       setState(() => _isPlacingBet = true);
 
       try {
-        debugPrint('[BAHIS] placeBet çağrılıyor...');
-        await state.placeBet(
+        debugPrint('[TAHMIN] submitPrediction çağrılıyor...');
+        await state.submitPrediction(
           authState,
           widget.model,
           authState.userId ?? '',
           _period,
           widget.commentFlag,
         );
-        debugPrint('[BAHIS] placeBet başarılı!');
+        debugPrint('[TAHMIN] submitPrediction başarılı!');
 
         state.setToldyaToReply = widget.model;
-        debugPrint('[BAHIS] Bildirim gönderiliyor...');
+        debugPrint('[TAHMIN] Bildirim gönderiliyor...');
         authState.getuserDetail(widget.model.userId ?? '').then((user) {
           final ownUser = authState.userModel;
           if (user != null && ownUser != null && context.mounted) {
@@ -845,7 +834,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                 .sendNotificationToFeed(
                     widget.model, user, ownUser, widget.commentFlag, _period)
                 .then((_) {
-                  debugPrint('[BAHIS] Bildirim gönderildi');
+                  debugPrint('[TAHMIN] Bildirim gönderildi');
                 });
           }
         });
@@ -855,18 +844,18 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           Future.delayed(const Duration(milliseconds: 350), () {
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
+              SnackBar(content: Text(AppLocalizations.of(context)!.predictionSubmitted)),
             );
             if (Navigator.canPop(context)) Navigator.pop(context);
           });
         }
       } on PlatformException catch (e) {
         // Native Android hataları PlatformException olarak gelir
-        debugPrint('[BAHIS HATASI] PlatformException');
-        debugPrint('[BAHIS HATASI] code: ${e.code}');
-        debugPrint('[BAHIS HATASI] message: ${e.message}');
-        debugPrint('[BAHIS HATASI] details: ${e.details}');
-        debugPrint('[BAHIS HATASI] stacktrace: ${e.stacktrace}');
+        debugPrint('[TAHMIN HATASI] PlatformException');
+        debugPrint('[TAHMIN HATASI] code: ${e.code}');
+        debugPrint('[TAHMIN HATASI] message: ${e.message}');
+        debugPrint('[TAHMIN HATASI] details: ${e.details}');
+        debugPrint('[TAHMIN HATASI] stacktrace: ${e.stacktrace}');
         if (context.mounted) {
           setState(() => _isPlacingBet = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -879,24 +868,24 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         }
       } on FirebaseFunctionsException catch (e) {
         // Konsol + Logcat'te görünmesi için (Android Studio Run/Debug sekmesi)
-        debugPrint('[BAHIS HATASI] FirebaseFunctionsException');
-        debugPrint('[BAHIS HATASI] code: ${e.code}');
-        debugPrint('[BAHIS HATASI] message: ${e.message}');
-        debugPrint('[BAHIS HATASI] details: ${e.details}');
+        debugPrint('[TAHMIN HATASI] FirebaseFunctionsException');
+        debugPrint('[TAHMIN HATASI] code: ${e.code}');
+        debugPrint('[TAHMIN HATASI] message: ${e.message}');
+        debugPrint('[TAHMIN HATASI] details: ${e.details}');
         if (context.mounted) {
           final l10n = AppLocalizations.of(context)!;
           final code = e.code.toLowerCase().replaceAll('_', '-');
-          String errorMessage = l10n.betErrorGeneric;
+          String errorMessage = l10n.predictionErrorGeneric;
           if (e.code == 'internal' || e.code == 'INTERNAL') {
             errorMessage = l10n.gmsUpdateMessage;
           } else if (e.code == 'unauthenticated') {
             errorMessage = l10n.loginRequired;
           } else if (e.code == 'deadline-exceeded') {
-            errorMessage = l10n.betTimeout;
+            errorMessage = l10n.predictionTimeout;
           } else if (code == 'insufficient-balance' || code.contains('insufficient')) {
             errorMessage = l10n.tokenInsufficient;
-          } else if (code.contains('bet-limit') || code.contains('limit')) {
-            errorMessage = e.message != null && e.message!.isNotEmpty ? e.message! : l10n.betErrorGeneric;
+          } else if (code.contains('limit')) {
+            errorMessage = e.message != null && e.message!.isNotEmpty ? e.message! : l10n.predictionErrorGeneric;
           } else if (e.message != null && e.message!.isNotEmpty) {
             errorMessage = e.message!;
           } else if (e.code.isNotEmpty) {
@@ -912,10 +901,10 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           );
         }
       } catch (e, stackTrace) {
-        debugPrint('[BAHIS HATASI] Genel Exception');
-        debugPrint('[BAHIS HATASI] Type: ${e.runtimeType}');
-        debugPrint('[BAHIS HATASI] Message: $e');
-        debugPrint('[BAHIS HATASI] Stack trace: $stackTrace');
+        debugPrint('[TAHMIN HATASI] Genel Exception');
+        debugPrint('[TAHMIN HATASI] Type: ${e.runtimeType}');
+        debugPrint('[TAHMIN HATASI] Message: $e');
+        debugPrint('[TAHMIN HATASI] Stack trace: $stackTrace');
         if (context.mounted) {
           setState(() => _isPlacingBet = false);
           final msg = e.toString().length > 120
@@ -943,7 +932,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                   HapticFeedback.mediumImpact();
                   if (_period <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount), duration: Duration(seconds: 2)),
+                      SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectPredictionAmount), duration: Duration(seconds: 2)),
                     );
                     return;
                   }
@@ -952,9 +941,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                     builder: (ctx) => AlertDialog(
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Text(AppLocalizations.of(context)!.confirmBet, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
+                      title: Text(AppLocalizations.of(context)!.confirmPrediction, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
                       content: Text(
-                        AppLocalizations.of(context)!.confirmBetMessage('$_period'),
+                        AppLocalizations.of(context)!.confirmPredictionMessage('$_period'),
                         style: TextStyle(color: Color(0xFF616161)),
                       ),
                       actions: [
@@ -989,7 +978,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text(
-                    AppLocalizations.of(context)!.confirmBet,
+                    AppLocalizations.of(context)!.confirmPrediction,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1010,8 +999,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         sumOfVote(widget.model.unlikeList ?? []);
     maxVal = [
       balance,
-      Tokenomics.maxBetByRank(balance, xp),
-      Tokenomics.maxBetByPool(totalPool),
+      Tokenomics.maxPredictionByRank(balance, xp),
+      Tokenomics.maxPredictionByPool(totalPool),
     ].reduce((a, b) => a < b ? a : b);
 
     const presetAmounts = [10, 25, 50, 100];
@@ -1026,7 +1015,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(
-          AppLocalizations.of(context)!.betAmountLabel,
+          AppLocalizations.of(context)!.pointsUsedLabel,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,

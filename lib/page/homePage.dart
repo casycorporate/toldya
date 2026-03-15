@@ -9,7 +9,6 @@ import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/feed/feedPage.dart';
-import 'package:toldya/page/message/chatListPage.dart';
 import 'package:toldya/page/profile/profilePage.dart';
 import 'package:toldya/state/appState.dart';
 import 'package:toldya/state/authState.dart';
@@ -26,8 +25,6 @@ import '../model/PushNotificationModel.dart';
 import '../services/notification_service.dart';
 import 'common/sidebar.dart';
 import 'notification/notificationPage.dart';
-import 'search/SearchPage.dart';
-import 'profile/leaderboard/leaderboardPage.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -193,12 +190,10 @@ class _HomePageState extends State<HomePage> {
         top: true,
         bottom: reserveBottomPadding,
         child: IndexedStack(
-          index: index,
+          index: index.clamp(0, 1),
           children: [
             _getPage(0),
             _getPage(1),
-            _getPage(2),
-            _getPage(3),
           ],
         ),
       ),
@@ -212,19 +207,10 @@ class _HomePageState extends State<HomePage> {
           scaffoldKey: _scaffoldKey,
           refreshIndicatorKey: refreshIndicatorKey,
         );
-        break;
       case 1:
-        return SearchPage(scaffoldKey: _scaffoldKey);
-        break;
-      case 2:
-        return LeaderboardPage();
-        break;
-      case 3:
         return ProfilePage(isTabContent: true, parentScaffoldKey: _scaffoldKey);
-        break;
       default:
-        return FeedPage(scaffoldKey: _scaffoldKey);
-        break;
+        return FeedPage(scaffoldKey: _scaffoldKey, refreshIndicatorKey: refreshIndicatorKey);
     }
   }
 

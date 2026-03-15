@@ -16,7 +16,7 @@ class FeedModel {
   int? commentCount;
   int? retoldyaCount;
   String? createdAt;
-  /// Kapanış zamanı: Bahislerin kabul edilmeyeceği an (lock-in)
+  /// Kapanış zamanı: Tahminlerin kabul edilmeyeceği an (lock-in)
   String? endDate;
   /// Sonuçlanma zamanı: Olayın gerçekleşeceği ve sonucun girileceği an
   String? resolutionDate;
