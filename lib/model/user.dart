@@ -33,6 +33,8 @@ class UserModel {
   /// Ardışık kazanma serisi (3+ iken alev ikonu ve kazanç çarpanı)
   int? currentStreak;
   int? role;
+  /// Admin: sonuç bekleyen tahminleri onaylayabilir; bildirim isAdmin olan herkese gider.
+  bool? isAdmin;
   String? fcmToken;
   List<String>? followersList;
   List<String>? followingList;
@@ -68,7 +70,8 @@ class UserModel {
       this.rank,
       this.predictorScore,
       this.currentStreak,
-      this.role});
+      this.role,
+      this.isAdmin});
 
   UserModel.fromJson(Map<dynamic, dynamic>? map) {
     if (map == null) {
@@ -102,6 +105,7 @@ class UserModel {
     predictorScore = map['predictorScore'];
     currentStreak = map['currentStreak'];
     role = map['role'];
+    isAdmin = map['isAdmin'] == true;
     webSite = map['webSite'];
     fcmToken = map['fcmToken'];
     isVerified = map['isVerified'] ?? false;
@@ -162,7 +166,8 @@ class UserModel {
       'rank': rank,
       'predictorScore': predictorScore ?? 0,
       'currentStreak': currentStreak ?? 0,
-      'role': role
+      'role': role,
+      'isAdmin': isAdmin ?? false
     };
   }
 
@@ -195,7 +200,8 @@ class UserModel {
       List<String>? blackList,
       int? rank,
       int? predictorScore,
-      int? role}) {
+      int? role,
+      bool? isAdmin}) {
     return UserModel(
         email: email ?? this.email,
         bio: bio ?? this.bio,
@@ -226,7 +232,8 @@ class UserModel {
         rank: rank ?? this.rank,
         predictorScore: predictorScore ?? this.predictorScore,
         currentStreak: currentStreak ?? this.currentStreak,
-        role: role ?? this.role);
+        role: role ?? this.role,
+        isAdmin: isAdmin ?? this.isAdmin);
   }
 
   String getLevel() {

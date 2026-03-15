@@ -330,7 +330,7 @@ class _ProfilePageState extends State<ProfilePage>
                               isFollower: isFollower(),
                               isBlackList: isBlackList(),
                               onAvatarTap: () => Navigator.pushNamed(context, '/ProfileImageView'),
-                              onTokenManagement: () => Navigator.of(context).pushNamed('/TokenEarnPage'),
+                              onPointsManagement: () => Navigator.of(context).pushNamed('/PointsEarnPage'),
                             ),
                     ),
               SliverToBoxAdapter(
@@ -406,7 +406,7 @@ class _ProfilePageState extends State<ProfilePage>
     required bool isFollower,
     required bool isBlackList,
     required VoidCallback onAvatarTap,
-    required VoidCallback onTokenManagement,
+    required VoidCallback onPointsManagement,
   }) {
     return Builder(
       builder: (context) {
@@ -517,7 +517,7 @@ class _ProfilePageState extends State<ProfilePage>
                 isMyProfile: isMyProfile,
                 canClaimDailyBonus: canClaimDailyBonus,
                 onClaimDailyBonus: onClaimDailyBonus,
-                onTokenManagement: onTokenManagement,
+                onPointsManagement: onPointsManagement,
               ),
               _ProfileStatsSection(context, user: user, isMyProfile: isMyProfile),
             ],
@@ -640,13 +640,13 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  /// 2. Cüzdan kapsülü: Bakiye + Takipçi | Günlük bonus | Token Yönetimi, Divider(white10)
+  /// 2. Cüzdan kapsülü: Bakiye + Takipçi | Günlük bonus | Puan Yönetimi, Divider(white10)
   Widget _WalletCapsule({
     required UserModel user,
     required bool isMyProfile,
     required bool canClaimDailyBonus,
     required VoidCallback onClaimDailyBonus,
-    required VoidCallback onTokenManagement,
+    required VoidCallback onPointsManagement,
   }) {
     return Center(
       child: Container(
@@ -667,7 +667,7 @@ class _ProfilePageState extends State<ProfilePage>
                     Icon(Icons.monetization_on_rounded, size: 22, color: Color(0xFFFFD700)),
                     SizedBox(width: 10),
                     Text(
-                      AppLocalizations.of(context)!.balanceToken(user.pegCount ?? 0),
+                      AppLocalizations.of(context)!.balancePoints(user.pegCount ?? 0),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
@@ -710,7 +710,7 @@ class _ProfilePageState extends State<ProfilePage>
             if (isMyProfile) ...[
               Divider(height: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
               InkWell(
-                onTap: onTokenManagement,
+                onTap: onPointsManagement,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
@@ -720,7 +720,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Icon(Icons.settings_ethernet, size: 18, color: Theme.of(context).colorScheme.outline),
                       SizedBox(width: 8),
                       Text(
-                        AppLocalizations.of(context)!.tokenManagement,
+                        AppLocalizations.of(context)!.pointsManagement,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline, fontSize: 14),
                       ),
                     ],
@@ -1337,7 +1337,7 @@ class UserNameRowWidget extends StatelessWidget {
                 ),
                 SizedBox(width: 4),
                 Text(
-                  AppLocalizations.of(context)!.tokenLabel,
+                  AppLocalizations.of(context)!.pointsLabel,
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),

@@ -217,8 +217,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'Lütfen kullanılacak puan miktarını seçin!';
 
   @override
-  String maxPredictionTokens(String maxVal) {
-    return 'Maksimum: $maxVal token';
+  String maxPredictionPoints(String maxVal) {
+    return 'Maksimum: $maxVal puan';
   }
 
   @override
@@ -237,7 +237,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String confirmPredictionMessage(String amount) {
-    return 'Bu tahmine $amount token kullanmak istediğinize emin misiniz?';
+    return 'Bu tahmine $amount puan kullanmak istediğinize emin misiniz?';
   }
 
   @override
@@ -282,8 +282,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adsComingSoon => 'Reklam özelliği yakında eklenecek.';
 
   @override
-  String tokensAdded(String amount) {
-    return '+$amount token eklendi!';
+  String pointsAdded(String amount) {
+    return '+$amount puan eklendi!';
   }
 
   @override
@@ -392,7 +392,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get wifiOnly => 'Yalnızca Wi-Fi';
 
   @override
-  String get tokenInsufficient => 'Token yetersiz';
+  String get pointsInsufficient => 'Puan yetersiz';
 
   @override
   String get closedNoSelection => 'Kapandığı için seçim yapılamaz';
@@ -465,8 +465,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tokenInsufficientForVote =>
-      'Token yetersiz olduğu için seçim yapılamaz';
+  String get pointsInsufficientForVote =>
+      'Puan yetersiz olduğu için seçim yapılamaz';
 
   @override
   String get predictionErrorGeneric => 'Tahmin gönderilemedi.';
@@ -569,14 +569,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tokenEarnTitle => 'Token Kazan';
+  String get pointsEarnTitle => 'Puan Kazan';
 
   @override
   String get watchAdTitle => 'Reklam İzle';
 
   @override
-  String tokenEarnFreeSubtitle(String amount) {
-    return '$amount Token ücretsiz';
+  String pointsEarnFreeSubtitle(String amount) {
+    return '$amount puan ücretsiz';
   }
 
   @override
@@ -592,7 +592,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tryAgainTomorrow => 'Yarın tekrar dene';
 
   @override
-  String get tokenPacksTitle => 'Token Paketleri';
+  String get pointsPacksTitle => 'Puan Paketleri';
 
   @override
   String get mostPopular => 'En popüler';
@@ -800,6 +800,24 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get unreadBadgeSubtitle =>
       'Uygulama içinde sizi bekleyen bildirim sayısını rozet olarak gösterin.';
+
+  @override
+  String get adminApprovalsTitle => 'Onaylar';
+
+  @override
+  String get adminTabPending => 'Bekleyenler';
+
+  @override
+  String get adminPendingTitle => 'Sonuç bekleyen tahminler';
+
+  @override
+  String get adminPendingEmpty => 'Sonuç bekleyen tahmin yok.';
+
+  @override
+  String get adminResultYes => 'Evet kazandı';
+
+  @override
+  String get adminResultNo => 'Hayır kazandı';
 
   @override
   String get pushNotificationsTitle => 'Anlık bildirimler';
@@ -1254,17 +1272,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get youAreBlocked => 'Engellendin';
 
   @override
-  String balanceToken(int count) {
-    return 'Bakiye: $count Token';
+  String balancePoints(int count) {
+    return 'Bakiye: $count puan';
   }
 
   @override
   String dailyBonusClaim(int amount) {
-    return 'Günlük bonusu al (+$amount token)';
+    return 'Günlük bonusu al (+$amount puan)';
   }
 
   @override
-  String get tokenManagement => 'Token Yönetimi';
+  String get pointsManagement => 'Puan Yönetimi';
 
   @override
   String get emptyActivePredictions => 'Aktif tahminin yok';
@@ -1351,7 +1369,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get followingCountLabel => 'Takipler';
 
   @override
-  String get tokenLabel => 'Token';
+  String get pointsLabel => 'Puan';
 
   @override
   String get bottomNavHome => 'Ana';

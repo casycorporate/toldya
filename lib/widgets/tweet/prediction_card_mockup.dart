@@ -288,12 +288,12 @@ class PredictionCardMockup extends StatelessWidget {
     final balance = authState.userModel?.pegCount ?? 0;
     final xp = authState.userModel?.xp ?? 0;
     final totalPool = sumOfVote(model.likeList ?? []) + sumOfVote(model.unlikeList ?? []);
-    final maxPoints = [balance, Tokenomics.maxPredictionByRank(balance, xp), Tokenomics.maxPredictionByPool(totalPool)]
+    final maxPoints = [balance, PointsLogic.maxPredictionByRank(balance, xp), PointsLogic.maxPredictionByPool(totalPool)]
         .reduce((a, b) => a < b ? a : b);
     if (maxPoints <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text(l10n.tokenInsufficient),
+        content: Text(l10n.pointsInsufficient),
         backgroundColor: ToldyaDesign.card,
       ));
       return;
@@ -341,7 +341,7 @@ class PredictionCardMockup extends StatelessWidget {
               } on Exception catch (e) {
                 if (context.mounted) {
                   final msg = e.toString().contains('insufficient') || e.toString().contains('INSUFFICIENT')
-                      ? l10n.tokenInsufficient
+                      ? l10n.pointsInsufficient
                       : (e.toString().length > 80 ? '${e.toString().substring(0, 80)}...' : e.toString());
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -423,7 +423,7 @@ class PredictionCardMockup extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          closed ? 'Kapandığı için seçim yapılamaz' : 'Token yetersiz',
+          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.pointsInsufficient,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 2),

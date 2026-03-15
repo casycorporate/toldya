@@ -154,7 +154,7 @@ class _TooltipInfo extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                '${k_m_b_generator(totalPoints)} Token participation',
+                '${k_m_b_generator(totalPoints)} points participation',
                 style: TextStyle(
                   color: ToldyaDesign.textPrimary,
                   fontSize: 11,

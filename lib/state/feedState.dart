@@ -730,6 +730,14 @@ class FeedState extends AppState {
     });
   }
 
+  /// Admin ekranı için sonuç bekleyen tahmin listesi (statu=1, feedResult yok). Sadece admin çağırabilir.
+  Future<List<Map<String, dynamic>>> getPendingResolutionToldyas() async {
+    final result = await FirebaseFunctions.instance.httpsCallable('getPendingResolutionToldyas').call();
+    final data = result.data as Map<String, dynamic>?;
+    final list = data?['list'] as List<dynamic>? ?? [];
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
   /// (Kullanımdışı – kural: tahmin sadece submitPrediction Callable üzerinden.)
   /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm tahmin submitPrediction ile.
   @Deprecated('Use submitPrediction Callable for any prediction. No direct client write to toldya.')

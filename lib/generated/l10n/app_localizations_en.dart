@@ -216,8 +216,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseSelectPredictionAmount => 'Please select points to use!';
 
   @override
-  String maxPredictionTokens(String maxVal) {
-    return 'Maximum: $maxVal tokens';
+  String maxPredictionPoints(String maxVal) {
+    return 'Maximum: $maxVal points';
   }
 
   @override
@@ -236,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String confirmPredictionMessage(String amount) {
-    return 'Are you sure you want to use $amount tokens on this prediction?';
+    return 'Are you sure you want to use $amount points on this prediction?';
   }
 
   @override
@@ -281,8 +281,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adsComingSoon => 'Ads feature coming soon.';
 
   @override
-  String tokensAdded(String amount) {
-    return '+$amount tokens added!';
+  String pointsAdded(String amount) {
+    return '+$amount points added!';
   }
 
   @override
@@ -391,7 +391,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiOnly => 'Wi-Fi only';
 
   @override
-  String get tokenInsufficient => 'Insufficient tokens';
+  String get pointsInsufficient => 'Insufficient points';
 
   @override
   String get closedNoSelection => 'Cannot select because it is closed';
@@ -464,8 +464,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tokenInsufficientForVote =>
-      'Cannot vote due to insufficient tokens';
+  String get pointsInsufficientForVote =>
+      'Cannot vote due to insufficient points';
 
   @override
   String get predictionErrorGeneric => 'Prediction could not be submitted.';
@@ -567,14 +567,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tokenEarnTitle => 'Earn tokens';
+  String get pointsEarnTitle => 'Gain points';
 
   @override
   String get watchAdTitle => 'Watch ad';
 
   @override
-  String tokenEarnFreeSubtitle(String amount) {
-    return '$amount free tokens';
+  String pointsEarnFreeSubtitle(String amount) {
+    return '$amount free points';
   }
 
   @override
@@ -590,7 +590,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryAgainTomorrow => 'Try again tomorrow';
 
   @override
-  String get tokenPacksTitle => 'Token packs';
+  String get pointsPacksTitle => 'Point packs';
 
   @override
   String get mostPopular => 'Most popular';
@@ -797,6 +797,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get unreadBadgeSubtitle =>
       'Display a badge with the number of notifications waiting for you inside the app.';
+
+  @override
+  String get adminApprovalsTitle => 'Approvals';
+
+  @override
+  String get adminTabPending => 'Pending';
+
+  @override
+  String get adminPendingTitle => 'Predictions awaiting result';
+
+  @override
+  String get adminPendingEmpty => 'No predictions awaiting result.';
+
+  @override
+  String get adminResultYes => 'Yes won';
+
+  @override
+  String get adminResultNo => 'No won';
 
   @override
   String get pushNotificationsTitle => 'Push notifications';
@@ -1251,17 +1269,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get youAreBlocked => 'You are blocked';
 
   @override
-  String balanceToken(int count) {
-    return 'Balance: $count tokens';
+  String balancePoints(int count) {
+    return 'Balance: $count points';
   }
 
   @override
   String dailyBonusClaim(int amount) {
-    return 'Claim daily bonus (+$amount tokens)';
+    return 'Claim daily bonus (+$amount points)';
   }
 
   @override
-  String get tokenManagement => 'Token management';
+  String get pointsManagement => 'Points management';
 
   @override
   String get emptyActivePredictions => 'You have no active predictions';
@@ -1348,7 +1366,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get followingCountLabel => 'Following';
 
   @override
-  String get tokenLabel => 'Token';
+  String get pointsLabel => 'Points';
 
   @override
   String get bottomNavHome => 'Home';

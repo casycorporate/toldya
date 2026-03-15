@@ -508,11 +508,11 @@ abstract class AppLocalizations {
   /// **'Lütfen kullanılacak puan miktarını seçin!'**
   String get pleaseSelectPredictionAmount;
 
-  /// No description provided for @maxPredictionTokens.
+  /// No description provided for @maxPredictionPoints.
   ///
   /// In tr, this message translates to:
-  /// **'Maksimum: {maxVal} token'**
-  String maxPredictionTokens(String maxVal);
+  /// **'Maksimum: {maxVal} puan'**
+  String maxPredictionPoints(String maxVal);
 
   /// No description provided for @predictionOneSideOnly.
   ///
@@ -541,7 +541,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmPredictionMessage.
   ///
   /// In tr, this message translates to:
-  /// **'Bu tahmine {amount} token kullanmak istediğinize emin misiniz?'**
+  /// **'Bu tahmine {amount} puan kullanmak istediğinize emin misiniz?'**
   String confirmPredictionMessage(String amount);
 
   /// No description provided for @closesIn.
@@ -622,11 +622,11 @@ abstract class AppLocalizations {
   /// **'Reklam özelliği yakında eklenecek.'**
   String get adsComingSoon;
 
-  /// No description provided for @tokensAdded.
+  /// No description provided for @pointsAdded.
   ///
   /// In tr, this message translates to:
-  /// **'+{amount} token eklendi!'**
-  String tokensAdded(String amount);
+  /// **'+{amount} puan eklendi!'**
+  String pointsAdded(String amount);
 
   /// No description provided for @purchaseComingSoon.
   ///
@@ -838,11 +838,11 @@ abstract class AppLocalizations {
   /// **'Yalnızca Wi-Fi'**
   String get wifiOnly;
 
-  /// No description provided for @tokenInsufficient.
+  /// No description provided for @pointsInsufficient.
   ///
   /// In tr, this message translates to:
-  /// **'Token yetersiz'**
-  String get tokenInsufficient;
+  /// **'Puan yetersiz'**
+  String get pointsInsufficient;
 
   /// No description provided for @closedNoSelection.
   ///
@@ -970,11 +970,11 @@ abstract class AppLocalizations {
   /// **'{days} gün {hours} saat'**
   String leagueCountdown(int days, int hours);
 
-  /// No description provided for @tokenInsufficientForVote.
+  /// No description provided for @pointsInsufficientForVote.
   ///
   /// In tr, this message translates to:
-  /// **'Token yetersiz olduğu için seçim yapılamaz'**
-  String get tokenInsufficientForVote;
+  /// **'Puan yetersiz olduğu için seçim yapılamaz'**
+  String get pointsInsufficientForVote;
 
   /// No description provided for @predictionErrorGeneric.
   ///
@@ -1156,11 +1156,11 @@ abstract class AppLocalizations {
   /// **'{feature} yakında eklenecek.'**
   String featureComingSoon(String feature);
 
-  /// No description provided for @tokenEarnTitle.
+  /// No description provided for @pointsEarnTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Token Kazan'**
-  String get tokenEarnTitle;
+  /// **'Puan Kazan'**
+  String get pointsEarnTitle;
 
   /// No description provided for @watchAdTitle.
   ///
@@ -1168,11 +1168,11 @@ abstract class AppLocalizations {
   /// **'Reklam İzle'**
   String get watchAdTitle;
 
-  /// No description provided for @tokenEarnFreeSubtitle.
+  /// No description provided for @pointsEarnFreeSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'{amount} Token ücretsiz'**
-  String tokenEarnFreeSubtitle(String amount);
+  /// **'{amount} puan ücretsiz'**
+  String pointsEarnFreeSubtitle(String amount);
 
   /// No description provided for @watch.
   ///
@@ -1198,11 +1198,11 @@ abstract class AppLocalizations {
   /// **'Yarın tekrar dene'**
   String get tryAgainTomorrow;
 
-  /// No description provided for @tokenPacksTitle.
+  /// No description provided for @pointsPacksTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Token Paketleri'**
-  String get tokenPacksTitle;
+  /// **'Puan Paketleri'**
+  String get pointsPacksTitle;
 
   /// No description provided for @mostPopular.
   ///
@@ -1587,6 +1587,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Uygulama içinde sizi bekleyen bildirim sayısını rozet olarak gösterin.'**
   String get unreadBadgeSubtitle;
+
+  /// No description provided for @adminApprovalsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylar'**
+  String get adminApprovalsTitle;
+
+  /// No description provided for @adminTabPending.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyenler'**
+  String get adminTabPending;
+
+  /// No description provided for @adminPendingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuç bekleyen tahminler'**
+  String get adminPendingTitle;
+
+  /// No description provided for @adminPendingEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuç bekleyen tahmin yok.'**
+  String get adminPendingEmpty;
+
+  /// No description provided for @adminResultYes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet kazandı'**
+  String get adminResultYes;
+
+  /// No description provided for @adminResultNo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hayır kazandı'**
+  String get adminResultNo;
 
   /// No description provided for @pushNotificationsTitle.
   ///
@@ -2398,23 +2434,23 @@ abstract class AppLocalizations {
   /// **'Engellendin'**
   String get youAreBlocked;
 
-  /// No description provided for @balanceToken.
+  /// No description provided for @balancePoints.
   ///
   /// In tr, this message translates to:
-  /// **'Bakiye: {count} Token'**
-  String balanceToken(int count);
+  /// **'Bakiye: {count} puan'**
+  String balancePoints(int count);
 
   /// No description provided for @dailyBonusClaim.
   ///
   /// In tr, this message translates to:
-  /// **'Günlük bonusu al (+{amount} token)'**
+  /// **'Günlük bonusu al (+{amount} puan)'**
   String dailyBonusClaim(int amount);
 
-  /// No description provided for @tokenManagement.
+  /// No description provided for @pointsManagement.
   ///
   /// In tr, this message translates to:
-  /// **'Token Yönetimi'**
-  String get tokenManagement;
+  /// **'Puan Yönetimi'**
+  String get pointsManagement;
 
   /// No description provided for @emptyActivePredictions.
   ///
@@ -2560,11 +2596,11 @@ abstract class AppLocalizations {
   /// **'Takipler'**
   String get followingCountLabel;
 
-  /// No description provided for @tokenLabel.
+  /// No description provided for @pointsLabel.
   ///
   /// In tr, this message translates to:
-  /// **'Token'**
-  String get tokenLabel;
+  /// **'Puan'**
+  String get pointsLabel;
 
   /// No description provided for @bottomNavHome.
   ///

@@ -35,9 +35,10 @@ import '../page/Auth/signup.dart';
 import '../page/feed/feedPostDetail.dart';
 import '../page/profile/EditProfilePage.dart';
 import '../page/profile/leaderboard/leaderboardPage.dart';
-import '../page/profile/token_earn_page.dart';
+import '../page/profile/points_earn_page.dart';
 import '../page/message/chatScreenPage.dart';
 import '../page/profile/profilePage.dart';
+import '../page/admin/admin_approvals_page.dart';
 import '../widgets/customWidgets.dart';
 
 class Routes{
@@ -118,8 +119,10 @@ class Routes{
       case "FollowingListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowingListPage(),); 
       case "FollowerListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowerListPage(),); 
       case "LeaderboardPage":return CustomRoute<bool>(builder:(BuildContext context)=> LeaderboardPage(),);
-      case "TokenEarnPage":return CustomRoute<bool>(builder:(BuildContext context)=> TokenEarnPage(),); 
+      case "PointsEarnPage":return CustomRoute<bool>(builder:(BuildContext context)=> PointsEarnPage(),); 
       case "VerifyEmailPage":return CustomRoute<bool>(builder:(BuildContext context)=> VerifyEmailPage(),); 
+      case "AdminApprovalsPage":return CustomRoute<bool>(builder:(BuildContext context)=> const AdminApprovalsPage(),);
+      case "AdminPendingPage":return CustomRoute<bool>(builder:(BuildContext context)=> const AdminApprovalsPage(),);
       default:return onUnknownRoute(RouteSettings(name: '/Feature'));
      }
   }

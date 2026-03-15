@@ -242,6 +242,9 @@ class NotificationService {
     final navigator = key!.currentState!;
 
     switch (type) {
+      case 'admin_pending':
+        navigator.pushNamed('/AdminApprovalsPage');
+        break;
       case 'prediction_result':
       case 'challenge':
         if (id.isNotEmpty) {

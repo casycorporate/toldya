@@ -127,7 +127,7 @@ class _PredictionDetailBody extends StatelessWidget {
     final hayirColor = ToldyaDesign.no;
     final balance = authState.userModel?.pegCount ?? 0;
     final xp = authState.userModel?.xp ?? 0;
-    final maxPoints = [balance, Tokenomics.maxPredictionByRank(balance, xp), Tokenomics.maxPredictionByPool(total)].reduce((a, b) => a < b ? a : b);
+    final maxPoints = [balance, PointsLogic.maxPredictionByRank(balance, xp), PointsLogic.maxPredictionByPool(total)].reduce((a, b) => a < b ? a : b);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
     final authorUserId = model.userId ?? model.user?.userId ?? '';
@@ -259,7 +259,7 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)!.maxPredictionTokens(maxPoints.toString()),
+            AppLocalizations.of(context)!.maxPredictionPoints(maxPoints.toString()),
             style: TextStyle(fontSize: 12, color: ToldyaDesign.textSecondary),
           ),
           SizedBox(height: 24),

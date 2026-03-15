@@ -121,7 +121,7 @@ class ToldyaIconsRow extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficientForVote,
+          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.pointsInsufficientForVote,
           textAlign: TextAlign.center,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),

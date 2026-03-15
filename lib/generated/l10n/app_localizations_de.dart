@@ -220,8 +220,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pleaseSelectPredictionAmount => 'Bitte wähle die Punkteanzahl!';
 
   @override
-  String maxPredictionTokens(String maxVal) {
-    return 'Maximal: $maxVal Token';
+  String maxPredictionPoints(String maxVal) {
+    return 'Maximal: $maxVal Punkte';
   }
 
   @override
@@ -240,7 +240,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String confirmPredictionMessage(String amount) {
-    return 'Möchtest du wirklich $amount Token für diese Vorhersage verwenden?';
+    return 'Möchtest du wirklich $amount Punkte für diese Vorhersage verwenden?';
   }
 
   @override
@@ -286,8 +286,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adsComingSoon => 'Werbefunktion demnächst.';
 
   @override
-  String tokensAdded(String amount) {
-    return '+$amount Token hinzugefügt!';
+  String pointsAdded(String amount) {
+    return '+$amount Punkte hinzugefügt!';
   }
 
   @override
@@ -396,7 +396,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wifiOnly => 'Nur WLAN';
 
   @override
-  String get tokenInsufficient => 'Nicht genug Token';
+  String get pointsInsufficient => 'Nicht genug Punkte';
 
   @override
   String get closedNoSelection => 'Auswahl nicht möglich (geschlossen)';
@@ -469,8 +469,8 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get tokenInsufficientForVote =>
-      'Abstimmung nicht möglich wegen unzureichender Token';
+  String get pointsInsufficientForVote =>
+      'Abstimmung nicht möglich wegen unzureichender Punkte';
 
   @override
   String get predictionErrorGeneric =>
@@ -574,14 +574,14 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get tokenEarnTitle => 'Token verdienen';
+  String get pointsEarnTitle => 'Punkte verdienen';
 
   @override
   String get watchAdTitle => 'Werbung ansehen';
 
   @override
-  String tokenEarnFreeSubtitle(String amount) {
-    return '$amount Token gratis';
+  String pointsEarnFreeSubtitle(String amount) {
+    return '$amount Punkte gratis';
   }
 
   @override
@@ -597,7 +597,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tryAgainTomorrow => 'Morgen erneut versuchen';
 
   @override
-  String get tokenPacksTitle => 'Token-Pakete';
+  String get pointsPacksTitle => 'Punkte-Pakete';
 
   @override
   String get mostPopular => 'Am beliebtesten';
@@ -804,6 +804,24 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get unreadBadgeSubtitle =>
       'Zeige ein Badge mit der Anzahl der wartenden Benachrichtigungen in der App an.';
+
+  @override
+  String get adminApprovalsTitle => 'Freigaben';
+
+  @override
+  String get adminTabPending => 'Ausstehend';
+
+  @override
+  String get adminPendingTitle => 'Tipps mit ausstehendem Ergebnis';
+
+  @override
+  String get adminPendingEmpty => 'Keine Tipps mit ausstehendem Ergebnis.';
+
+  @override
+  String get adminResultYes => 'Ja hat gewonnen';
+
+  @override
+  String get adminResultNo => 'Nein hat gewonnen';
 
   @override
   String get pushNotificationsTitle => 'Push‑Benachrichtigungen';
@@ -1260,17 +1278,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get youAreBlocked => 'Du bist blockiert';
 
   @override
-  String balanceToken(int count) {
-    return 'Kontostand: $count Token';
+  String balancePoints(int count) {
+    return 'Kontostand: $count Punkte';
   }
 
   @override
   String dailyBonusClaim(int amount) {
-    return 'Täglichen Bonus holen (+$amount Token)';
+    return 'Täglichen Bonus holen (+$amount Punkte)';
   }
 
   @override
-  String get tokenManagement => 'Token-Verwaltung';
+  String get pointsManagement => 'Punkte-Verwaltung';
 
   @override
   String get emptyActivePredictions => 'Du hast keine aktiven Vorhersagen';
@@ -1360,7 +1378,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get followingCountLabel => 'Folgende';
 
   @override
-  String get tokenLabel => 'Token';
+  String get pointsLabel => 'Punkte';
 
   @override
   String get bottomNavHome => 'Start';

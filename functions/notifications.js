@@ -90,6 +90,33 @@ async function sendFcm(token, title, body, data) {
 }
 
 /**
+ * profile/{uid}/isAdmin === true olan tüm kullanıcılara "sonuç bekleyen tahminler" push bildirimi gönderir.
+ * Birinin onaylaması yeterli; bildirim tüm adminlere gider.
+ * @param {number} pendingCount - Sonuç bekleyen tahmin sayısı
+ * @returns {Promise<number>} Bildirim gönderilen admin sayısı
+ */
+async function notifyAllAdminsPendingResolution(pendingCount) {
+  if (pendingCount < 1) return 0;
+  const profileSnap = await getDb().ref("profile").once("value");
+  const profiles = profileSnap.val();
+  if (!profiles || typeof profiles !== "object") return 0;
+  const title = pendingCount === 1
+    ? "1 tahmin sonuç bekliyor"
+    : `${pendingCount} tahmin sonuç bekliyor`;
+  const body = "Onaylar ekranından kazanan tarafı belirleyebilirsiniz. Birinin onaylaması yeterli.";
+  const data = { type: "admin_pending", route: "AdminApprovalsPage" };
+  let sent = 0;
+  for (const [uid, p] of Object.entries(profiles)) {
+    if (!p || p.isAdmin !== true) continue;
+    const token = await getFcmToken(uid);
+    if (token && (await sendFcm(token, title, body, data))) sent++;
+  }
+  if (sent > 0) console.log("[notifications] notifyAllAdminsPendingResolution: " + sent + " admin'e bildirim gönderildi");
+  return sent;
+}
+exports.notifyAllAdminsPendingResolution = notifyAllAdminsPendingResolution;
+
+/**
  * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda tahmin yapan herkese bildirim.
  * Tetikleyici: toldya/{toldyaId} onUpdate
  */

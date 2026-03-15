@@ -33,7 +33,7 @@ class FeedModel {
   String? oracleSource;
   /// API URL - otomatik sonuç için (opsiyonel)
   String? oracleApiUrl;
-  /// Tahminci teminatı (sembolik token)
+  /// Tahminci teminatı (sembolik puan)
   int? collateralAmount;
   /// İtiraz eden kullanıcı ID'leri
   List<String>? disputeUserIds;

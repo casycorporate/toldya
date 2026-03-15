@@ -786,7 +786,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.maxPredictionTokens('$maxVal')),
+              content: Text(AppLocalizations.of(context)!.maxPredictionPoints('$maxVal')),
               duration: Duration(seconds: 3),
             ),
           );
@@ -899,7 +899,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           } else if (code == 'already-participated') {
             errorMessage = l10n.predictionAlreadyParticipated;
           } else if (code == 'insufficient-balance' || code.contains('insufficient')) {
-            errorMessage = l10n.tokenInsufficient;
+            errorMessage = l10n.pointsInsufficient;
           } else if (code.contains('limit')) {
             errorMessage = e.message != null && e.message!.isNotEmpty ? e.message! : l10n.predictionErrorGeneric;
           } else if (e.message != null && e.message!.isNotEmpty) {
@@ -1015,8 +1015,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         sumOfVote(widget.model.unlikeList ?? []);
     maxVal = [
       balance,
-      Tokenomics.maxPredictionByRank(balance, xp),
-      Tokenomics.maxPredictionByPool(totalPool),
+      PointsLogic.maxPredictionByRank(balance, xp),
+      PointsLogic.maxPredictionByPool(totalPool),
     ].reduce((a, b) => a < b ? a : b);
 
     const presetAmounts = [10, 25, 50, 100];
@@ -1048,7 +1048,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             border: Border.all(color: MockupDesign.cardBorder),
           ),
           child: Text(
-            '$_period token',
+            '$_period ${AppLocalizations.of(context)!.pointsLabel}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,

@@ -390,70 +390,22 @@ async function runClosePredictionsLogic() {
     });
   }
   if (pendingList.length > 0) {
-    await sendAdminPendingSummaryEmail(pendingList);
+    try {
+      const { notifyAllAdminsPendingResolution } = require("./notifications");
+      await notifyAllAdminsPendingResolution(pendingList.length);
+    } catch (e) {
+      console.warn("[runClosePredictionsLogic] notifyAllAdminsPendingResolution error", e.message);
+    }
   }
   return { closed: Object.keys(updates).length, pendingCount: pendingList.length };
 }
 
-/** Admin'e sonuç bekleyen tüm toldyaları tek özet mailde gönderir. Kazanan taraf setToldyaResult ile girilir, sonra saatlik job ödül dağıtır. */
-async function sendAdminPendingSummaryEmail(pendingList) {
-  const adminEmail = process.env.ADMIN_EMAIL || (functions.config().admin && functions.config().admin.email);
-  const sendgridKey = process.env.SENDGRID_API_KEY || (functions.config().sendgrid && functions.config().sendgrid.api_key);
-  const webhookUrl = process.env.MAIL_WEBHOOK_URL || (functions.config().mail && functions.config().mail.webhook_url);
-
-  const subject = `[Toldya] ${pendingList.length} tahmin sonuç bekliyor`;
-  const lines = [
-    "Tahmin süresi biten ve sonuç girilmesi gereken toldyalar:",
-    "",
-    ...pendingList.map((p, i) => `${i + 1}. Toldya ID: ${p.key}\n   Metin: ${(p.description || "(yok)").replace(/\n/g, " ")}\n   Kapanış: ${p.endDate}`),
-    "",
-    "Kazanan tarafı belirlemek için:",
-    "- setToldyaResult Callable çağrısı: { toldyaId: \"<id>\", result: 1 } = EVET kazandı, { result: 2 } = HAYIR kazandı.",
-    "- Veya Firebase Console: toldya/<id>/feedResult = 1 veya 2, toldya/<id>/statu = 2 (Ok).",
-    "",
-    "Sonuç girdikten sonra bir sonraki saatlik job kazananlara ödül dağıtacaktır.",
-  ];
-  const body = lines.join("\n");
-
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: adminEmail || "admin@example.com",
-          subject,
-          text: body,
-          pendingCount: pendingList.length,
-          toldyaIds: pendingList.map((p) => p.key),
-        }),
-      });
-    } catch (e) {
-      console.warn("[sendAdminPendingSummaryEmail] webhook error", e.message);
-    }
-    return;
-  }
-  if (sendgridKey && adminEmail) {
-    try {
-      await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${sendgridKey}`,
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: adminEmail }] }],
-          from: { email: process.env.SENDGRID_FROM || "noreply@toldya.app", name: "Toldya" },
-          subject,
-          content: [{ type: "text/plain", value: body }],
-        }),
-      });
-    } catch (e) {
-      console.warn("[sendAdminPendingSummaryEmail] SendGrid error", e.message);
-    }
-    return;
-  }
-  console.log("[sendAdminPendingSummaryEmail] No ADMIN_EMAIL/SENDGRID or MAIL_WEBHOOK_URL; skipping. Pending:", pendingList.length);
+/** profile/{uid}/isAdmin === true ise admin. Mail yok; bildirim isAdmin olan herkese gider, birinin onaylaması yeterli. */
+async function isAdminUser(uid) {
+  if (!uid) return false;
+  const snap = await getDb().ref(`profile/${uid}`).once("value");
+  const p = snap.val();
+  return !!(p && p.isAdmin === true);
 }
 
 // --- Weekly Leagues (Haftalık Lig): tier, weeklyXp, yükselme/düşme ---
@@ -989,7 +941,7 @@ const submitPredictionHandler = functions.runWith({ enforceAppCheck: false }).ht
     if (amount > maxPredictionForPool) {
       throw new functions.https.HttpsError(
         "resource-exhausted",
-        `Havuz henüz küçük, maksimum ${MAX_PREDICTION_SMALL_POOL} token kullanılabilir.`
+        `Havuz henüz küçük, maksimum ${MAX_PREDICTION_SMALL_POOL} puan kullanılabilir.`
       );
     }
 
@@ -1046,13 +998,12 @@ const submitPredictionHandler = functions.runWith({ enforceAppCheck: false }).ht
 });
 exports.submitPrediction = submitPredictionHandler;
 
-// --- Callable: setToldyaResult – V1 Admin manuel sonuç (EVET/HAYIR). Sadece ADMIN_UID ile çağrılabilir. ---
+// --- Callable: setToldyaResult – profile.isAdmin true olan herhangi biri sonuç girebilir; birinin onaylaması yeterli. ---
 exports.setToldyaResult = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
   }
-  const adminUid = process.env.ADMIN_UID || (functions.config().admin && functions.config().admin.uid);
-  if (adminUid && context.auth.uid !== adminUid) {
+  if (!(await isAdminUser(context.auth.uid))) {
     throw new functions.https.HttpsError("permission-denied", "Sadece admin sonuç girebilir.");
   }
   const rawToldyaId = data?.toldyaId;
@@ -1083,6 +1034,40 @@ exports.setToldyaResult = functions.runWith({ enforceAppCheck: false }).https.on
   });
   console.log(`[setToldyaResult] toldyaId=${toldyaId} result=${result === FEED_RESULT_LIKE ? "EVET" : "HAYIR"}`);
   return { ok: true, toldyaId, result: result === FEED_RESULT_LIKE ? "EVET" : "HAYIR" };
+});
+
+// --- Callable: getIsAdmin – profile/{uid}/isAdmin ile; uygulama içi admin menüsü. ---
+exports.getIsAdmin = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+  if (!context.auth) return { isAdmin: false };
+  return { isAdmin: await isAdminUser(context.auth.uid) };
+});
+
+// --- Callable: getPendingResolutionToldyas – isAdmin olanlar için sonuç bekleyen tahmin listesi. ---
+exports.getPendingResolutionToldyas = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
+  }
+  if (!(await isAdminUser(context.auth.uid))) {
+    throw new functions.https.HttpsError("permission-denied", "Bu liste yalnızca admin içindir.");
+  }
+  const toldyaRef = getDb().ref("toldya");
+  const snapshot = await toldyaRef.once("value");
+  const toldyas = snapshot.val();
+  if (!toldyas) return { list: [] };
+  const list = [];
+  for (const [key, tweet] of Object.entries(toldyas)) {
+    if (!tweet) continue;
+    if (tweet.parentkey) continue;
+    if (tweet.statu !== STATU_PENDING_RESULT) continue;
+    if (tweet.feedResult != null) continue;
+    list.push({
+      key,
+      description: (tweet.description || "").substring(0, 200),
+      endDate: tweet.endDate || "",
+    });
+  }
+  list.sort((a, b) => (a.endDate || "").localeCompare(b.endDate || ""));
+  return { list };
 });
 
 // --- Callable: voteReply – Yorum oylama (Katılıyorum / Katılmıyorum), sadece reply için ---
@@ -1173,7 +1158,7 @@ exports.claimDailyBonus = functions.runWith({ enforceAppCheck: false }).https.on
   return {
     ok: true,
     newBalance: newPeg,
-    message: `Günlük bonus: +${DAILY_BONUS_AMOUNT} token.`,
+    message: `Günlük bonus: +${DAILY_BONUS_AMOUNT} puan.`,
   };
 });
 
@@ -1184,27 +1169,27 @@ exports.claimDailyBonus = functions.runWith({ enforceAppCheck: false }).https.on
 // NASIL ÇALIŞIR:
 // 1. Kazançların bir kısmı (%30) "stashCount" (kilitli bakiye) olarak saklanır.
 // 2. Kullanıcının harcanabilir bakiyesi (pegCount) sıfıra indiğinde:
-//    - Her 24 saatte bir, stash'ten 200 token (veya stash'te kalan miktar, hangisi azsa)
+//    - Her 24 saatte bir, stash'ten 200 puan (veya stash'te kalan miktar, hangisi azsa)
 //      otomatik olarak harcanabilir bakiyeye aktarılır.
 // 3. Bu sayede kullanıcı "Param bitti ama yarın yine gelecek" hissini yaşar.
 //
 // ÖRNEK SENARYO:
-// - Kullanıcı 1000 token kazandı → 700 token pegCount'a, 300 token stashCount'a gider.
-// - Kullanıcı tüm 700 token'ı bahislerde kaybetti → pegCount = 0, stashCount = 300.
+// - Kullanıcı 1000 puan kazandı → 700 puan pegCount'a, 300 puan stashCount'a gider.
+// - Kullanıcı tüm 700 puanı tahminlerde kullandı → pegCount = 0, stashCount = 300.
 // - 24 saat sonra runStashDrip çalıştırıldığında:
 //   → pegCount = 200 (stash'ten aktarıldı)
 //   → stashCount = 100 (kalan)
 //   → lastStashDripAt = şimdiki zaman (bir sonraki drip için zaman damgası)
-// - Kullanıcı tekrar bahis yapabilir!
+// - Kullanıcı tekrar tahmin yapabilir!
 // - 24 saat sonra tekrar çalıştırıldığında:
-//   → pegCount = 100 (stash'te kalan son 100 token)
+//   → pegCount = 100 (stash'te kalan son 100 puan)
 //   → stashCount = 0
 //   → lastStashDripAt güncellenir
 //
 // KOŞULLAR:
 // - Sadece pegCount === 0 ve stashCount > 0 olan kullanıcılar için çalışır.
 // - Son drip'ten en az 24 saat geçmiş olmalı (DRIP_INTERVAL_MS = 24 saat).
-// - Her seferinde maksimum 200 token aktarılır (DRIP_AMOUNT).
+// - Her seferinde maksimum 200 puan aktarılır (DRIP_AMOUNT).
 // - Eğer stash'te 200'den az varsa, tümü aktarılır.
 //
 // TETİKLEME:
@@ -1229,7 +1214,7 @@ async function runStashDripLogic() {
     const peg = profile.pegCount || 0;
     if (peg !== 0) continue;
     
-    // Koşul 2: Kilitli bakiyede token olmalı
+    // Koşul 2: Kilitli bakiyede puan olmalı
     const stash = profile.stashCount || 0;
     if (stash <= 0) continue;
 
@@ -1241,7 +1226,7 @@ async function runStashDripLogic() {
       continue;
     }
 
-    // Aktarım miktarını hesapla: stash'te kalan veya 200 token, hangisi azsa
+    // Aktarım miktarını hesapla: stash'te kalan veya 200 puan, hangisi azsa
     const dripAmount = Math.min(DRIP_AMOUNT, stash);
     
     // Veritabanı güncellemelerini hazırla
@@ -1255,7 +1240,7 @@ async function runStashDripLogic() {
   // Tüm güncellemeleri atomik olarak uygula
   if (Object.keys(updates).length > 0) {
     await getDb().ref().update(updates);
-    console.log(`Stash drip tamamlandı: ${processedCount} kullanıcıya token aktarıldı.`);
+    console.log(`Stash drip tamamlandı: ${processedCount} kullanıcıya puan aktarıldı.`);
   }
 
   return { dripped: processedCount };

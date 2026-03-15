@@ -372,6 +372,13 @@ class _SidebarMenuState extends State<SidebarMenu> {
                                 isEnable: true,
                                 onPressed: () => _navigateTo('SettingsAndPrivacyPage'),
                               ),
+                              if (Provider.of<AuthState>(context).isAdmin == true)
+                                _menuListRowButton(
+                                  AppLocalizations.of(context)!.adminApprovalsTitle,
+                                  icon: Icons.gavel_outlined,
+                                  isEnable: true,
+                                  onPressed: () => _navigateTo('AdminApprovalsPage'),
+                                ),
                               Divider(
                                 height: 24,
                                 thickness: 0.5,

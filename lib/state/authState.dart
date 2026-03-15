@@ -41,8 +41,11 @@ class AuthState extends AppState {
   /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
   String? _pendingProfileRequestId;
   String? _profileError;
+  /// Admin menüsü (sonuç bekleyen tahminler) sadece admin kullanıcıya gösterilir; getIsAdmin callable ile yüklenir.
+  bool? _isAdmin;
 
   String? get profileError => _profileError;
+  bool? get isAdmin => _isAdmin;
 
   void clearProfileError() {
     _profileError = null;
@@ -109,6 +112,7 @@ class AuthState extends AppState {
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
+    _isAdmin = null;
     user = null;
     _profileUserModelList = null;
     if (isSignInWithGoogle) {
@@ -577,11 +581,13 @@ class AuthState extends AppState {
           _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
           if (user?.uid != null && userProfileId == user!.uid) {
             _userModel = _profileUserModelList!.last;
+            _isAdmin = _userModel!.isAdmin ?? false;
             _userModel!.isVerified = user!.emailVerified;
             if (!user!.emailVerified) {
               reloadUser();
             }
             updateFCMToken();
+            loadIsAdmin();
           }
           logEvent('get_profile');
         }
@@ -594,6 +600,23 @@ class AuthState extends AppState {
       cprint(error, errorIn: 'getProfileUser');
       notifyListeners();
     });
+  }
+
+  /// Admin menüsü görünürlüğü için; getIsAdmin callable çağrılır, UID sunucuda kalır.
+  Future<void> loadIsAdmin() async {
+    if (userId.isEmpty) {
+      _isAdmin = false;
+      notifyListeners();
+      return;
+    }
+    try {
+      final result = await FirebaseFunctions.instance.httpsCallable('getIsAdmin').call();
+      final data = result.data as Map<String, dynamic>?;
+      _isAdmin = data?['isAdmin'] as bool? ?? false;
+    } catch (_) {
+      _isAdmin = false;
+    }
+    notifyListeners();
   }
 
   /// if firebase token not available in profile

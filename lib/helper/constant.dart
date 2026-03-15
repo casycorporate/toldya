@@ -90,7 +90,7 @@ class AppIcon{
   /// Uygulama komisyonu (0.0 - 1.0 arası, örn: 0.05 = %5)
   static const double commissionRate = 0.05;
 
-  /// Tokenomics: Rütbe/XP sınırları (backend ile uyumlu)
+  /// Points logic: rank/XP limits (aligned with backend)
   static const int xpCaylakMax = 500;
   static const int xpUstaMin = 2000;
   static const double rankMultiplierCaylak = 0.10;
@@ -104,8 +104,8 @@ class AppIcon{
   static const String cloudFunctionsBaseUrl = 'https://us-central1-casy-570c4.cloudfunctions.net';
 }
 
-class Tokenomics {
-  Tokenomics._();
+class PointsLogic {
+  PointsLogic._();
   static double rankMultiplierForXp(int xp) {
     if (xp < AppIcon.xpCaylakMax) return AppIcon.rankMultiplierCaylak;
     if (xp < AppIcon.xpUstaMin) return AppIcon.rankMultiplierTahminci;
