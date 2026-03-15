@@ -199,7 +199,6 @@ class FeedState extends AppState {
   void getToldyaListByTopicAndSearch(UserModel? userModel, String searchWord,
       {String topic_val = topic.gundem}) {
     if (userModel == null || feedlist == null) {
-      _feedlist = [];
       return;
     }
     List<FeedModel> filterList = feedlist!;
@@ -1234,7 +1233,7 @@ class FeedState extends AppState {
           updateToldya(parentModel);
         }
         if (_feedlist!.isEmpty) {
-          _feedlist = null;
+          _feedlist = [];
         }
         cprint('Toldya deleted from home page list');
       }

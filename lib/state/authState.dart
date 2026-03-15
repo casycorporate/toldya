@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -35,6 +36,8 @@ class AuthState extends AppState {
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
   dabase.Query? _profileQuery;
   dabase.DatabaseReference? _mutedPostIdsRef;
+  StreamSubscription<dabase.DatabaseEvent>? _profileSubscription;
+  StreamSubscription<dabase.DatabaseEvent>? _mutedPostIdsSubscription;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
   List<String> _mutedPostIds = [];
@@ -107,8 +110,27 @@ class AuthState extends AppState {
     }
   }
 
+  /// İptal sırasında plugin zaten kaldırılmış olabilir (hot restart / çıkış) → MissingPluginException yutulur.
+  void _cancelProfileListeners() {
+    try {
+      _profileSubscription?.cancel();
+    } on MissingPluginException {
+      // Platform channel zaten kaldırıldı (hot restart vb.)
+    } catch (_) {}
+    _profileSubscription = null;
+    try {
+      _mutedPostIdsSubscription?.cancel();
+    } on MissingPluginException {
+      // Platform channel zaten kaldırıldı
+    } catch (_) {}
+    _mutedPostIdsSubscription = null;
+    _profileQuery = null;
+    _mutedPostIdsRef = null;
+  }
+
   /// Logout from device
   void logoutCallback() {
+    _cancelProfileListeners();
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
@@ -132,24 +154,24 @@ class AuthState extends AppState {
 
   databaseInit() {
     try {
-      if (_profileQuery == null && user != null) {
-        _profileQuery = kDatabase.child("profile").child(user!.uid);
-        _profileQuery!.onValue.listen(_onProfileChanged);
-        _mutedPostIdsRef = kDatabase.child("profile").child(user!.uid).child("mutedPostIds");
-        _mutedPostIdsRef!.onValue.listen((event) {
-          if (event.snapshot.value != null) {
-            final list = event.snapshot.value;
-            if (list is List) {
-              _mutedPostIds = list.map((e) => e.toString()).toList();
-            } else {
-              _mutedPostIds = [];
-            }
+      if (user == null) return;
+      _cancelProfileListeners();
+      _profileQuery = kDatabase.child("profile").child(user!.uid);
+      _profileSubscription = _profileQuery!.onValue.listen(_onProfileChanged);
+      _mutedPostIdsRef = kDatabase.child("profile").child(user!.uid).child("mutedPostIds");
+      _mutedPostIdsSubscription = _mutedPostIdsRef!.onValue.listen((event) {
+        if (event.snapshot.value != null) {
+          final list = event.snapshot.value;
+          if (list is List) {
+            _mutedPostIds = list.map((e) => e.toString()).toList();
           } else {
             _mutedPostIds = [];
           }
-          notifyListeners();
-        });
-      }
+        } else {
+          _mutedPostIds = [];
+        }
+        notifyListeners();
+      });
     } catch (error) {
       cprint(error, errorIn: 'databaseInit');
     }

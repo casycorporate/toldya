@@ -44,6 +44,7 @@ class _FeedPage extends State<FeedPage> {
   Timer? _idleShowBarTimer;
   static const Duration _idleShowBarDelay = Duration(seconds: 2);
   double? _lastScrollPixels;
+  bool _pendingReloadIfNull = false;
 
   @override
   void initState() {
@@ -127,6 +128,17 @@ class _FeedPage extends State<FeedPage> {
     var authstate = Provider.of<AuthState>(context, listen: false);
     var searchState = Provider.of<SearchState>(context, listen: false);
     return Consumer<FeedState>(builder: (context, feedState, _) {
+      if (feedState.feedlist != null) _pendingReloadIfNull = false;
+      if (feedState.feedlist == null && !feedState.isBusy && !_pendingReloadIfNull) {
+        _pendingReloadIfNull = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final fs = Provider.of<FeedState>(context, listen: false);
+            if (fs.feedlist == null && !fs.isBusy) fs.getDataFromDatabase();
+            if (mounted) setState(() => _pendingReloadIfNull = false);
+          }
+        });
+      }
       final mainList = feedState.getToldyaListByTopic(
         authstate.userModel,
         searchState.getUserInBlackList(authstate.userModel),
