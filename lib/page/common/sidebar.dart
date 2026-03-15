@@ -113,27 +113,6 @@ class _SidebarMenuState extends State<SidebarMenu> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      Row(
-                        children: <Widget>[
-                          Flexible(
-                            child: _tappbleText(
-                              context,
-                              '${state.userModel?.getFollower() ?? 0}',
-                              ' Takipçiler',
-                              'FollowerListPage',
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Flexible(
-                            child: _tappbleText(
-                              context,
-                              '${state.userModel?.getFollowing() ?? 0}',
-                              ' Takipler',
-                              'FollowingListPage',
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),

@@ -62,8 +62,6 @@ class TrendsPage extends StatelessWidget {
           _row(context, AppLocalizations.of(context)!.newestUserFirst, SortUser.ByNewest),
           Divider(height: 0),
           _row(context, AppLocalizations.of(context)!.oldestUserFirst, SortUser.ByOldest),
-          Divider(height: 0),
-          _row(context, AppLocalizations.of(context)!.maxFollowerFirst, SortUser.ByMaxFollower),
         ],
       ),
     );
@@ -99,7 +97,6 @@ class TrendsPage extends StatelessWidget {
       'alphabeticallySort' => l10n.alphabeticallySort,
       'newestUserFirst' => l10n.newestUserFirst,
       'oldestUserFirst' => l10n.oldestUserFirst,
-      'maxFollowerFirst' => l10n.maxFollowerFirst,
       _ => '',
     };
     return Scaffold(

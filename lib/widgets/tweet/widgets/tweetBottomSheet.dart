@@ -361,7 +361,6 @@ class _ToldyaActionSheetContent extends StatefulWidget {
 }
 
 class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
-  bool _isFollowLoading = false;
   bool _isMuteLoading = false;
 
   Future<void> _handleShare() async {
@@ -405,32 +404,6 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
   void _handleGoToProfile() {
     if (Navigator.canPop(context)) Navigator.pop(context);
     Navigator.pushNamed(context, '/ProfilePage/${widget.model.userId}');
-  }
-
-  Future<void> _handleFollowUnfollow() async {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
-    final targetUserId = widget.model.userId ?? '';
-    if (targetUserId.isEmpty) return;
-    setState(() => _isFollowLoading = true);
-    try {
-      await authState.followUserByUserId(targetUserId, removeFollower: isFollowing);
-      if (!mounted) return;
-      if (Navigator.canPop(context)) Navigator.pop(context);
-      final l10n = AppLocalizations.of(widget.parentContext)!;
-      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-        SnackBar(content: Text(isFollowing ? l10n.unfollowSuccess : l10n.followSuccess)),
-      );
-    } catch (_) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGeneric), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isFollowLoading = false);
-    }
   }
 
   Future<void> _handleMuteToggle() async {
@@ -636,7 +609,6 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
     final isMyPost = authState.userId == widget.model.userId;
     final l10n = AppLocalizations.of(context)!;
     final isMuted = authState.isPostMuted(widget.model.key ?? '');
-    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
     final isInBlackList = authState.userModel?.blackList?.contains(widget.model.userId ?? '') ?? false;
 
     return Column(
@@ -670,13 +642,6 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
             label: l10n.goToProfile,
             isDestructive: false,
             onTap: _handleGoToProfile,
-          ),
-          _buildRow(
-            icon: isFollowing ? Icons.person_remove_outlined : Icons.person_add_outlined,
-            label: isFollowing ? l10n.unfollow : l10n.follow,
-            isDestructive: false,
-            onTap: _handleFollowUnfollow,
-            isBusy: _isFollowLoading,
           ),
         ],
         _buildRow(

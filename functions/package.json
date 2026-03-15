@@ -7,7 +7,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "run-functions": "node run-functions.js"
+    "run-functions": "node run-functions.js",
+    "wipe-keep-user": "node ../scripts/wipe-firebase-keep-user.js"
   },
   "engines": {
     "node": "20"

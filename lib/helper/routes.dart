@@ -8,8 +8,6 @@ import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
 import 'package:toldya/page/feed/feedPage.dart';
 import 'package:toldya/page/message/conversationInformation/conversationInformation.dart';
 import 'package:toldya/page/message/newMessagePage.dart';
-import 'package:toldya/page/profile/follow/followerListPage.dart';
-import 'package:toldya/page/profile/follow/followingListPage.dart';
 import 'package:toldya/page/profile/profileImageView.dart';
 import 'package:toldya/page/search/SearchPage.dart';
 import 'package:toldya/page/settings/accountSettings/about/aboutTwitter.dart';
@@ -116,8 +114,6 @@ class Routes{
       case "AboutPage":return CustomRoute<bool>(builder:(BuildContext context)=> AboutPage(),);
       case "LanguagePage": return CustomRoute<bool>(builder:(BuildContext context)=> const LanguagePage(),); 
       case "ConversationInformation":return CustomRoute<bool>(builder:(BuildContext context)=> ConversationInformation(),); 
-      case "FollowingListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowingListPage(),); 
-      case "FollowerListPage":return CustomRoute<bool>(builder:(BuildContext context)=> FollowerListPage(),); 
       case "LeaderboardPage":return CustomRoute<bool>(builder:(BuildContext context)=> LeaderboardPage(),);
       case "PointsEarnPage":return CustomRoute<bool>(builder:(BuildContext context)=> PointsEarnPage(),); 
       case "VerifyEmailPage":return CustomRoute<bool>(builder:(BuildContext context)=> VerifyEmailPage(),); 

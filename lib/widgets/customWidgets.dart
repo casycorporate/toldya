@@ -191,7 +191,13 @@ Widget customImage(
   );
 }
 
-/// Profil resmi: boşsa varsayılan 5 avatar'dan userId'ye göre biri, değilse URL'den gösterir.
+/// Rastgele avatar URL'i (profil resmi yoksa userId'ye göre tutarlı avatar).
+String _avatarUrlForUser(String? userId) {
+  final seed = Uri.encodeComponent(userId?.trim().isEmpty == true ? 'default' : (userId ?? 'default'));
+  return 'https://api.dicebear.com/7.x/avataaars/png?seed=$seed';
+}
+
+/// Profil resmi: boşsa DiceBear rastgele avatar, değilse URL'den gösterir.
 Widget customProfileImage(
   BuildContext context,
   String? profilePic, {
@@ -201,7 +207,7 @@ Widget customProfileImage(
 }) {
   final effectivePath = (profilePic != null && profilePic.trim().isNotEmpty)
       ? profilePic
-      : DefaultProfilePics.assetForUser(userId);
+      : _avatarUrlForUser(userId);
   if (effectivePath == kToldyaLogo) {
     return Container(
       width: height,
@@ -229,7 +235,7 @@ Widget customProfileImage(
       ),
     );
   }
-  // Ağ resimleri: 412/403 vb. hatalarda placeholder göster (App Check / token sorunlarında exception engellenir)
+  // Hata durumunda yerel asset placeholder
   final placeholderPath = DefaultProfilePics.assetForUser(userId);
   return Container(
     width: height,

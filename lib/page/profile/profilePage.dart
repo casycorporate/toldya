@@ -43,8 +43,6 @@ class _ProfilePageState extends State<ProfilePage>
   bool isMyProfile = false;
   int pageIndex = 0;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _isFollowingAction = false;
-
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -117,16 +115,6 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _emptyBox() {
     return SliverToBoxAdapter(child: SizedBox.shrink());
-  }
-
-  isFollower() {
-    var authstate = Provider.of<AuthState>(context, listen: false);
-    final followers = authstate.profileUserModel?.followersList;
-    final myId = authstate.userModel?.userId;
-    if (followers != null && followers.isNotEmpty && myId != null) {
-      return followers.any((x) => x == myId);
-    }
-    return false;
   }
 
   isBlackList() {
@@ -299,35 +287,10 @@ class _ProfilePageState extends State<ProfilePage>
                                 if (isBlackList()) return;
                                 if (isMyProfile) {
                                   Navigator.pushNamed(context, '/EditProfile');
-                                  return;
-                                }
-                                setState(() => _isFollowingAction = true);
-                                try {
-                                  authstate.followUser(removeFollower: isFollower());
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          isFollower() ? AppLocalizations.of(context)!.unfollowSuccess : AppLocalizations.of(context)!.followSuccess,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (_) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(AppLocalizations.of(context)!.errorGeneric),
-                                        backgroundColor: Theme.of(context).colorScheme.error,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) setState(() => _isFollowingAction = false);
                                 }
                               },
-                              isFollowLoading: _isFollowingAction,
-                              isFollower: isFollower(),
+                              isFollowLoading: false,
+                              isFollower: false,
                               isBlackList: isBlackList(),
                               onAvatarTap: () => Navigator.pushNamed(context, '/ProfileImageView'),
                               onPointsManagement: () => Navigator.of(context).pushNamed('/PointsEarnPage'),
@@ -676,10 +639,7 @@ class _ProfilePageState extends State<ProfilePage>
                     ),
                   ],
                 ),
-                Text(
-                  '${user.getFollower()} ${AppLocalizations.of(context)!.follower}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline, fontSize: 13),
-                ),
+                SizedBox.shrink(),
               ],
             ),
             if (isMyProfile && canClaimDailyBonus) ...[
@@ -1406,22 +1366,6 @@ class UserNameRowWidget extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: 10,
-                height: 30,
-              ),
-              _tappbleText(context, '${user.getFollower()}', ' ${AppLocalizations.of(context)!.followers}',
-                  'FollowerListPage'),
-              SizedBox(width: 40),
-              _tappbleText(context, '${user.getFollowing()}', ' ${AppLocalizations.of(context)!.followingCountLabel}',
-                  'FollowingListPage'),
             ],
           ),
         ),

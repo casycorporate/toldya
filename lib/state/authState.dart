@@ -657,122 +657,16 @@ class AuthState extends AppState {
     });
   }
 
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
-  followUser({bool removeFollower = false}) {
-    /// `userModel` is user who is looged-in app.
-    /// `profileUserModel` is user whoose profile is open in app.
-    final profileUser = profileUserModel;
-    final currentUser = userModel;
-    if (profileUser == null || currentUser == null) return;
-    try {
-      if (removeFollower) {
-        /// If logged-in user `alredy follow `profile user then
-        /// 1.Remove logged-in user from profile user's `follower` list
-        /// 2.Remove profile user from logged-in user's `following` list
-        profileUser.followersList?.remove(currentUser.userId);
-
-        /// Remove profile user from logged-in user's following list
-        currentUser.followingList?.remove(profileUser.userId);
-        cprint('user removed from following list', event: 'remove_follow');
-      } else {
-        /// if logged in user is `not following` profile user then
-        /// 1.Add logged in user to profile user's `follower` list
-        /// 2. Add profile user to logged in user's `following` list
-        profileUser.followersList ??= [];
-        profileUser.followersList!.add(currentUser.userId ?? '');
-        currentUser.followingList ??= [];
-        currentUser.followingList!.add(profileUser.userId ?? '');
-      }
-      profileUser.followers = profileUser.followersList?.length ?? 0;
-      currentUser.following = currentUser.followingList?.length ?? 0;
-      kDatabase
-          .child('profile')
-          .child(profileUser.userId ?? '')
-          .child('followerList')
-          .set(profileUser.followersList);
-      kDatabase
-          .child('profile')
-          .child(currentUser.userId ?? '')
-          .child('followingList')
-          .set(currentUser.followingList);
-      if (!removeFollower) {
-        kDatabase
-            .child('followers')
-            .child(profileUser.userId ?? '')
-            .child(currentUser.userId ?? '')
-            .set(ServerValue.timestamp);
-      } else {
-        kDatabase
-            .child('followers')
-            .child(profileUser.userId ?? '')
-            .child(currentUser.userId ?? '')
-            .remove();
-      }
-      cprint(removeFollower ? 'user removed from following list' : 'user added to following list', event: removeFollower ? 'remove_follow' : 'add_follow');
-      notifyListeners();
-    } catch (error) {
-      cprint(error, errorIn: 'followUser');
-    }
+  void followUser({bool removeFollower = false}) {
+    // Takip özelliği kaldırıldı.
   }
 
 
-  /// Follow or unfollow a user by userId (e.g. from bottom sheet). Does not use profileUserModel.
+
   Future<void> followUserByUserId(String targetUserId, {bool removeFollower = false}) async {
-    final currentUser = userModel;
-    if (currentUser == null || targetUserId.isEmpty) return;
-    final targetUser = await getuserDetail(targetUserId);
-    if (targetUser == null) return;
-    try {
-      if (removeFollower) {
-        targetUser.followersList?.remove(currentUser.userId);
-        currentUser.followingList?.remove(targetUserId);
-      } else {
-        targetUser.followersList ??= [];
-        targetUser.followersList!.add(currentUser.userId ?? '');
-        currentUser.followingList ??= [];
-        currentUser.followingList!.add(targetUserId);
-      }
-      targetUser.followers = targetUser.followersList?.length ?? 0;
-      currentUser.following = currentUser.followingList?.length ?? 0;
-      await kDatabase
-          .child('profile')
-          .child(targetUserId)
-          .child('followerList')
-          .set(targetUser.followersList);
-      await kDatabase
-          .child('profile')
-          .child(currentUser.userId ?? '')
-          .child('followingList')
-          .set(currentUser.followingList);
-      if (!removeFollower) {
-        await kDatabase
-            .child('followers')
-            .child(targetUserId)
-            .child(currentUser.userId ?? '')
-            .set(ServerValue.timestamp);
-      } else {
-        await kDatabase
-            .child('followers')
-            .child(targetUserId)
-            .child(currentUser.userId ?? '')
-            .remove();
-      }
-      notifyListeners();
-    } catch (error) {
-      cprint(error, errorIn: 'followUserByUserId');
-      rethrow;
-    }
+    // Takip özelliği kaldırıldı.
   }
 
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
   addBlackList(String userId) {
     final currentUser = userModel;
     if (currentUser == null) return;

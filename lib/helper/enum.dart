@@ -15,7 +15,6 @@ enum SortUser{
   ByAlphabetically,
   ByNewest,
   ByOldest,
-  ByMaxFollower
 }
 
 enum NotificationType{
@@ -24,7 +23,6 @@ enum NotificationType{
   Toldya,
   Reply,
   Retoldya,
-  Follow,
   Mention,
   Like,
   UnLike

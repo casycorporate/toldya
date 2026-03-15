@@ -70,9 +70,6 @@ class FeedState extends AppState {
     notifyListeners();
   }
   List<FeedModel>? _toldyaDetailModelList;
-  List<String>? _userfollowingList;
-
-  List<String>? get followingList => _userfollowingList;
 
   List<FeedModel>? get toldyaDetailModel => _toldyaDetailModelList;
 
@@ -89,32 +86,8 @@ class FeedState extends AppState {
     }
   }
 
-  /// contain tweet list for home page
-  List<FeedModel> getToldyaListByFollow(UserModel? userModel) {
-    if (userModel == null) {
-      return [];
-    }
-
-    if (!isBusy && feedlist != null && feedlist!.isNotEmpty) {
-      final list = feedlist!.where((x) {
-        if (x.parentkey != null &&
-            x.childRetoldyaKey == null &&
-            x.user?.userId != userModel.userId) {
-          return false;
-        }
-        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked ||
-            x.statu == Statu.statusPending || x.statu == Statu.statusOk;
-        if (!isPublished) return false;
-        final fl = userModel.followingList;
-        if (fl != null && fl.contains(x.user?.userId)) {
-          return true;
-        }
-        return false;
-      }).toList();
-      return list;
-    }
-    return [];
-  }
+  /// Takip özelliği kaldırıldı; her zaman boş döner.
+  List<FeedModel> getToldyaListByFollow(UserModel? userModel) => [];
 
   /// contain tweet list for home page
   List<FeedModel> getToldyaList(UserModel? userModel) {
@@ -171,9 +144,7 @@ class FeedState extends AppState {
       if (statu == Statu.statusLive && isPublished) {
         if (topic_val == topic.gundem) return true;
         if (userModel == null) return false;
-        if (topic_val == topic.followList) {
-          return userModel.followingList?.contains(x.user?.userId) ?? false;
-        }
+        if (topic_val == topic.followList) return false; // Takip özelliği kaldırıldı
         if (topic_val == topic.favList) {
           return x.favList?.contains(userModel.userId) ?? false;
         }
@@ -182,9 +153,7 @@ class FeedState extends AppState {
       if (x.statu == statu) {
         if (topic_val == topic.gundem) return true;
         if (userModel == null) return false;
-        if (topic_val == topic.followList) {
-          return userModel.followingList?.contains(x.user?.userId) ?? false;
-        }
+        if (topic_val == topic.followList) return false; // Takip özelliği kaldırıldı
         if (topic_val == topic.favList) {
           return x.favList?.contains(userModel.userId) ?? false;
         }
@@ -229,9 +198,7 @@ class FeedState extends AppState {
             x.statu == Statu.statusPending || x.statu == Statu.statusOk;
         if (isPublished) {
           if (topic_val == topic.gundem) return true;
-          if (topic_val == topic.followList) {
-            return userModel.followingList?.contains(x.user?.userId) ?? false;
-          }
+          if (topic_val == topic.followList) return false; // Takip kaldırıldı
           return x.topic == topic_val;
         }
         return false;
