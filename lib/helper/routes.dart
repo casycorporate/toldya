@@ -37,6 +37,7 @@ import '../page/profile/points_earn_page.dart';
 import '../page/message/chatScreenPage.dart';
 import '../page/profile/profilePage.dart';
 import '../page/admin/admin_approvals_page.dart';
+import '../page/admin/admin_pending_page.dart';
 import '../widgets/customWidgets.dart';
 
 class Routes{
@@ -100,7 +101,6 @@ class Routes{
       case "NewMessagePage":return CustomRoute<bool>(builder:(BuildContext context)=> NewMessagePage(),); 
       case "SettingsAndPrivacyPage":return CustomRoute<bool>(builder:(BuildContext context)=> SettingsAndPrivacyPage(),); 
       case "AccountSettingsPage":return CustomRoute<bool>(builder:(BuildContext context)=> AccountSettingsPage(),); 
-      case "AccountSettingsPage":return CustomRoute<bool>(builder:(BuildContext context)=> AccountSettingsPage(),); 
       case "PrivacyAndSaftyPage":return CustomRoute<bool>(builder:(BuildContext context)=> PrivacyAndSaftyPage(),); 
       case "NotificationPage":return CustomRoute<bool>(builder:(BuildContext context)=> NotificationPage(),);
       case "NotificationFeedPage":return CustomRoute<bool>(builder:(BuildContext context)=> notification_feed.NotificationPage(),); 
@@ -118,7 +118,7 @@ class Routes{
       case "PointsEarnPage":return CustomRoute<bool>(builder:(BuildContext context)=> PointsEarnPage(),); 
       case "VerifyEmailPage":return CustomRoute<bool>(builder:(BuildContext context)=> VerifyEmailPage(),); 
       case "AdminApprovalsPage":return CustomRoute<bool>(builder:(BuildContext context)=> const AdminApprovalsPage(),);
-      case "AdminPendingPage":return CustomRoute<bool>(builder:(BuildContext context)=> const AdminApprovalsPage(),);
+      case "AdminPendingPage":return CustomRoute<bool>(builder:(BuildContext context)=> const AdminPendingPage(),);
       default:return onUnknownRoute(RouteSettings(name: '/Feature'));
      }
   }

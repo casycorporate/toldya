@@ -43,6 +43,8 @@ class _ProfilePageState extends State<ProfilePage>
   bool isMyProfile = false;
   int pageIndex = 0;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  late TabController _tabController;
+
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -51,7 +53,9 @@ class _ProfilePageState extends State<ProfilePage>
       isMyProfile =
           widget.profileId == null || widget.profileId == authstate.userId;
     });
-    _tabController = TabController(length: 2, vsync: this);
+    // 3 sekmeli sabit TabController:
+    // 0 = Tahminlerim, 1 = Oy verdiklerim, 2 = Onaylar (sadece adminler kullanabilir).
+    _tabController = TabController(length: 3, vsync: this);
     super.initState();
   }
 
@@ -141,8 +145,7 @@ class _ProfilePageState extends State<ProfilePage>
     if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
-  late TabController _tabController;
-  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Tahminlerim sekmesinde)
+  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen, 4=Kilitli (sadece kendi profilinde Tahminlerim sekmesinde)
   int _tahminlerimStatusFilter = 0;
 
   void shareProfile(BuildContext context) async {
@@ -172,6 +175,8 @@ class _ProfilePageState extends State<ProfilePage>
     final feedlist = state.feedlist ?? <FeedModel>[];
     String id = widget.profileId ?? authstate.userId ?? '';
     final profileUserId = authstate.profileUserModel?.userId ?? '';
+
+    final isAdmin = authstate.isAdmin == true && isMyProfile;
 
     final profileMatchesPage = authstate.profileUserModel == null
         ? false
@@ -313,6 +318,7 @@ class _ProfilePageState extends State<ProfilePage>
                     tabs: <Widget>[
                       Tab(text: AppLocalizations.of(context)!.myPredictionsTab),
                       Tab(text: AppLocalizations.of(context)!.myVotesTab),
+                      Tab(text: AppLocalizations.of(context)!.adminApprovalsTitle),
                     ],
                   ),
                 ),
@@ -347,6 +353,8 @@ class _ProfilePageState extends State<ProfilePage>
 
                     /// Display all reply tweet list (oy verdiklerim)
                     _tweetList(context, authstate, listForOyVerdiklerim, true, false, id),
+
+                    isAdmin ? const _AdminPendingTab() : const _NonAdminAdminTab(),
 
                     // /// Display all reply and comments tweet list
                     // _tweetList(context, authstate, list, false, true)
@@ -939,6 +947,217 @@ class _ProfilePageState extends State<ProfilePage>
               );
   }
 }
+
+/// Admin sekmesi: sonuç bekleyen tahminler listesi ve Evet/Hayır onayı.
+class _AdminPendingTab extends StatefulWidget {
+  const _AdminPendingTab();
+
+  @override
+  State<_AdminPendingTab> createState() => _AdminPendingTabState();
+}
+
+class _AdminPendingTabState extends State<_AdminPendingTab> {
+  List<Map<String, dynamic>> _list = [];
+  bool _loading = true;
+  String? _error;
+  String? _busyKey;
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final feedState = Provider.of<FeedState>(context, listen: false);
+      final list = await feedState.getPendingResolutionToldyas();
+      if (!mounted) return;
+      setState(() {
+        _list = list;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _setResult(String key, int result) async {
+    if (_busyKey != null) return;
+    setState(() => _busyKey = key);
+    try {
+      final feedState = Provider.of<FeedState>(context, listen: false);
+      await feedState.setToldyaResult(key, result);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result == FeedResult.feedResultlike
+              ? AppLocalizations.of(context)!.adminResultYes
+              : AppLocalizations.of(context)!.adminResultNo),
+          backgroundColor: ToldyaDesign.statusBadge,
+        ),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busyKey = null);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _load,
+                child: Text(l10n.retry),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_list.isEmpty) {
+      return Center(
+        child: Text(
+          l10n.adminPendingEmpty,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        itemCount: _list.length,
+        itemBuilder: (context, index) {
+          final item = _list[index];
+          final key = item['key'] as String? ?? '';
+          final desc = item['description'] as String? ?? '';
+          final endDate = item['endDate'] as String? ?? '';
+          final isBusy = _busyKey == key;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            color: theme.cardColor,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    desc,
+                    style: theme.textTheme.bodyMedium,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (endDate.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        '${l10n.closingTimeLabel}: $endDate',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: isBusy
+                            ? null
+                            : () => _setResult(key, FeedResult.feedResultlike),
+                        icon: isBusy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.thumb_up_outlined, size: 18),
+                        label: Text(l10n.adminResultYes),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        onPressed: isBusy
+                            ? null
+                            : () => _setResult(key, FeedResult.feedResultunLike),
+                        icon: const Icon(Icons.thumb_down_outlined, size: 18),
+                        label: Text(l10n.adminResultNo),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Admin olmayan kullanıcılar için üçüncü sekmede gösterilen bilgilendirme.
+class _NonAdminAdminTab extends StatelessWidget {
+  const _NonAdminAdminTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          l10n.adminPendingEmpty,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
 
 /// Profil tahmin kartı: koyu gri arka plan, çerçeve yok; oran barı altında ince Evet/Hayır (ok ikonlu)
 class _ProfilePredictionCard extends StatelessWidget {

@@ -15,6 +15,7 @@ enum SortUser{
   ByAlphabetically,
   ByNewest,
   ByOldest,
+  ByMaxFollower,
 }
 
 enum NotificationType{
