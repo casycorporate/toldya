@@ -8,20 +8,25 @@ class EmptyStateContent extends StatelessWidget {
     Key? key,
     this.title,
     this.subtitle,
+    this.icon,
+    this.ctaLabel,
+    this.onCtaPressed,
   }) : super(key: key);
 
   final String? title;
   final String? subtitle;
+  final IconData? icon;
+  final String? ctaLabel;
+  final VoidCallback? onCtaPressed;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final displayTitle = title ?? l10n.emptyPredictionsDefaultTitle;
     final displaySubtitle = subtitle ?? l10n.emptyPredictionsDefaultSubtitle;
+    final displayIcon = icon ?? Icons.inbox_outlined;
     return Container(
       color: MockupDesign.background,
-      height: double.infinity,
-      width: double.infinity,
       child: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
@@ -29,9 +34,9 @@ class EmptyStateContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.inbox_outlined,
+                displayIcon,
                 size: 100,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.2),
               ),
               SizedBox(height: 32),
               Text(
@@ -54,6 +59,21 @@ class EmptyStateContent extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (ctaLabel != null && onCtaPressed != null) ...[
+                SizedBox(height: 22),
+                TextButton(
+                  onPressed: onCtaPressed,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFFF6B6B),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(
+                    ctaLabel!,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

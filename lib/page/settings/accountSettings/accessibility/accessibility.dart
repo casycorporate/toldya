@@ -22,10 +22,10 @@ class AccessibilityPage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
+            color: MockupDesign.card,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
           ),
           child: child,
@@ -107,53 +107,45 @@ class AccessibilityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          AppLocalizations.of(context)!.accessibilityTitle,
+          l10n.accessibilityTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget(AppLocalizations.of(context)!.screenReaderHeader),
+          HeaderWidget(l10n.screenReaderHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.pronounceHashtagTitle,
-            showCheckBox: true,
+            l10n.pronounceHashtagTitle,
+            subtitle: l10n.featureComingSoon(l10n.pronounceHashtagTitle),
           ),
           Divider(height: 0),
-          HeaderWidget(AppLocalizations.of(context)!.visionHeader),
+          HeaderWidget(l10n.visionHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.composeImageDescriptionsTitle,
-            subtitle: AppLocalizations.of(context)!.composeImageDescriptionsSubtitle,
+            l10n.composeImageDescriptionsTitle,
+            subtitle: l10n.featureComingSoon(l10n.composeImageDescriptionsTitle),
             vPadding: 15,
             showCheckBox: false,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
             showDivider: false,
           ),
           HeaderWidget(
-            AppLocalizations.of(context)!.motionHeader,
+            l10n.motionHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.reduceMotionTitle,
-            subtitle: AppLocalizations.of(context)!.reduceMotionSubtitle,
+            l10n.reduceMotionTitle,
+            subtitle: l10n.featureComingSoon(l10n.reduceMotionTitle),
             vPadding: 15,
             showCheckBox: false,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.videoAutoplayTitle,
-            subtitle: AppLocalizations.of(context)!.wifiOnly,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
+            l10n.videoAutoplayTitle,
+            subtitle: l10n.featureComingSoon(l10n.videoAutoplayTitle),
           ),
         ],
       ),

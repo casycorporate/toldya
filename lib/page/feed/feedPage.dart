@@ -135,12 +135,10 @@ class _FeedPage extends State<FeedPage> {
         statu,
         topic_val: topic.gundem,
       );
-      debugPrint("[FeedDebug] FeedPage: mainList.length=${mainList.length}, feedState.feedlist?.length=${feedState.feedlist?.length}, isBusy=${feedState.isBusy}, statu=$statu");
       // Boş ekranı sadece veri yüklendikten sonra ve gerçekten tahmin yoksa göster
       final showEmptyState = !feedState.isBusy &&
           feedState.feedlist != null &&
           mainList.isEmpty;
-      debugPrint("[FeedDebug] FeedPage: showEmptyState=$showEmptyState (isBusy=${feedState.isBusy}, feedlist!=null=${feedState.feedlist != null}, mainList.isEmpty=${mainList.isEmpty})");
       if (showEmptyState) {
         return EmptyStateScreen(
           onMenuPressed: () => widget.scaffoldKey?.currentState?.openDrawer(),
@@ -444,7 +442,10 @@ class _FeedPage extends State<FeedPage> {
                         SliverToBoxAdapter(
                           child: SizedBox(
                             height: fullHeight(context) - 135,
-                            child: EmptyStateContent(),
+                            child: EmptyStateContent(
+                              ctaLabel: l10n.addNow,
+                              onCtaPressed: () => Navigator.pushNamed(context, '/CreateFeedPage'),
+                            ),
                           ),
                         )
                       else

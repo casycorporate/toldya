@@ -17,9 +17,11 @@ import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/tweet/prediction_shared_ui.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/helper/bet_flow.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
 
 /// Mockup’a uygun tahmin kartı: soru üstte, countdown belirgin, progress + Evet/Hayır.
 class PredictionCardMockup extends StatelessWidget {
@@ -34,30 +36,23 @@ class PredictionCardMockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authState = Provider.of<AuthState>(context, listen: false);
     final totalYes = sumOfVote(model.likeList ?? []);
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
     final closed = isBettingClosed(model.statu, model.endDate);
-    final evetColor = (model.likeList ?? []).any((e) => e.userId == authState.userId)
-        ? AppNeon.green
-        : AppNeon.green.withOpacity(0.8);
-    final hayirColor = (model.unlikeList ?? []).any((e) => e.userId == authState.userId)
-        ? AppNeon.red
-        : AppNeon.red.withOpacity(0.8);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
 
-    final isLive = !isBettingClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
-
-    final isTrend = total >= 10 && isLive;
+    final isLive = !closed && (model.statu == Statu.statusLive);
     final countdownLong = getCountdownLong(model.endDate);
-
     final yesPct = total > 0 ? (percent * 100).round().clamp(0, 100) : 50;
     final noPct = 100 - yesPct;
 
     return InkWell(
       onTap: () {
+        if (!kEnablePostDetail) {
+          return;
+        }
         Provider.of<FeedState>(context, listen: false)
             .getpostDetailFromDatabase(model.key ?? '', model: model);
         Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
@@ -67,7 +62,7 @@ class PredictionCardMockup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Üst satır: sol avatar + @kullanici (güncel profil) + kategori; sağ LIVE + Kalan + aksiyon ikonları
+          // Zone 1 — Header: Avatar + username + RankBadge + category; right: single more_horiz
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -88,21 +83,28 @@ class PredictionCardMockup extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                handle,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      handle,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 2),
+                              SizedBox(height: 4),
                               Text(
                                 topicLabel,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey,
+                                  color: Colors.white.withOpacity(0.5),
                                 ),
                               ),
                             ],
@@ -113,62 +115,6 @@ class PredictionCardMockup extends StatelessWidget {
                   },
                 ),
               ),
-              if (isLive || isTrend) ...[
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isLive ? AppNeon.green.withOpacity(0.15) : AppNeon.orange.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isLive ? AppNeon.green : AppNeon.orange,
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isLive ? 'LIVE' : 'TREND',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: isLive ? AppNeon.green : AppNeon.orange,
-                        ),
-                      ),
-                      if (countdownLong.isNotEmpty) ...[
-                        SizedBox(height: 2),
-                        Text(
-                          'Kalan: $countdownLong',
-                          style: TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(width: 6),
-              ],
-              _iconBtn(
-                context,
-                (model.favList ?? []).any((id) => id == authState.userId)
-                    ? Icons.star
-                    : Icons.star_border,
-                Theme.of(context).primaryColor,
-                () {
-                  Provider.of<FeedState>(context, listen: false)
-                      .addFavToToldya(model, authState.userId);
-                },
-              ),
-              _iconBtn(context, Icons.share_outlined, Colors.grey, () async {
-                await Utility.createLinkToShare(
-                  context,
-                  'toldya/${model.key}',
-                  socialMetaTagParameters: SocialMetaTagParameters(
-                    description: model.description ??
-                        AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
-                    title: AppLocalizations.of(context)!.appTitle,
-                  ),
-                );
-              }),
               ToldyaBottomSheet().toldyaOptionIcon(
                 context,
                 model: model,
@@ -177,7 +123,7 @@ class PredictionCardMockup extends StatelessWidget {
               ),
             ],
           ),
-          // Tahmin başlığı
+          // Zone 2 — Body: prediction text prominent, bold, white
           if (model.description != null && (model.description ?? '').isNotEmpty) ...[
             SizedBox(height: 12),
             UrlText(
@@ -185,108 +131,79 @@ class PredictionCardMockup extends StatelessWidget {
               onHashTagPressed: (_) {},
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
               urlStyle: TextStyle(
                 fontSize: 17,
+                height: 1.35,
                 color: AppNeon.cyan,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
-          // Oran çubuğu + altında % YES / % NO
+          // Zone 3 — Action: progress-style Evet/Hayır buttons
           SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: yesPct.clamp(1, 99),
-                  child: Container(height: 10, color: evetColor),
-                ),
-                Expanded(
-                  flex: noPct.clamp(1, 99),
-                  child: Container(height: 10, color: hayirColor),
-                ),
-              ],
+          YesNoBetButtonsRow(
+            yesPercent: yesPct,
+            noPercent: noPct,
+            onYesTap: () => openBetFlowWithFeedback(
+              context: context,
+              model: model,
+              commentFlag: AppIcon.evetCommentFlag,
+              type: ToldyaType.Toldya,
+              scaffoldKey: scaffoldKey,
+            ),
+            onNoTap: () => openBetFlowWithFeedback(
+              context: context,
+              model: model,
+              commentFlag: AppIcon.hayirCommentFlag,
+              type: ToldyaType.Toldya,
+              scaffoldKey: scaffoldKey,
             ),
           ),
-          SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '%$yesPct YES',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: evetColor,
-                ),
-              ),
-              Text(
-                '%$noPct NO',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: hayirColor,
-                ),
-              ),
-            ],
-          ),
-          // Alt satır: Token Bahis (sol) + BAHİS YAP (sağ)
-          SizedBox(height: 12),
+          // Zone 4 — Footer: pool left, live + countdown right (pulse when live)
+          SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${k_m_b_generator(total)} Token Bahis',
+                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(total) + ' token')}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: Colors.white.withOpacity(0.5),
                 ),
               ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: closed
-                      ? () {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            content: Text(
-                              'Kapandığı için seçim yapılamaz',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            duration: Duration(seconds: 2),
-                            backgroundColor: Colors.black87,
-                          ));
-                        }
-                      : () {
-                          Provider.of<FeedState>(context, listen: false)
-                              .getpostDetailFromDatabase(model.key ?? '', model: model);
-                          Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
-                        },
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    height: 36,
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: closed ? Colors.grey[700] : const Color(0xFF2E7D32),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      closed ? 'Bitti' : 'BAHİS YAP',
+              if (isLive && countdownLong.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 8, color: Colors.red)
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .fadeIn(duration: 600.ms)
+                        .fadeOut(duration: 600.ms),
+                    SizedBox(width: 6),
+                    Text(
+                      '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     ),
+                  ],
+                )
+              else
+                Text(
+                  model.statu == Statu.statusPendingAiReview
+                      ? AppLocalizations.of(context)!.statuUnderReview
+                      : AppLocalizations.of(context)!.predictionEnded,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.5),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -311,6 +228,51 @@ class PredictionCardMockup extends StatelessWidget {
           if (label == 'TREND') SizedBox(width: 3),
           Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color)),
         ],
+      ),
+    );
+  }
+
+  Widget _betButton(
+    BuildContext context, {
+    required String label,
+    required int percent,
+    required Color color,
+    required Color textColor,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return AnimatedBounceButton(
+      enabled: enabled,
+      child: Material(
+        color: enabled ? color.withOpacity(0.18) : Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: enabled ? color.withOpacity(0.55) : Colors.white.withOpacity(0.10),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$label · $percent%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: enabled ? textColor : Colors.white.withOpacity(0.35),
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

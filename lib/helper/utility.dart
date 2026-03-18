@@ -20,6 +20,10 @@ final kAnalytics = FirebaseAnalytics.instance;
 final DatabaseReference kDatabase = FirebaseDatabase.instance.ref();
 final kScreenloader = CustomLoader();
 
+/// Logging flags (keep default silent; enable temporarily in debug sessions).
+const bool _utilityDebug = false;
+const bool _utilityEventDebug = false;
+
 /// Kullanıcı adı gösterimi: baştaki @ kaldırılır, sadece kullanıcı adı döner (örn. "sinanyilmaz").
 String formatHandle(String? userName, [String? displayName]) {
   final raw = userName?.trim() ?? displayName?.trim() ?? '';
@@ -247,7 +251,6 @@ String? getSocialLinks(String? url) {
                 (!url.contains('https') && !url.contains('http'))
             ? 'https://' + url
             : 'https://www.' + url;
-    cprint('Launching URL : $normalized');
     return normalized;
   }
   return null;
@@ -258,37 +261,60 @@ launchURL(String url) async {
   if (uri != null && await canLaunchUrl(uri)) {
     await launchUrl(uri);
   } else {
-    cprint('Could not launch $url');
+    cprint('Could not launch $url', errorIn: 'launchURL');
   }
 }
 
 void cprint(dynamic data, {String? errorIn, String? event}) {
-  if (errorIn != null) {
-    print(
-        '****************************** error ******************************');
-    developer.log('[Error]', time: DateTime.now(), error: data, name: errorIn);
-    print(
-        '****************************** error ******************************');
-  } else if (data != null) {
+  if (data == null) return;
+  if (errorIn != null && errorIn.isNotEmpty) {
     developer.log(
-      data,
+      errorIn,
+      name: 'toldya',
+      time: DateTime.now(),
+      error: data,
+    );
+    return;
+  }
+  if (kDebugMode && _utilityDebug) {
+    developer.log(
+      data.toString(),
+      name: 'toldya',
       time: DateTime.now(),
     );
   }
-  if (event != null) {
-    // logEvent(event);
+  if (event != null && event.isNotEmpty) {
+    logEvent(event);
   }
 }
 
 void logEvent(String event, {Map<String, dynamic>? parameter}) {
-  kReleaseMode
-      ? kAnalytics.logEvent(name: event, parameters: parameter != null ? Map<String, Object>.from(parameter) : null)
-      : print("[EVENT]: $event");
+  if (event.isEmpty) return;
+  if (kReleaseMode) {
+    kAnalytics.logEvent(
+      name: event,
+      parameters: parameter != null ? Map<String, Object>.from(parameter) : null,
+    );
+    return;
+  }
+  if (_utilityEventDebug) {
+    developer.log(
+      event,
+      name: 'analytics',
+      time: DateTime.now(),
+      error: parameter,
+    );
+  }
 }
 
 void debugLog(String log, {dynamic param = ""}) {
-  final String time = DateFormat("mm:ss:mmm").format(DateTime.now());
-  print("[$time][Log]: $log, $param");
+  if (!kDebugMode || !_utilityDebug) return;
+  developer.log(
+    log,
+    name: 'debug',
+    time: DateTime.now(),
+    error: param,
+  );
 }
 
 void share(String message, {String? subject}) {

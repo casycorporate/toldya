@@ -6,6 +6,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:toldya/helper/constant.dart';
 
 /// Top-level handler for FCM background messages (app terminated/background).
 /// Must be top-level or static to be used with [FirebaseMessaging.onBackgroundMessage].
@@ -34,6 +35,8 @@ class NotificationService {
   static const String _channelName = 'Bildirimler';
 
   bool _initialized = false;
+  String? _lastSavedToken;
+  String? _lastSavedUid;
 
   /// Uygulama başlarken runApp öncesinde çağrılmalı.
   /// [navigatorKeyParam] MaterialApp'e verilen navigatorKey ile aynı olmalı.
@@ -48,6 +51,7 @@ class NotificationService {
     await _requestPermission();
     await _initLocalNotifications();
     await _refreshAndPersistToken();
+    _setupTokenRefreshHandler();
     _setupForegroundHandler();
     _setupBackgroundOpenedHandler();
     _setupInitialMessageHandler();
@@ -81,24 +85,43 @@ class NotificationService {
     try {
       final token = await _fcm.getToken();
       if (token != null && token.isNotEmpty) {
-        debugPrint('[FCM] Device token: $token');
-        cprint('FCM token: $token', event: 'FCM_TOKEN');
-
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (uid != null && uid.isNotEmpty) {
-          await FirebaseDatabase.instance
-              .ref()
-              .child('profile')
-              .child(uid)
-              .update({'fcmToken': token});
-          cprint('FCM token saved to profile/$uid', event: 'FCM_TOKEN_SAVED');
+        // Avoid noisy duplicate logs during startup (same token can be returned multiple times).
+        if (_lastSavedToken != token) {
+          debugPrint('[FCM] Device token: $token');
+          cprint('FCM token: $token', event: 'FCM_TOKEN');
         }
+        await _persistTokenForCurrentUser(token);
       }
       return token;
     } catch (e) {
       cprint(e, errorIn: 'getTokenAndPersist');
       return null;
     }
+  }
+
+  void _setupTokenRefreshHandler() {
+    _fcm.onTokenRefresh.listen((token) async {
+      if (token.isEmpty) return;
+      cprint('FCM token refreshed: $token', event: 'FCM_TOKEN_REFRESH');
+      await _persistTokenForCurrentUser(token);
+    });
+  }
+
+  Future<void> _persistTokenForCurrentUser(String token) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
+
+    // Avoid redundant writes within the same session.
+    if (_lastSavedUid == uid && _lastSavedToken == token) return;
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child('profile')
+        .child(uid)
+        .update({'fcmToken': token});
+    _lastSavedUid = uid;
+    _lastSavedToken = token;
+    cprint('FCM token saved to profile/$uid', event: 'FCM_TOKEN_SAVED');
   }
 
   Future<void> _initLocalNotifications() async {
@@ -242,21 +265,29 @@ class NotificationService {
     final navigator = key!.currentState!;
 
     switch (type) {
+      case 'toldya':
       case 'prediction_result':
       case 'challenge':
         if (id.isNotEmpty) {
-          navigator.pushNamed('/FeedPostDetail/$id');
+          if (!kEnablePostDetail) {
+            return;
+          }
+          navigator.pushNamed('/toldya/$id');
         }
         break;
+      case 'profile':
       case 'new_follower':
         if (id.isNotEmpty) {
-          navigator.pushNamed('/ProfilePage/$id');
+          navigator.pushNamed('/profile/$id');
         }
         break;
       case 'NotificationType.Mention':
       case 'Mention':
         if (id.isNotEmpty) {
-          navigator.pushNamed('/FeedPostDetail/$id');
+          if (!kEnablePostDetail) {
+            return;
+          }
+          navigator.pushNamed('/toldya/$id');
         }
         break;
       case 'NotificationType.Message':
@@ -267,7 +298,10 @@ class NotificationService {
         break;
       default:
         if (id.isNotEmpty) {
-          navigator.pushNamed('/FeedPostDetail/$id');
+          if (!kEnablePostDetail) {
+            return;
+          }
+          navigator.pushNamed('/toldya/$id');
         }
         break;
     }

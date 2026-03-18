@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +15,7 @@ import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/network_utils.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/user.dart';
+import 'package:toldya/services/notification_service.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path/path.dart' as Path;
@@ -29,7 +29,7 @@ class AuthState extends AppState {
   bool isSignInWithGoogle = false;
   User? user;
   String userId = '';
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  Future<User?>? _getCurrentUserInFlight;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
@@ -37,6 +37,7 @@ class AuthState extends AppState {
   dabase.DatabaseReference? _mutedPostIdsRef;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
+  bool? _isAdminCached;
   List<String> _mutedPostIds = [];
   /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
   String? _pendingProfileRequestId;
@@ -50,6 +51,30 @@ class AuthState extends AppState {
   }
 
   UserModel? get userModel => _userModel;
+
+  /// Admin check (UI only).
+  /// Source of truth (temporary): RTDB `profile/{uid}/isAdmin == true`.
+  /// Fallback: userModel.role == Role.adminRole (legacy).
+  Future<bool> isAdminUser({bool forceRefresh = false}) async {
+    if (!forceRefresh && _isAdminCached != null) return _isAdminCached!;
+    final current = FirebaseAuth.instance.currentUser;
+    final uid = current?.uid;
+    if (uid == null || uid.isEmpty) {
+      _isAdminCached = false;
+      return false;
+    }
+    try {
+      final snap = await FirebaseDatabase.instance.ref('profile/$uid/isAdmin').get();
+      final val = snap.value;
+      final isAdmin = val == true || val == 1 || val == 'true';
+      _isAdminCached = isAdmin;
+      return isAdmin;
+    } catch (_) {
+      final fallback = (_userModel?.role == Role.adminRole);
+      _isAdminCached = fallback;
+      return fallback;
+    }
+  }
 
   UserModel? get profileUserModel {
     if (_profileUserModelList != null && _profileUserModelList!.length > 0) {
@@ -81,7 +106,11 @@ class AuthState extends AppState {
     }
     if (_profileUserModelList == null || _profileUserModelList!.isEmpty) {
       debugPrint('[Profile] list empty after close, calling ensureProfileIsCurrentUser _userModel=${_userModel != null}');
-      ensureProfileIsCurrentUser();
+      if (_userModel != null && userId.isNotEmpty) {
+        ensureProfileIsCurrentUser();
+      } else {
+        notifyListeners();
+      }
     } else if (isMyProfile &&
         _userModel != null &&
         _profileUserModelList!.last.userId != _userModel!.userId) {
@@ -94,8 +123,12 @@ class AuthState extends AppState {
 
   /// "Kendi profilim" sekmesi görünürken profileUserModel başkasıysa (örn. alt bardan dönüldü), listeyi giriş yapan kullanıcıya çevirir.
   void ensureProfileIsCurrentUser() {
+    // Startup guard: don't mutate profile stack until we actually have a signed-in user.
+    if (_userModel == null || userId.isEmpty) {
+      debugPrint('[Profile] ensureProfileIsCurrentUser skipped _userModel=${_userModel != null} userId=$userId');
+      return;
+    }
     debugPrint('[Profile] ensureProfileIsCurrentUser _userModel=${_userModel != null} userId=${_userModel?.userId}');
-    if (_userModel == null) return;
     if (_profileUserModelList == null ||
         _profileUserModelList!.isEmpty ||
         _profileUserModelList!.last.userId != userId) {
@@ -364,25 +397,36 @@ class AuthState extends AppState {
 
   /// Fetch current user profile
   Future<User?> getCurrentUser() async {
-    try {
-      loading = true;
-      logEvent('get_currentUSer');
-      user = _firebaseAuth.currentUser;
-      if (user != null) {
-        authStatus = AuthStatus.LOGGED_IN;
-        userId = user!.uid;
-        getProfileUser();
-      } else {
+    // Avoid duplicate calls during startup/rebuilds.
+    final existing = _getCurrentUserInFlight;
+    if (existing != null) return existing;
+
+    final fut = () async {
+      try {
+        loading = true;
+        logEvent('get_currentUSer');
+        user = _firebaseAuth.currentUser;
+        if (user != null) {
+          authStatus = AuthStatus.LOGGED_IN;
+          userId = user!.uid;
+          getProfileUser();
+        } else {
+          authStatus = AuthStatus.NOT_LOGGED_IN;
+        }
+        loading = false;
+        return user;
+      } catch (error) {
+        loading = false;
+        cprint(error, errorIn: 'getCurrentUser');
         authStatus = AuthStatus.NOT_LOGGED_IN;
+        return null;
+      } finally {
+        _getCurrentUserInFlight = null;
       }
-      loading = false;
-      return user;
-    } catch (error) {
-      loading = false;
-      cprint(error, errorIn: 'getCurrentUser');
-      authStatus = AuthStatus.NOT_LOGGED_IN;
-      return null;
-    }
+    }();
+
+    _getCurrentUserInFlight = fut;
+    return fut;
   }
 
   /// Reload user to get refresh user data
@@ -600,16 +644,14 @@ class AuthState extends AppState {
   /// Then get token from firebase and save it to profile
   /// When someone sends you a message FCM token is used
   void updateFCMToken() {
-    if (_userModel == null) {
-      return;
-    }
-    final model = _userModel!;
-    _firebaseMessaging.getToken().then((String? token) {
-      if (token != null) {
-        model.fcmToken = token;
-        createUser(model);
-      }
-    });
+    // Token persistence is owned by NotificationService (single responsibility).
+    // Keep this method for backward compatibility with existing call sites.
+    if (user?.uid == null || user!.uid!.isEmpty) return;
+    // If profile already has a token, don't spam getToken() / logs at startup.
+    if ((_userModel?.fcmToken ?? '').isNotEmpty) return;
+    // Fire-and-forget: NotificationService will skip redundant writes.
+    // ignore: unawaited_futures
+    NotificationService.instance.getTokenAndPersist();
   }
 
   /// Follow / Unfollow user

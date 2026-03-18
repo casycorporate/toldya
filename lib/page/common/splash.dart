@@ -1,11 +1,9 @@
-import 'dart:io';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
-import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/selectAuthMethod.dart';
 import 'package:toldya/page/Auth/verifyEmail.dart';
@@ -63,6 +61,9 @@ class _SplashPageState extends State<SplashPage> {
     if (type == "profile") {
       Navigator.of(context).pushNamed('/ProfilePage/' + id);
     } else if (type == "toldya") {
+      if (!kEnablePostDetail) {
+        return;
+      }
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(id);
       Navigator.of(context).pushNamed('/FeedPostDetail/' + id);
@@ -70,15 +71,14 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void timer() async {
-    final isAppUpdated = await _checkAppVersion();
-    if (isAppUpdated) {
-      print("App is updated");
-      Future.delayed(Duration(seconds: 1)).then((_) {
-        var state = Provider.of<AuthState>(context, listen: false);
-        // state.authStatus = AuthStatus.NOT_DETERMINED;
-        state.getCurrentUser();
-      });
-    }
+    // Startup optimization:
+    // - don't block login/navigation behind Remote Config version check
+    // - kick off auth load immediately, then check version in background
+    final state = Provider.of<AuthState>(context, listen: false);
+    Future.microtask(() => state.getCurrentUser());
+
+    // Version check is still enforced (release), but runs after auth begins.
+    _checkAppVersion();
   }
 
   /// Return installed app version
@@ -100,11 +100,10 @@ class _SplashPageState extends State<SplashPage> {
             "Redirect devs to update screen can put other devs in confusion");
         return true;
       }
+      if (!mounted) return false;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => UpdateApp(),
-        ),
+        MaterialPageRoute(builder: (_) => UpdateApp()),
       );
       return false;
     } else {

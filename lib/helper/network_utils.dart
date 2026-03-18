@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
+
+const bool _networkDebug = false;
 
 /// Runs [fn] with [timeout]. On [TimeoutException] or other error, retries up to
 /// [maxRetries] times, waiting [retryDelay] between attempts. Rethrows on final failure.
@@ -19,7 +22,14 @@ Future<T> runWithTimeoutAndRetry<T>(
       );
     } catch (e, st) {
       attempt++;
-      debugPrint("[FeedDebug] runWithTimeoutAndRetry: attempt $attempt failed: $e");
+      if (kDebugMode && _networkDebug) {
+        developer.log(
+          'runWithTimeoutAndRetry attempt $attempt failed',
+          name: 'network_utils',
+          error: e,
+          stackTrace: st,
+        );
+      }
       if (attempt > maxRetries) rethrow;
       await Future.delayed(retryDelay);
     }

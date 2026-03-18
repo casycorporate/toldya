@@ -87,14 +87,15 @@ class NotificationPageBody extends StatelessWidget {
     if (isFollow) {
       return _FollowNotificationTile(notificationModel: model);
     }
-    final postId = model.toldyaKey ?? '';
+    // Standard payload: model.data => { type, id }. Backward compatible: toldyaKey is still present.
+    final targetId = model.navId;
     return FutureBuilder<FeedModel?>(
-      future: state.getToldyaDetail(postId),
+      future: state.getToldyaDetail(targetId),
       builder: (BuildContext context, AsyncSnapshot<FeedModel?> snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           return NotificationTile(
             model: snapshot.data!,
-            postId: postId,
+            postId: targetId,
             notificationType: model.type,
           );
         } else if (snapshot.connectionState == ConnectionState.waiting ||
@@ -111,7 +112,7 @@ class NotificationPageBody extends StatelessWidget {
           );
         } else {
           var authstate = Provider.of<AuthState>(context);
-          state.removeNotification(authstate.userId, postId);
+          state.removeNotification(authstate.userId, model.toldyaKey ?? targetId);
           return SizedBox();
         }
       },
@@ -200,12 +201,12 @@ class _FollowNotificationTile extends StatelessWidget {
           );
         }
         final user = snapshot.data!;
-        final name = user.displayName ?? user.userName ?? 'Bir kullanıcı';
         final l10n = AppLocalizations.of(context)!;
+        final name = user.displayName ?? user.userName ?? l10n.someone;
         return InkWell(
           onTap: () {
             if (followerId.isNotEmpty) {
-              Navigator.of(context).pushNamed('/ProfilePage/$followerId');
+              Navigator.of(context).pushNamed('/profile/$followerId');
             }
           },
           child: Container(
@@ -421,7 +422,7 @@ class NotificationTile extends StatelessWidget {
     final isReply = notificationType == 'Reply' || notificationType == 'NotificationType.Reply';
 
     final titleText = isReply
-        ? '${model.user?.displayName ?? model.user?.userName ?? "Bir kullanıcı"} ${l10n.notificationCommentedOnPost}'
+        ? '${model.user?.displayName ?? model.user?.userName ?? l10n.someone} ${l10n.notificationCommentedOnPost}'
         : l10n.votedOnYourPost(length);
 
     final avatarWidget = isReply && model.userId != null
@@ -435,9 +436,12 @@ class NotificationTile extends StatelessWidget {
           return;
         }
         if (postId.isEmpty) return;
+        if (!kEnablePostDetail) {
+          return;
+        }
         final state = Provider.of<FeedState>(context, listen: false);
         state.getpostDetailFromDatabase(postId, model: model);
-        Navigator.of(context).pushNamed('/FeedPostDetail/$postId');
+        Navigator.of(context).pushNamed('/toldya/$postId');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

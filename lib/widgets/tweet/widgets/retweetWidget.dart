@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
@@ -130,6 +131,9 @@ class RetoldyaWidget extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(15)),
               onPressed: () {
                 final data = snapshot.data!;
+                if (!kEnablePostDetail) {
+                  return;
+                }
                 feedstate.getpostDetailFromDatabase(data.key ?? '', model: data);
                 Navigator.of(context)
                     .pushNamed('/FeedPostDetail/' + (data.key ?? ''));

@@ -28,39 +28,49 @@ class SettingRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isInteractive = onPressed != null || navigateTo != null;
     return Column(
       children: <Widget>[
         ListTile(
           contentPadding:
               EdgeInsets.symmetric(vertical: vPadding, horizontal: 18),
-          onTap: () {
-            if (onPressed != null) {
-              onPressed?.call();
-              return;
-            }
-            if (navigateTo == null) {
-              return;
-            }
-            Navigator.pushNamed(context, '/$navigateTo');
-          },
+          onTap: !isInteractive
+              ? null
+              : () {
+                  if (onPressed != null) {
+                    onPressed?.call();
+                    return;
+                  }
+                  if (navigateTo == null) return;
+                  Navigator.pushNamed(context, '/$navigateTo');
+                },
           title: title == null
               ? null
               : UrlText(
                   text: title ?? '',
                   style: TextStyle(
                       fontSize: 16,
-                      color: textColor ?? Theme.of(context).colorScheme.onSurface),
+                    color: textColor ??
+                        Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(isInteractive ? 1 : 0.55)),
                 ),
           subtitle: subtitle == null
               ? null
               : UrlText(
                   text: subtitle!,
                   style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(isInteractive ? 0.7 : 0.45),
                       fontWeight: FontWeight.w400),
                 ),
-          trailing: CustomCheckBox(isChecked:showCheckBox,visibleSwitch: visibleSwitch, )
-              
+          trailing: CustomCheckBox(
+            isChecked: showCheckBox,
+            visibleSwitch: visibleSwitch,
+          ),
         ),
         (showDivider != false) ? Divider(height: 0) : SizedBox()
       ],

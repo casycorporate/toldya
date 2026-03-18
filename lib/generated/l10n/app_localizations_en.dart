@@ -36,10 +36,289 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile => 'Profile';
 
   @override
+  String get adminModeration => 'Admin moderation';
+
+  @override
+  String get adminJobsTitle => 'Admin jobs';
+
+  @override
+  String get adminSegmentModeration => 'Moderation';
+
+  @override
+  String get adminSegmentResolve => 'Resolve';
+
+  @override
+  String get adminSegmentQuickFix => 'Quick Fix';
+
+  @override
+  String get adminSegmentDistribute => 'Distribute';
+
+  @override
+  String get adminJobSecretLabel => 'Job secret';
+
+  @override
+  String get adminJobSecretHint => 'Enter secret';
+
+  @override
+  String get adminJobSecretSessionNote =>
+      'Stored only in memory for this session.';
+
+  @override
+  String get adminJobSecretMissing => 'Job secret is required to run.';
+
+  @override
+  String get adminResolveTitle => 'Resolve';
+
+  @override
+  String get adminResolveDesc =>
+      'Lists expired predictions that are not yet resolved. As an admin you can manually pick the winning side (Yes/No) and resolve.';
+
+  @override
+  String get adminResolvePreviewButton => 'Preview';
+
+  @override
+  String get adminResolveRunButton => 'Run';
+
+  @override
+  String get adminResolveManualYes => 'Yes won';
+
+  @override
+  String get adminResolveManualNo => 'No won';
+
+  @override
+  String get adminResolveManualApply => 'Resolve';
+
+  @override
+  String get adminResolveManualSuccess => 'Prediction resolved.';
+
+  @override
+  String get adminDistributeTitle => 'Distribute';
+
+  @override
+  String get adminDistributeDesc =>
+      'Distribute winnings one by one for resolved predictions.';
+
+  @override
+  String get adminDistributeIdempotentNote => 'Note: This job is idempotent.';
+
+  @override
+  String get adminDistributePreviewButton => 'Preview';
+
+  @override
+  String get adminDistributeRunButton => 'Run';
+
+  @override
+  String get adminDistributeManualApply => 'Distribute winnings';
+
+  @override
+  String get adminDistributeManualSuccess => 'Winnings distributed.';
+
+  @override
+  String get adminDistributeManualNoop => 'No winnings to distribute.';
+
+  @override
+  String get adminQuickFixTitle => 'Quick Fix';
+
+  @override
+  String get adminQuickFixDesc =>
+      'Fix records stuck in statu=1 with missing/invalid date fields. Set dates and optionally publish to move them into the normal lock → oracle → distribution lifecycle.';
+
+  @override
+  String adminQuickFixCount(String n) {
+    return 'Broken date records: $n';
+  }
+
+  @override
+  String get adminQuickFixSearchHint => 'Search by ID or description';
+
+  @override
+  String get adminQuickFixFilterEndDatePassed =>
+      'Only items with endDate passed';
+
+  @override
+  String get adminQuickFixEndDateLabel => 'End date';
+
+  @override
+  String get adminQuickFixResolutionDateLabel => 'Resolution date';
+
+  @override
+  String get adminQuickFixAutofillEndNowPlus => 'EndDate = now + 5 min';
+
+  @override
+  String get adminQuickFixAutofillResolutionPlus1h =>
+      'ResolutionDate = endDate + 1h';
+
+  @override
+  String get adminQuickFixSetOnly => 'Set only';
+
+  @override
+  String get adminQuickFixSetAndPublish => 'Set & publish';
+
+  @override
+  String get adminQuickFixConfirmPublish => 'I confirm publishing';
+
+  @override
+  String get adminQuickFixValidationEndRequired => 'EndDate is required.';
+
+  @override
+  String get adminQuickFixValidationResolutionRequired =>
+      'ResolutionDate is required.';
+
+  @override
+  String get adminQuickFixValidationResolutionAfterEnd =>
+      'ResolutionDate must be after EndDate.';
+
+  @override
+  String get adminQuickFixValidationMin1h =>
+      'ResolutionDate must be at least 1 hour after EndDate.';
+
+  @override
+  String get adminQuickFixSuccess => 'Record updated.';
+
+  @override
+  String get adminQuickFixWarningPublish =>
+      'This will publish the prediction and it will continue automatically via lock/oracle jobs.';
+
+  @override
+  String adminQuickFixCreatedAt(String t) {
+    return 'Created: $t';
+  }
+
+  @override
+  String get adminQuickFixChipStatu1 => 'statu: 1';
+
+  @override
+  String get adminQuickFixChipEndMissing => 'endDate: missing';
+
+  @override
+  String get adminQuickFixChipEndInvalid => 'endDate: invalid';
+
+  @override
+  String get adminQuickFixChipEndOk => 'endDate: ok';
+
+  @override
+  String get adminQuickFixChipEndPassed => 'endDate: passed';
+
+  @override
+  String get adminQuickFixChipResMissing => 'resolutionDate: missing';
+
+  @override
+  String get adminQuickFixChipResInvalid => 'resolutionDate: invalid';
+
+  @override
+  String get adminQuickFixChipTopicMissing => 'topic: missing';
+
+  @override
+  String adminDistributeTotalPoolEstimate(String n) {
+    return 'Total pool estimate: $n';
+  }
+
+  @override
+  String adminPreviewCandidates(String n) {
+    return 'Candidates: $n';
+  }
+
+  @override
+  String adminJobResultResolved(String n) {
+    return 'Resolved: $n';
+  }
+
+  @override
+  String adminJobResultDistributed(String n) {
+    return 'Distributed: $n';
+  }
+
+  @override
+  String get adminJobSkippedTitle => 'Skipped';
+
+  @override
+  String get adminJobShowMore => 'Show more';
+
+  @override
+  String get adminJobShowLess => 'Show less';
+
+  @override
+  String adminJobErrorWithMessage(String msg) {
+    return 'Error: $msg';
+  }
+
+  @override
+  String get adminModerationQueueEmpty => 'No pending moderation.';
+
+  @override
+  String get adminModerationReject => 'Reject';
+
+  @override
+  String get adminModerationRejectReasonHint => 'Rejection reason';
+
+  @override
+  String get adminModerationApprove => 'Approve';
+
+  @override
+  String get adminModerationApproveTitle => 'Publish';
+
+  @override
+  String get adminModerationTopicLabel => 'Category';
+
+  @override
+  String get adminModerationEndDateLabel => 'Close time';
+
+  @override
+  String get adminModerationResolutionDateLabel => 'Resolution time';
+
+  @override
+  String get adminModerationOracleSourceOptional => 'Oracle source (optional)';
+
+  @override
+  String get adminModerationOracleApiUrlOptional => 'Oracle API URL (optional)';
+
+  @override
+  String get adminModerationCollateralOptional => 'Collateral (optional)';
+
+  @override
+  String get adminModerationInvalidForm =>
+      'Please fill in the required fields.';
+
+  @override
+  String get adminModerationDateRule =>
+      'Resolution time must be at least 1 hour after close time.';
+
+  @override
+  String get adminModerationConflictRetry =>
+      'Conflict occurred, please try again.';
+
+  @override
+  String get adminModerationActionFailed => 'Action failed.';
+
+  @override
+  String get adminModerationMetaUser => 'User';
+
+  @override
+  String get adminModerationMetaCreatedAt => 'Created';
+
+  @override
+  String get adminModerationMetaTopic => 'Topic';
+
+  @override
+  String get adminModerationMetaOracleApiUrl => 'Oracle URL';
+
+  @override
   String get settings => 'Settings';
 
   @override
   String get settingsAndPrivacy => 'Settings and privacy';
+
+  @override
+  String get drawerActiveBets => 'My Active Bets';
+
+  @override
+  String get drawerWeeklyLeague => 'Weekly League';
+
+  @override
+  String get drawerSettingsAndPrivacy => 'Settings & Privacy';
+
+  @override
+  String get drawerWalletTitle => 'Token';
 
   @override
   String get logout => 'Log out';
@@ -186,6 +465,44 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get betOnOneSideOnly =>
       'You have already bet on the other side of this prediction. You can only bet on one side (Yes or No) per prediction.';
+
+  @override
+  String get betPleaseWait => 'A bet is in progress. Please wait.';
+
+  @override
+  String get betLimitHint =>
+      'Your maximum bet is limited by balance, rank, and pool size.';
+
+  @override
+  String availableBalanceTokens(String pegCount) {
+    return 'Available balance: $pegCount 🪙';
+  }
+
+  @override
+  String get betSheetSideYes => 'Yes';
+
+  @override
+  String get betSheetSideNo => 'No';
+
+  @override
+  String get betSheetSubmitYes => 'BET ON YES';
+
+  @override
+  String get betSheetSubmitNo => 'BET ON NO';
+
+  @override
+  String potentialReturnEstimate(String amount) {
+    return 'Potential return: ~$amount 🪙';
+  }
+
+  @override
+  String get potentialReturnUnavailable => '—';
+
+  @override
+  String get potentialReturnDisclaimer => 'Estimate only; not guaranteed.';
+
+  @override
+  String get betSheetMaxButton => 'MAX';
 
   @override
   String get betPlaced => 'Bet placed.';
@@ -416,6 +733,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get betErrorGeneric => 'Bet could not be placed.';
+
+  @override
+  String get betErrorUnauthenticated => 'You need to sign in to place a bet.';
+
+  @override
+  String get betErrorDeadlineExceeded => 'Request timed out. Please try again.';
+
+  @override
+  String get betErrorResourceExhausted =>
+      'Too many requests right now. Please try again shortly.';
+
+  @override
+  String get betErrorFailedPrecondition =>
+      'You can’t place a bet on this prediction right now. Please try again later.';
+
+  @override
+  String get statuPending => 'Pending';
+
+  @override
+  String get statuUnderReview => 'Under review';
+
+  @override
+  String get statuRejectedByAi => 'Rejected';
 
   @override
   String gmsError(String message) {
@@ -1195,6 +1535,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get defaultUserHandle => '@user';
 
   @override
+  String get someone => 'Someone';
+
+  @override
   String get youAreBlocked => 'You are blocked';
 
   @override
@@ -1351,6 +1694,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get betAmountLabel => 'Bet amount';
 
   @override
+  String amountPlayed(String amount) {
+    return '$amount played';
+  }
+
+  @override
+  String get liveLabel => 'LIVE';
+
+  @override
+  String get timeLeftLabel => 'Left';
+
+  @override
+  String get predictionEnded => 'Ended';
+
+  @override
   String get approvalPendingStatus => 'Selection pending status';
 
   @override
@@ -1428,4 +1785,116 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get emptyPredictionsDefaultSubtitle =>
       'New predictions will appear here.\nTap the button below to create a prediction.';
+
+  @override
+  String get interactionAndSocialHeader => 'Interaction & Social';
+
+  @override
+  String get commentPermissionTitle => 'Who can comment on my predictions';
+
+  @override
+  String get commentPermissionEveryone => 'Everyone';
+
+  @override
+  String get commentPermissionFollowed => 'Followed';
+
+  @override
+  String get commentPermissionNone => 'None';
+
+  @override
+  String get mentionPermissionTitle => 'Who can mention me (@mention)';
+
+  @override
+  String get contentModerationHeader => 'Content & Moderation';
+
+  @override
+  String get hideSensitiveContentTitle => 'Hide sensitive content';
+
+  @override
+  String get aiModerationTitle => 'AI Moderation';
+
+  @override
+  String get aiModerationSubtitle =>
+      'Posts are checked by AI to help ensure they follow community guidelines.';
+
+  @override
+  String get dataAndSystemHeader => 'Data & System';
+
+  @override
+  String get locationDataTitle => 'Location data';
+
+  @override
+  String get legalHeader => 'Legal';
+
+  @override
+  String get privacyPolicyRowTitle => 'Privacy Policy';
+
+  @override
+  String get userAgreementRowTitle => 'User Agreement';
+
+  @override
+  String get legalUrlMissingSubtitle => 'Coming soon.';
+
+  @override
+  String get deleteAccountTitle => 'Delete account';
+
+  @override
+  String get deleteAccountWarning =>
+      'Once completed, all your tokens, stash, and history will be permanently deleted.';
+
+  @override
+  String get deleteAccountCannotBeUndone => 'This action cannot be undone.';
+
+  @override
+  String get deleteAccountBusy => 'Deleting…';
+
+  @override
+  String get deleteAccountDeleteButton => 'Delete';
+
+  @override
+  String get deleteAccountSuccess => 'Your account has been deleted.';
+
+  @override
+  String get deleteAccountErrorGeneric =>
+      'Could not delete your account. Please try again.';
+
+  @override
+  String get mutedWordsComingSoonTitle => 'Muted words (coming soon)';
+
+  @override
+  String get mutedWordsComingSoonSubtitle => 'This feature isn’t ready yet.';
+
+  @override
+  String get blockedAccountsEmptyTitle => 'No blocked accounts yet';
+
+  @override
+  String get blockedAccountsEmptySubtitle =>
+      'Accounts you block will appear here.';
+
+  @override
+  String get unblockButton => 'Unblock';
+
+  @override
+  String get unblockSuccess => 'Account unblocked.';
+
+  @override
+  String get legalUrlMissingTitle => 'Legal URL missing';
+
+  @override
+  String get openLegalButton => 'Open in browser';
+
+  @override
+  String get changePasswordTitle => 'Change password';
+
+  @override
+  String get languageOptionTurkish => 'Turkish';
+
+  @override
+  String get languageOptionEnglish => 'English';
+
+  @override
+  String get languageOptionGerman => 'German';
+
+  @override
+  String get logoutActionTitle => 'Log out';
 }

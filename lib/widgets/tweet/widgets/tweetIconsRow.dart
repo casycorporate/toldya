@@ -12,13 +12,15 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/page/common/usersListPage.dart';
+import 'package:toldya/helper/bet_flow.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
 
 import '../../../model/user.dart';
 
@@ -43,173 +45,74 @@ class ToldyaIconsRow extends StatelessWidget {
       : super(key: key);
 
   Widget _likeCommentsIcons(BuildContext context, FeedModel model) {
-    var authState = Provider.of<AuthState>(context, listen: false);
     double getPercent(){
       final total = sumOfVote(model.unlikeList ?? []) + sumOfVote(model.likeList ?? []);
       if (total == 0) return 0.5;
       final percent = sumOfVote(model.likeList ?? []) / total;
       return percent.isNaN ? 0.5 : percent;
     }
-    final closed = isBettingClosed(model.statu, model.endDate);
-    final evetColor = model.feedResult == FeedResult.feedResultlike
-        ? Color(0xFF2E7D32)
-        : (model.likeList ?? []).any((e) => e.userId == authState.userId)
-            ? Color(0xFF4CAF50)
-            : Color(0xFF81C784);
-    final hayirColor = model.feedResult == FeedResult.feedResultunLike
-        ? Color(0xFFC62828)
-        : (model.unlikeList ?? []).any((e) => e.userId == authState.userId)
-            ? Color(0xFFE53935)
-            : Color(0xFFE57373);
+    final totalPool = sumOfVote(model.likeList ?? []) + sumOfVote(model.unlikeList ?? []);
     return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: LinearPercentIndicator(
-              percent: getPercent(),
-              lineHeight: 10,
-              animation: true,
-              animationDuration: 600,
-              barRadius: Radius.circular(5),
-              leading: Text(
-                k_m_b_generator(sumOfVote(model.likeList ?? [])),
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: evetColor,
-                  fontSize: 13,
-                ),
-              ),
-              trailing: Text(
-                k_m_b_generator(sumOfVote(model.unlikeList ?? [])),
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: hayirColor,
-                  fontSize: 13,
-                ),
-              ),
-              backgroundColor: hayirColor.withOpacity(0.25),
-              progressColor: evetColor,
+          YesNoBetButtonsRow(
+            yesPercent: (getPercent() * 100).round(),
+            noPercent: (100 - (getPercent() * 100).round()).clamp(0, 100),
+            onYesTap: () => openBetFlowWithFeedback(
+              context: context,
+              model: model,
+              commentFlag: AppIcon.evetCommentFlag,
+              type: type,
+              scaffoldKey: scaffoldKey,
+            ),
+            onNoTap: () => openBetFlowWithFeedback(
+              context: context,
+              model: model,
+              commentFlag: AppIcon.hayirCommentFlag,
+              type: type,
+              scaffoldKey: scaffoldKey,
             ),
           ),
           SizedBox(height: 10),
           Row(
-            children: <Widget>[
-              Expanded(
-                child: _voteChip(
-                  context,
-                  label: AppLocalizations.of(context)!.yes,
-                  count: k_m_b_generator(sumOfVote(model.likeList ?? [])),
-                  icon: Icons.thumb_up_rounded,
-                  color: evetColor,
-                  onPressed: () => _onVotePressed(context, authState, AppIcon.evetCommentFlag),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(totalPool) + ' token')}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.5),
                 ),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _voteChip(
-                  context,
-                  label: AppLocalizations.of(context)!.no,
-                  count: isTweetDetail ? '' : k_m_b_generator(sumOfVote(model.unlikeList ?? [])),
-                  icon: Icons.thumb_down_rounded,
-                  color: hayirColor,
-                  onPressed: () => _onVotePressed(context, authState, AppIcon.hayirCommentFlag),
-                ),
-              ),
+              _buildFooterTime(context),
             ],
           ),
         ]);
   }
 
-  void _onVotePressed(BuildContext context, AuthState authState, int commentFlag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficientForVote,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white),
-        ),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.black87,
-      ));
-      return;
-    }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          AppLocalizations.of(context)!.betOnOneSideOnly,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white),
-        ),
-        duration: Duration(seconds: 4),
-        backgroundColor: Colors.orange.shade800,
-      ));
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-        commentFlag, context,
-        type: type, model: model, scaffoldKey: scaffoldKey);
-  }
-
-  Widget _voteChip(BuildContext context, {
-    required String label,
-    required String count,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return AnimatedBounceButton(
-      child: Material(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onPressed();
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.4), width: 1),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 20, color: color),
-                SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (count.isNotEmpty)
-                      Text(
-                        count,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: color.withOpacity(0.9),
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+  Widget _buildFooterTime(BuildContext context) {
+    final countdownLong = getCountdownLong(model.endDate);
+    final isLive = !isBettingClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
+    if (isLive && countdownLong.isNotEmpty) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.circle, size: 8, color: Colors.red)
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .fadeIn(duration: 600.ms)
+              .fadeOut(duration: 600.ms),
+          SizedBox(width: 6),
+          Text(
+            '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
+            style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.7)),
           ),
-        ),
-      ),
+        ],
+      );
+    }
+    return Text(
+      AppLocalizations.of(context)!.predictionEnded,
+      style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
     );
   }
 

@@ -2,10 +2,9 @@ import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
 import 'package:toldya/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-// import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/searchState.dart';
@@ -41,33 +40,10 @@ void main() async {
     FirebaseDatabase.instance.setPersistenceEnabled(true);
   } catch (_) {}
 
-  // App Check KAPALI: Bazı cihazlarda GMS "Unknown calling package name 'com.google.android.gms'"
-  // SecurityException veriyor. Sunucuda placeBet/claimDailyBonus için enforceAppCheck: false.
-  // Sorun giderildikten sonra aşağıdaki blok tekrar açılabilir.
-  // if (kDebugMode) {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.debug,
-  //     appleProvider: AppleProvider.debug,
-  //   );
-  // } else {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.playIntegrity,
-  //     appleProvider: AppleProvider.appAttest,
-  //   );
-  // }
-
-  // FCM: Bildirim servisini başlat (izin, token, foreground/background/terminated yönetimi).
-  await NotificationService.init(navigatorKey);
-
-  // Locale: single source of truth from SharedPreferences before first frame.
-  final prefs = await SharedPreferences.getInstance();
-  const String localeKey = 'locale';
-  final savedCode = prefs.getString(localeKey);
-  final Locale initialLocale = (savedCode != null && ['tr', 'en', 'de'].contains(savedCode))
-      ? Locale(savedCode)
-      : const Locale('tr');
-
-  runApp(MyApp(initialLocale: initialLocale));
+  // Startup optimization:
+  // - runApp ASAP (render first frame)
+  // - defer AppCheck/FCM/locale IO to after first frame inside MyApp.
+  runApp(const MyApp(initialLocale: Locale('tr')));
 }
 
 class MyApp extends StatefulWidget {
@@ -79,6 +55,42 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deferredInit();
+    });
+  }
+
+  Future<void> _deferredInit() async {
+    // App Check: do not block first frame (enforcement disabled server-side).
+    try {
+      const bool kForceDebugAppCheck = false;
+      final bool useDebugProvider = kForceDebugAppCheck || kDebugMode || kProfileMode;
+      if (useDebugProvider) {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.debug,
+          appleProvider: AppleProvider.debug,
+        );
+      } else {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.playIntegrity,
+          appleProvider: AppleProvider.appAttest,
+        );
+      }
+    } catch (e) {
+      debugPrint('[AppCheck] activate failed: $e');
+    }
+
+    // FCM: init notification service after first frame.
+    try {
+      await NotificationService.init(navigatorKey);
+    } catch (e) {
+      debugPrint('[FCM] NotificationService init failed: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

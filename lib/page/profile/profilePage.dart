@@ -17,11 +17,14 @@ import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/custom_shimmer.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
+import 'package:toldya/widgets/newWidget/empty_state_screen.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
 import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/helper/bet_flow.dart';
 import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/widgets/rank/xpProgressBarWidget.dart';
+import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -44,6 +47,10 @@ class _ProfilePageState extends State<ProfilePage>
   int pageIndex = 0;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isFollowingAction = false;
+
+  // TEMP: Profile içindeki token/rütbe/liderlik UI'larını şimdilik gizle.
+  // İleride tekrar açmak için sadece bu flag'i true yap.
+  static const bool _showTokenAndRankUi = false;
 
   @override
   void initState() {
@@ -174,7 +181,13 @@ class _ProfilePageState extends State<ProfilePage>
   build(BuildContext context) {
     var state = Provider.of<FeedState>(context);
     var authstate = Provider.of<AuthState>(context);
-    if (widget.profileId == null && authstate.profileUserModel?.userId != authstate.userId) {
+    // Prevent the background Profile tab (kept alive under HomePage) from overwriting
+    // the currently opened profile route (e.g. when viewing someone else).
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+    if (isCurrentRoute &&
+        widget.profileId == null &&
+        authstate.userId.isNotEmpty &&
+        authstate.profileUserModel?.userId != authstate.userId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           Provider.of<AuthState>(context, listen: false).ensureProfileIsCurrentUser();
@@ -195,7 +208,9 @@ class _ProfilePageState extends State<ProfilePage>
         profileMatchesPage;
     debugPrint('[ProfilePage] build profileId=${widget.profileId} profileUserModel=${authstate.profileUserModel != null} isbusy=${authstate.isbusy} showHeader=$showHeader');
 
-    if (id.isNotEmpty && profileMatchesPage && state.profileUserToldyaUserId != id) {
+    if (id.isNotEmpty &&
+        profileMatchesPage &&
+        !state.hasProfileUserToldyaCached(id)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           Provider.of<FeedState>(context, listen: false).loadToldyaListForUser(id);
@@ -204,8 +219,9 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     /// Bahislerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
-    final listForBahislerim = (state.profileUserToldyaUserId == id && state.profileUserToldyaList != null)
-        ? state.profileUserToldyaList!
+    final cached = id.isNotEmpty ? state.profileUserToldyaListFor(id) : null;
+    final listForBahislerim = (cached != null)
+        ? cached
         : feedlist
             .where((x) =>
                 (x.parentkey == null || x.childRetoldyaKey != null) &&
@@ -512,14 +528,16 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
               SizedBox(height: 14),
-              _WalletCapsule(
-                user: user,
-                isMyProfile: isMyProfile,
-                canClaimDailyBonus: canClaimDailyBonus,
-                onClaimDailyBonus: onClaimDailyBonus,
-                onTokenManagement: onTokenManagement,
-              ),
-              _ProfileStatsSection(context, user: user, isMyProfile: isMyProfile),
+              if (_showTokenAndRankUi)
+                _WalletCapsule(
+                  user: user,
+                  isMyProfile: isMyProfile,
+                  canClaimDailyBonus: canClaimDailyBonus,
+                  onClaimDailyBonus: onClaimDailyBonus,
+                  onTokenManagement: onTokenManagement,
+                ),
+              if (_showTokenAndRankUi)
+                _ProfileStatsSection(context, user: user, isMyProfile: isMyProfile),
             ],
           ),
         );
@@ -946,36 +964,47 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
     if (authstate.isbusy && list.isEmpty) {
-      return SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing8),
-          child: FeedShimmer(itemCount: 3),
-        ),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing8),
+            child: FeedShimmer(itemCount: 3),
+          ),
+        ],
       );
     }
 
     /// if tweet list is empty or null then need to show user a message
     final bottomPadding = 24.0 + MediaQuery.of(context).padding.bottom;
     return list.isEmpty
-            ? SingleChildScrollView(
-                child: Container(
-                  padding: EdgeInsets.only(top: 20, left: 30, right: 30, bottom: bottomPadding),
-                  color: MockupDesign.background,
-                  constraints: BoxConstraints(
-                    minHeight: 200,
-                  ),
-                  child: NotifyText(
-                    title: _emptyListTitle(
-                      isreply: isreply,
-                      isMedia: isMedia,
-                      statusFilter: statusFilter,
-                      isMyProfile: isMyProfile,
-                      profileUserName: authstate.profileUserModel?.userName ?? '',
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(top: 20, left: 16, right: 16, bottom: bottomPadding),
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 240),
+                    child: EmptyStateContent(
+                      icon: statusFilter == 1
+                          ? Icons.pending_actions
+                          : statusFilter == 3
+                              ? Icons.block
+                              : Icons.inbox_outlined,
+                      title: _emptyListTitle(
+                        isreply: isreply,
+                        isMedia: isMedia,
+                        statusFilter: statusFilter,
+                        isMyProfile: isMyProfile,
+                        profileUserName: authstate.profileUserModel?.userName ?? '',
+                      ),
+                      subtitle: isMyProfile
+                          ? AppLocalizations.of(context)!.emptyPredictionsDefaultSubtitle
+                          : AppLocalizations.of(context)!.willShowHere,
+                      ctaLabel: isMyProfile ? AppLocalizations.of(context)!.addNow : null,
+                      onCtaPressed: isMyProfile ? () => Navigator.pushNamed(context, '/CreateFeedPage') : null,
                     ),
-                    subTitle:
-                        isMyProfile ? AppLocalizations.of(context)!.addNow : AppLocalizations.of(context)!.willShowHere,
                   ),
-                ),
+                ],
               )
 
             /// 4. Tahmin kartları: #2C2C2E, 16px radius, çerçeve yok; ince Evet/Hayır butonları
@@ -1013,42 +1042,19 @@ class _ProfilePredictionCard extends StatelessWidget {
   }) : super(key: key);
 
   void _onCardTap(BuildContext context) {
+    if (!kEnablePostDetail) {
+      return;
+    }
     Provider.of<FeedState>(context, listen: false).getpostDetailFromDatabase(model.key ?? '', model: model);
     Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');
   }
 
   void _onVoteTap(BuildContext context, int commentFlag) {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final closed = isBettingClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
-          style: TextStyle(color: Colors.white),
-        ),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.black87,
-      ));
-      return;
-    }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          AppLocalizations.of(context)!.betOnOneSideOnly,
-          style: TextStyle(color: Colors.white),
-        ),
-        duration: Duration(seconds: 4),
-        backgroundColor: Colors.orange.shade800,
-      ));
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-      commentFlag,
-      context,
-      type: ToldyaType.Detail,
+    openBetFlowWithFeedback(
+      context: context,
       model: model,
+      commentFlag: commentFlag,
+      type: ToldyaType.Detail,
       scaffoldKey: scaffoldKey,
     );
   }
@@ -1059,9 +1065,10 @@ class _ProfilePredictionCard extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     const cardColor = Color(0xFF2C2C2E);
+    final yesPct = total > 0 ? (percent * 100).round().clamp(0, 100) : 50;
+    final noPct = 100 - yesPct;
 
     return Material(
       color: cardColor,
@@ -1120,87 +1127,13 @@ class _ProfilePredictionCard extends StatelessWidget {
                   trailing,
                 ],
               ),
-              SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: percent,
-                  backgroundColor: AppNeon.red.withOpacity(0.4),
-                  valueColor: AlwaysStoppedAnimation<Color>(AppNeon.green),
-                  minHeight: 8,
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      k_m_b_generator(totalYes),
-                      style: TextStyle(color: AppNeon.green, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      k_m_b_generator(totalNo),
-                      style: TextStyle(color: AppNeon.red, fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ),
               SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Material(
-                      color: AppNeon.green.withOpacity(0.35),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () => _onVoteTap(context, AppIcon.evetCommentFlag),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.trending_up_rounded, size: 20, color: Colors.white),
-                              SizedBox(width: 6),
-                              Text(
-                                AppLocalizations.of(context)!.yesPercent(total > 0 ? (percent * 100).round() : 50),
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Material(
-                      color: AppNeon.red.withOpacity(0.35),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () => _onVoteTap(context, AppIcon.hayirCommentFlag),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.trending_down_rounded, size: 20, color: Colors.white),
-                              SizedBox(width: 6),
-                              Text(
-                                AppLocalizations.of(context)!.noPercent(total > 0 ? ((1 - percent) * 100).round() : 50),
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              YesNoBetButtonsRow(
+                yesPercent: yesPct,
+                noPercent: noPct,
+                height: 48,
+                onYesTap: () => _onVoteTap(context, AppIcon.evetCommentFlag),
+                onNoTap: () => _onVoteTap(context, AppIcon.hayirCommentFlag),
               ),
             ],
           ),
@@ -1219,6 +1152,8 @@ class UserNameRowWidget extends StatelessWidget {
 
   final bool isMyProfile;
   final UserModel user;
+
+  static const bool _showTokenAndRankUi = false;
 
   String getBio(BuildContext context, String bio) {
     if (isMyProfile) {
@@ -1353,131 +1288,133 @@ class UserNameRowWidget extends StatelessWidget {
         //     getBio(user.bio),
         //   ),
         // ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+        if (_showTokenAndRankUi) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.monetization_on, size: 24, color: Theme.of(context).primaryColor),
+                  SizedBox(width: 10),
+                  Text(
+                    '${user.pegCount ?? 0}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    AppLocalizations.of(context)!.tokenLabel,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ),
+          if (isMyProfile && (user.xp != null)) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.rankProgressTitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  XpProgressBarWidget(xp: xp),
+                ],
+              ),
+            ),
+          ],
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
-              children: [
-                Icon(Icons.monetization_on, size: 24, color: Theme.of(context).primaryColor),
+              children: <Widget>[
+                Expanded(
+                  child: _statCard(
+                    context: context,
+                    icon: Icons.emoji_events,
+                    iconColor: Theme.of(context).primaryColor,
+                    title: AppLocalizations.of(context)!.bettors,
+                    value: user.rank ?? 0,
+                  ),
+                ),
                 SizedBox(width: 10),
-                Text(
-                  '${user.pegCount ?? 0}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Text(
-                  AppLocalizations.of(context)!.tokenLabel,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                Expanded(
+                  child: _statCard(
+                    context: context,
+                    icon: Icons.lightbulb_outline,
+                    iconColor: AppNeon.green,
+                    title: AppLocalizations.of(context)!.rankPredictor,
+                    value: user.predictorScore ?? 0,
                   ),
                 ),
               ],
             ),
           ),
-        ),
-        if (isMyProfile && (user.xp != null)) ...[
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.rankProgressTitle,
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Row(
+              children: <Widget>[
+                RankBadgeWidget(xp: user.xp ?? 0, compact: true),
+                SizedBox(width: 10),
+                customText(
+                  AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
                   style: TextStyle(
-                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                   ),
                 ),
-                SizedBox(height: 4),
-                XpProgressBarWidget(xp: xp),
               ],
             ),
           ),
-        ],
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: _statCard(
-                  context: context,
-                  icon: Icons.emoji_events,
-                  iconColor: Theme.of(context).primaryColor,
-                  title: AppLocalizations.of(context)!.bettors,
-                  value: user.rank ?? 0,
-                ),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: _statCard(
-                  context: context,
-                  icon: Icons.lightbulb_outline,
-                  iconColor: AppNeon.green,
-                  title: AppLocalizations.of(context)!.rankPredictor,
-                  value: user.predictorScore ?? 0,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: Row(
-            children: <Widget>[
-              RankBadgeWidget(xp: user.xp ?? 0, compact: true),
-              SizedBox(width: 10),
-              customText(
-                AppLocalizations.of(context)!.levelLabel(user.getLevel().trim()),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isMyProfile)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
-                icon: Icon(
-                  Icons.leaderboard_outlined,
-                  size: 18,
-                  color: Theme.of(context).primaryColor,
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.seeLeaderboard,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+          if (isMyProfile)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/LeaderboardPage'),
+                  icon: Icon(
+                    Icons.leaderboard_outlined,
+                    size: 18,
                     color: Theme.of(context).primaryColor,
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  foregroundColor: Theme.of(context).primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                  label: Text(
+                    AppLocalizations.of(context)!.seeLeaderboard,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    foregroundColor: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+        ],
         Container(
           alignment: Alignment.center,
           child: Row(

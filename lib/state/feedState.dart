@@ -17,16 +17,51 @@ import 'package:toldya/state/authState.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as Path;
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'dart:developer' as developer;
 
 class FeedState extends AppState {
   static const int kFeedPageSize = 10;
+  static const bool _feedDebug = false;
 
   bool isBusy = false;
+  final Set<String> _betInFlightIds = <String>{};
+  bool isBetInFlight(String? toldyaId) {
+    if (toldyaId == null || toldyaId.isEmpty) return false;
+    return _betInFlightIds.contains(toldyaId);
+  }
   Map<String, List<FeedModel>> toldyaReplyMap = {};
   FeedModel? _toldyaToReplyModel;
   FeedModel? _toldyaToEditModel;
+
+  /// Cache for feed ordering to avoid sorting on every getter call.
+  /// The UI reads [feedlist] often; we rebuild this cache only when underlying data changes.
+  List<FeedModel>? _feedSortedCache;
+  bool _isFeedCacheDirty = true;
+
+  void _markFeedCacheDirty() {
+    _isFeedCacheDirty = true;
+  }
+
+  void _rebuildFeedCacheIfNeeded() {
+    if (!_isFeedCacheDirty) return;
+    final src = _feedlist;
+    if (src == null) {
+      _feedSortedCache = null;
+      _isFeedCacheDirty = false;
+      return;
+    }
+    // Preserve existing behavior: sort by total vote (like+unlike), descending.
+    final list = List<FeedModel>.from(src);
+    list.sort((a, b) =>
+        (sumOfVote(b.likeList ?? []) + sumOfVote(b.unlikeList ?? []))
+            .compareTo(sumOfVote(a.likeList ?? []) + sumOfVote(a.unlikeList ?? [])));
+    _feedSortedCache = list;
+    _isFeedCacheDirty = false;
+  }
 
   String? _lastLoadedKey;
   bool _hasMoreFeed = true;
@@ -46,6 +81,7 @@ class FeedState extends AppState {
   }
 
   void clearToldyaToEdit() {
+    if (_toldyaToEditModel == null) return;
     _toldyaToEditModel = null;
     notifyListeners();
   }
@@ -63,6 +99,15 @@ class FeedState extends AppState {
   List<FeedModel>? get profileUserToldyaList => _profileUserToldyaList;
   String? get profileUserToldyaUserId => _profileUserToldyaUserId;
 
+  /// Cache profile "Bahislerim" lists per userId to avoid tab/profile swap flicker.
+  final Map<String, List<FeedModel>> _profileUserToldyaCache = {};
+
+  List<FeedModel>? profileUserToldyaListFor(String userId) =>
+      _profileUserToldyaCache[userId];
+
+  bool hasProfileUserToldyaCached(String userId) =>
+      _profileUserToldyaCache.containsKey(userId);
+
   String? get feedError => _feedError;
 
   void clearFeedError() {
@@ -78,15 +123,8 @@ class FeedState extends AppState {
 
   /// `feedlist` always [contain all tweets] fetched from firebase database
   List<FeedModel>? get feedlist {
-    if (_feedlist == null) {
-      return null;
-    } else {
-      debugPrint("[FeedDebug] feedlist getter: _feedlist.length=${_feedlist?.length ?? 0}");
-      _feedlist!.sort((a,b)=>(sumOfVote(a.likeList ?? [])+sumOfVote(a.unlikeList ?? [])).compareTo((sumOfVote(b.likeList ?? [])+sumOfVote(b.unlikeList ?? []))));
-      final result = List<FeedModel>.from(_feedlist!.reversed);
-      debugPrint("[FeedDebug] feedlist getter: returning list length ${result.length} (after sort+reversed copy)");
-      return result;
-    }
+    _rebuildFeedCacheIfNeeded();
+    return _feedSortedCache;
   }
 
   /// contain tweet list for home page
@@ -134,7 +172,9 @@ class FeedState extends AppState {
 
   List<FeedModel> getToldyaListByTopic(UserModel? userModel, List<String> inBlackList, String searchWord, int statu,
       {String topic_val = topic.gundem}) {
-    debugPrint("[FeedDebug] getToldyaListByTopic: feedlist==null=${feedlist == null}, feedlist!.length=${feedlist?.length ?? -1}, topic_val=$topic_val, statu=$statu, userModel?.userId=${userModel?.userId}, inBlackList.length=${inBlackList.length}");
+    if (_feedDebug) {
+      debugPrint("[FeedDebug] getToldyaListByTopic: feedlist==null=${feedlist == null}, feedlist!.length=${feedlist?.length ?? -1}, topic_val=$topic_val, statu=$statu, userModel?.userId=${userModel?.userId}, inBlackList.length=${inBlackList.length}");
+    }
     if (feedlist == null) return [];
     List<FeedModel> filterList = feedlist!;
     if (!feedlist!.isNotEmpty) return [];
@@ -153,7 +193,9 @@ class FeedState extends AppState {
                     .toLowerCase()
                     .contains(searchWord.toLowerCase()));
       }).toList();
-      debugPrint("[FeedDebug] getToldyaListByTopic: after search filter, filterList.length=${filterList.length}");
+      if (_feedDebug) {
+        debugPrint("[FeedDebug] getToldyaListByTopic: after search filter, filterList.length=${filterList.length}");
+      }
     }
     final list = filterList.where((x) {
       if (x.parentkey != null &&
@@ -166,7 +208,11 @@ class FeedState extends AppState {
         return false;
       }
       final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
-      if (statu == Statu.statusLive && isPublished) {
+      final isMine = userModel != null && x.userId == userModel.userId;
+      final isAiReviewOrRejected = x.statu == Statu.statusPendingAiReview || x.statu == Statu.statusRejectedByAi;
+
+      // Feed'de netlik: Yayında filtredeyken kendi "incelemede / AI reddi" gönderilerini de göster.
+      if (statu == Statu.statusLive && (isPublished || (isMine && isAiReviewOrRejected))) {
         if (topic_val == topic.gundem) return true;
         if (userModel == null) return false;
         if (topic_val == topic.followList) {
@@ -190,7 +236,9 @@ class FeedState extends AppState {
       }
       return false;
     }).toList();
-    debugPrint("[FeedDebug] getToldyaListByTopic: result list.length=${list.length} (topic_val=$topic_val, statu=$statu)");
+    if (_feedDebug) {
+      debugPrint("[FeedDebug] getToldyaListByTopic: result list.length=${list.length} (topic_val=$topic_val, statu=$statu)");
+    }
     return list;
   }
 
@@ -306,13 +354,13 @@ class FeedState extends AppState {
     _isLoadingMore = false;
     isBusy = true;
     notifyListeners();
-    debugPrint("[FeedDebug] getDataFromDatabase: starting query (orderByKey limitToLast)");
+    if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: starting query (orderByKey limitToLast)");
     runWithTimeoutAndRetry(() => kDatabase
         .child('toldya')
         .orderByKey()
         .limitToLast(kFeedPageSize)
         .once()).then((snapshot) {
-      debugPrint("[FeedDebug] getDataFromDatabase: snapshot has ${snapshot.snapshot.children.length} children (from query orderByKey limitToLast)");
+      if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: snapshot has ${snapshot.snapshot.children.length} children (from query orderByKey limitToLast)");
       final parsedList = <FeedModel>[];
       int rawChildCount = 0;
       final children = snapshot.snapshot.children;
@@ -330,7 +378,7 @@ class FeedState extends AppState {
             final isFirst = i == 0;
             final isLast = i == childrenList.length - 1;
             if (isFirst || isLast) {
-              debugPrint("[FeedDebug] getDataFromDatabase: ${isFirst ? "first" : "last"} child key=$key, statu=${model.statu}, user?.userName=${model.user?.userName}, isValidToldya=${model.isValidToldya}");
+              if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: ${isFirst ? "first" : "last"} child key=$key, statu=${model.statu}, user?.userName=${model.user?.userName}, isValidToldya=${model.isValidToldya}");
             }
             if (model.isValidToldya) {
               parsedList.add(model);
@@ -355,7 +403,7 @@ class FeedState extends AppState {
               final isFirst = i == 0;
               final isLast = i == entries.length - 1;
               if (isFirst || isLast) {
-                debugPrint("[FeedDebug] getDataFromDatabase: ${isFirst ? "first" : "last"} child key=$key, statu=${model.statu}, user?.userName=${model.user?.userName}, isValidToldya=${model.isValidToldya}");
+                if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: ${isFirst ? "first" : "last"} child key=$key, statu=${model.statu}, user?.userName=${model.user?.userName}, isValidToldya=${model.isValidToldya}");
               }
               if (model.isValidToldya) {
                 parsedList.add(model);
@@ -366,18 +414,17 @@ class FeedState extends AppState {
           }
         }
       }
-      debugPrint("[FeedDebug] getDataFromDatabase: after parse, _feedlist.length=${_feedlist?.length ?? 0}, _lastLoadedKey=$_lastLoadedKey");
+      if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: after parse, _feedlist.length=${_feedlist?.length ?? 0}, _lastLoadedKey=$_lastLoadedKey");
       if (parsedList.isNotEmpty) {
         _feedlist = parsedList;
-        _feedlist!.sort((a, b) =>
-            (a.createdAt ?? '').compareTo(b.createdAt ?? ''));
+        _markFeedCacheDirty();
         final sortedKeys = _feedlist!.map((e) => e.key!).toList()..sort();
         _lastLoadedKey = sortedKeys.first;
         _hasMoreFeed = _feedlist!.length >= kFeedPageSize;
         final keys = _feedlist!.map((e) => e.key!).toList();
         final first3 = keys.length > 3 ? keys.take(3).join(',') : keys.join(',');
         final last3 = keys.length > 3 ? keys.reversed.take(3).toList().reversed.join(',') : '';
-        debugPrint("[FeedDebug] getDataFromDatabase: _lastLoadedKey set, _feedlist keys first3=$first3${last3.isNotEmpty ? ', last3=$last3' : ''}");
+        if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: _lastLoadedKey set, _feedlist keys first3=$first3${last3.isNotEmpty ? ', last3=$last3' : ''}");
         _feedError = null;
       } else {
         // Keep _feedlist unchanged so items already added by _onToldyaAdded remain visible
@@ -391,16 +438,16 @@ class FeedState extends AppState {
       if (_feedlist != null && _feedlist!.isNotEmpty) _feedError = null;
       notifyListeners();
     }).catchError((error) {
-      debugPrint("[FeedDebug] getDataFromDatabase: CATCHERROR error=$error");
+      if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: CATCHERROR error=$error");
       if (error != null && error is Error) {
-        debugPrint("[FeedDebug] getDataFromDatabase: stackTrace=${(error as Error).stackTrace}");
+        if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: stackTrace=${(error as Error).stackTrace}");
       }
       final msg = error?.toString().toLowerCase() ?? '';
       if (msg.contains('permission')) {
-        debugPrint("[FeedDebug] getDataFromDatabase: hint=likely Firebase rules/auth");
+        if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: hint=likely Firebase rules/auth");
       }
       if (msg.contains('timeout')) {
-        debugPrint("[FeedDebug] getDataFromDatabase: hint=likely network/timeout");
+        if (_feedDebug) debugPrint("[FeedDebug] getDataFromDatabase: hint=likely network/timeout");
       }
       cprint(error, errorIn: 'getDataFromDatabase');
       isBusy = false;
@@ -461,6 +508,7 @@ class FeedState extends AppState {
       } else {
         _feedlist ??= <FeedModel>[];
         _feedlist!.addAll(toAppend);
+        _markFeedCacheDirty();
         final newKeys = toAppend.map((e) => e.key!).toList()..sort();
         _lastLoadedKey = newKeys.first;
         _hasMoreFeed = toAppend.length >= kFeedPageSize;
@@ -518,12 +566,16 @@ class FeedState extends AppState {
         }
       }
       list.sort((a, b) => (a.createdAt ?? '').compareTo(b.createdAt ?? ''));
-      _profileUserToldyaList = list.reversed.toList();
+      final out = list.reversed.toList();
+      _profileUserToldyaCache[userId] = out;
+      // Keep legacy fields in sync for older call sites.
+      _profileUserToldyaList = out;
       _profileUserToldyaUserId = userId;
       notifyListeners();
     } catch (error) {
       cprint(error, errorIn: 'loadToldyaListForUser');
-      _profileUserToldyaList = [];
+      _profileUserToldyaCache[userId] = [];
+      _profileUserToldyaList = _profileUserToldyaCache[userId];
       _profileUserToldyaUserId = userId;
       notifyListeners();
     }
@@ -706,7 +758,40 @@ class FeedState extends AppState {
   /// [update] tweet
   Future<void> updateToldya(FeedModel model) async {
     try {
-      await kDatabase.child('toldya').child(model.key ?? '').set(model.toJson());
+      final key = model.key;
+      if (key == null || key.isEmpty) return;
+
+      // IMPORTANT: Never overwrite the whole `toldya/{id}` node from client.
+      // Root `.set(model.toJson())` can accidentally null out server-controlled fields
+      // (e.g. `statu`, `endDate`, `resolutionDate`, `manualModeration*`) and races with
+      // admin/batch jobs. Use partial update instead.
+      final raw = Map<String, dynamic>.from(model.toJson() as Map);
+
+      // Drop nulls: RTDB `update` treats null as delete.
+      raw.removeWhere((k, v) => v == null);
+
+      // Server-controlled fields: never write from client updates.
+      raw.remove('statu');
+      raw.remove('topic');
+      raw.remove('endDate');
+      raw.remove('resolutionDate');
+      raw.remove('aiModerationReason');
+      raw.remove('oracleSource');
+      raw.remove('oracleApiUrl');
+      raw.remove('collateralAmount');
+      raw.remove('distributionDone');
+      raw.remove('feedResult');
+      raw.remove('disputeUserIds');
+      raw.remove('challengeeUserId');
+      raw.remove('parentkey');
+      raw.remove('childRetoldyaKey');
+      raw.remove('createdAt');
+      raw.remove('userId');
+
+      // If nothing left, don't write.
+      if (raw.isEmpty) return;
+
+      await kDatabase.child('toldya').child(key).update(raw);
     } catch (error) {
       cprint(error, errorIn: 'updateToldya');
       rethrow;
@@ -763,25 +848,42 @@ class FeedState extends AppState {
   /// Bahis işlemini backend (placeBet Callable) üzerinden yapar.
   /// Optimistic UI: önce yerel state güncellenir (bakiye + post likeList/unlikeList), sonra HTTP çağrısı yapılır.
   /// Başarısız olursa yerel state snapshot ile geri alınır ve hata fırlatılır.
-  Future<void> placeBet(AuthState authState, FeedModel model, String userId, int amount, int commentFlag) async {
-    debugPrint('[placeBet] Başlatılıyor...');
-    debugPrint('[placeBet] toldyaId: ${model.key}');
-    debugPrint('[placeBet] side: ${commentFlag == 0 ? 1 : 2} (commentFlag: $commentFlag)');
-    debugPrint('[placeBet] amount: $amount');
-    debugPrint('[placeBet] userId: $userId');
+  Future<void> placeBet(
+    AuthState authState,
+    FeedModel model,
+    String userId,
+    int amount,
+    int commentFlag, {
+    BuildContext? context,
+  }) async {
+    if (_feedDebug) {
+      developer.log(
+        'placeBet start',
+        name: 'FeedState',
+        error: {'toldyaId': model.key, 'side': commentFlag, 'amount': amount, 'userId': userId},
+      );
+    }
 
     final currentUser = authState.user;
     if (currentUser == null) {
-      debugPrint('[placeBet] HATA: Kullanıcı giriş yapmamış!');
       throw FirebaseFunctionsException(
         code: "unauthenticated",
-        message: "Giriş yapmanız gerekiyor.",
+        message: context != null
+            ? AppLocalizations.of(context)!.betErrorUnauthenticated
+            : "Giriş yapmanız gerekiyor.",
       );
     }
     if (amount <= 0) {
       throw FirebaseFunctionsException(code: "invalid-argument", message: "Geçersiz bahis miktarı.");
     }
-    debugPrint('[placeBet] Kullanıcı doğrulandı: ${currentUser.uid}');
+    final toldyaId = model.key ?? '';
+    if (toldyaId.isNotEmpty && _betInFlightIds.contains(toldyaId)) {
+      return;
+    }
+    if (toldyaId.isNotEmpty) {
+      _betInFlightIds.add(toldyaId);
+      notifyListeners();
+    }
 
     // Snapshot: rollback için önceki bakiye ve listelerin kopyası (optimistic güncellemeden önce alınır)
     final previousPegCount = authState.userModel?.pegCount ?? 0;
@@ -793,8 +895,8 @@ class FeedState extends AppState {
     authState.setBalanceOptimistic(previousPegCount - amount, previousStashCount);
     _applyBetToFeedModel(model, userId, amount, commentFlag == 0);
     _updateLocalFeedModelAfterBet(model.key, userId, amount, commentFlag == 0);
+    _markFeedCacheDirty();
     notifyListeners();
-    debugPrint('[placeBet] Optimistic update uygulandı');
 
     try {
       final side = commentFlag == 0 ? 1 : 2; // 1 = Evet (like), 2 = Hayır (unlike)
@@ -807,7 +909,6 @@ class FeedState extends AppState {
       }
 
       final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/placeBet');
-      debugPrint('[placeBet] HTTP çağrılıyor: $uri');
 
       final response = await http
           .post(
@@ -827,10 +928,11 @@ class FeedState extends AppState {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              debugPrint('[placeBet] TIMEOUT: İstek zaman aşımına uğradı');
+              final l10n = context != null ? AppLocalizations.of(context!) : null;
               throw FirebaseFunctionsException(
                 code: "deadline-exceeded",
-                message: "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
+                message: l10n?.betErrorDeadlineExceeded ??
+                    "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
               );
             },
           );
@@ -840,14 +942,16 @@ class FeedState extends AppState {
         final err = body['error'] as Map<String, dynamic>? ?? {};
         final code = (err['status'] as String?)?.toLowerCase().replaceAll('_', '-') ?? 'unknown';
         final message = err['message'] as String? ?? 'Bahis kabul edilemedi.';
-        debugPrint('[placeBet] Sunucu hatası: $code - $message');
-        throw FirebaseFunctionsException(code: code, message: message);
+        final l10n = context != null ? AppLocalizations.of(context!) : null;
+        throw FirebaseFunctionsException(
+          code: code,
+          message: l10n != null ? _mapPlaceBetError(l10n, code, message) : message,
+        );
       }
 
       final result = body['result'] as Map<String, dynamic>?;
       final data = result;
       if (data == null || data['ok'] != true) {
-        debugPrint('[placeBet] HATA: data null veya ok != true');
         throw FirebaseFunctionsException(
           code: "unknown",
           message: "Bahis kabul edilemedi.",
@@ -856,24 +960,63 @@ class FeedState extends AppState {
 
       final newBalance = (data['newBalance'] as num?)?.toInt() ?? 0;
       final newStashBalance = (data['newStashBalance'] as num?)?.toInt() ?? 0;
-      debugPrint('[placeBet] Yeni bakiye: $newBalance, stash: $newStashBalance');
-
       authState.updateBalanceFromBet(newBalance, newStashBalance);
       notifyListeners();
-      debugPrint('[placeBet] Başarıyla tamamlandı!');
     } on PlatformException catch (e) {
-      debugPrint('[placeBet] PlatformException: ${e.code} ${e.message}');
+      developer.log(
+        'placeBet PlatformException',
+        name: 'FeedState',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
       _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('[placeBet] FirebaseFunctionsException: ${e.code} ${e.message}');
+      developer.log(
+        'placeBet FirebaseFunctionsException',
+        name: 'FeedState',
+        error: e,
+        stackTrace: StackTrace.current,
+      );
       _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
-      rethrow;
+      final l10n = context != null ? AppLocalizations.of(context!) : null;
+      if (l10n == null) rethrow;
+      final code = e.code;
+      final msg = _mapPlaceBetError(l10n, code, e.message);
+      throw FirebaseFunctionsException(code: code, message: msg, details: e.details);
     } catch (e, stackTrace) {
-      debugPrint('[placeBet] EXCEPTION: $e');
-      debugPrint('[placeBet] Stack trace: $stackTrace');
+      developer.log(
+        'placeBet exception',
+        name: 'FeedState',
+        error: e,
+        stackTrace: stackTrace,
+      );
       _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
+    } finally {
+      if (toldyaId.isNotEmpty) {
+        _betInFlightIds.remove(toldyaId);
+        notifyListeners();
+      }
+    }
+  }
+
+  String _mapPlaceBetError(AppLocalizations l10n, String codeRaw, String? fallbackMessage) {
+    final code = codeRaw.toLowerCase().replaceAll('_', '-');
+    switch (code) {
+      case 'unauthenticated':
+        return l10n.betErrorUnauthenticated;
+      case 'deadline-exceeded':
+        return l10n.betErrorDeadlineExceeded;
+      case 'resource-exhausted':
+        return l10n.betErrorResourceExhausted;
+      case 'failed-precondition':
+        return l10n.betErrorFailedPrecondition;
+      case 'insufficient-balance':
+        return l10n.tokenInsufficient;
+      default:
+        if (fallbackMessage != null && fallbackMessage.trim().isNotEmpty) return fallbackMessage;
+        return l10n.betErrorGeneric;
     }
   }
 
@@ -907,8 +1050,8 @@ class FeedState extends AppState {
         }
       }
     }
+    _markFeedCacheDirty();
     notifyListeners();
-    debugPrint('[placeBet] Rollback uygulandı');
   }
 
   /// Yorum oylama (Katılıyorum / Katılmıyorum). [postId] ana tahmin key, [replyToldyaId] yorum key, [vote] 1 veya -1.
@@ -1106,6 +1249,7 @@ class FeedState extends AppState {
       var oldEntry = feedlist.lastWhere((entry) => entry.key == event.snapshot.key);
       final idx = feedlist.indexOf(oldEntry);
       if (idx >= 0) feedlist[idx] = model;
+      _markFeedCacheDirty();
     }
 
     final detailList = _toldyaDetailModelList;
@@ -1137,13 +1281,13 @@ class FeedState extends AppState {
   /// It will add new Tweet in home page list.
   /// IF Tweet is comment it will be added in comment section too.
   _onToldyaAdded(DatabaseEvent event) {
-    debugPrint("[FeedDebug] _onToldyaAdded: key=${event.snapshot.key}, value exists=${event.snapshot.value != null}");
+    if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: key=${event.snapshot.key}, value exists=${event.snapshot.value != null}");
     final value = event.snapshot.value;
     if (value == null) return;
     final map = Map<String, dynamic>.from(value as Map);
     FeedModel toldya = FeedModel.fromJson(map);
     toldya.key = event.snapshot.key ?? '';
-    debugPrint("[FeedDebug] _onToldyaAdded: parsed key=${toldya.key}, statu=${toldya.statu}, user?.userName=${toldya.user?.userName}, isValidToldya=${toldya.isValidToldya}, alreadyInList=${_feedlist?.any((x) => x.key == toldya.key) ?? false}");
+    if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: parsed key=${toldya.key}, statu=${toldya.statu}, user?.userName=${toldya.user?.userName}, isValidToldya=${toldya.isValidToldya}, alreadyInList=${_feedlist?.any((x) => x.key == toldya.key) ?? false}");
 
     _onCommentAdded(toldya);
     _feedlist ??= <FeedModel>[];
@@ -1151,8 +1295,9 @@ class FeedState extends AppState {
     final added = toldya.isValidToldya && !_feedlist!.any((x) => x.key == toldya.key);
     if (added) {
       _feedlist!.add(toldya);
+      _markFeedCacheDirty();
     }
-    debugPrint("[FeedDebug] _onToldyaAdded: added=$added, _feedlist.length now=${_feedlist?.length ?? 0}");
+    if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: added=$added, _feedlist.length now=${_feedlist?.length ?? 0}");
     isBusy = false;
     notifyListeners();
   }
@@ -1169,7 +1314,7 @@ class FeedState extends AppState {
       cprint('Comment Added');
     }
     isBusy = false;
-    notifyListeners();
+    // No notify here; caller already notifies (avoids duplicate rebuilds).
   }
 
   /// Trigger when Tweet `Deleted`
@@ -1194,6 +1339,7 @@ class FeedState extends AppState {
         /// Delete toldya if it is in home page list.
         deletedToldya = feedlist.firstWhere((x) => x.key == toldyaId);
         _feedlist!.remove(deletedToldya);
+        _markFeedCacheDirty();
 
         final dpk = deletedToldya.parentkey;
         if (dpk != null &&
@@ -1208,6 +1354,7 @@ class FeedState extends AppState {
         }
         if (_feedlist!.isEmpty) {
           _feedlist = null;
+          _markFeedCacheDirty();
         }
         cprint('Toldya deleted from home page list');
       }

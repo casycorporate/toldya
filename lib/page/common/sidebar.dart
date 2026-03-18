@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/widgets/toldya_logo.dart';
 import 'package:provider/provider.dart';
 
@@ -18,23 +20,27 @@ class SidebarMenu extends StatefulWidget {
 }
 
 class _SidebarMenuState extends State<SidebarMenu> {
-  static const double _headerPaddingH = 20.0;
+  static const double _headerPaddingH = 16.0;
   static const double _avatarSize = 56.0;
   static const double _avatarRingWidth = 1.5;
 
   Widget _menuHeader() {
     final state = Provider.of<AuthState>(context);
+    final l10n = AppLocalizations.of(context)!;
     if (state.userModel == null) {
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.of(context).pushNamed('/SignIn'),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _navigateTo('SignIn');
+          },
           borderRadius: BorderRadius.circular(radiusMedium),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 24, horizontal: _headerPaddingH),
             child: Center(
               child: Text(
-                AppLocalizations.of(context)!.signInToContinue,
+                l10n.signInToContinue,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -53,7 +59,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           GestureDetector(
-            onTap: () => _navigateTo('ProfilePage'),
+            onTap: () => _navigateTo('profile/${state.userId}'),
             child: Row(
               children: <Widget>[
                 Container(
@@ -112,6 +118,14 @@ class _SidebarMenuState extends State<SidebarMenu> {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
+                      SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: RankBadgeWidget(
+                          xp: state.userModel?.xp ?? 0,
+                          compact: true,
+                        ),
+                      ),
                       SizedBox(height: 10),
                       Row(
                         children: <Widget>[
@@ -119,7 +133,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                             child: _tappbleText(
                               context,
                               '${state.userModel?.getFollower() ?? 0}',
-                              ' Takipçiler',
+                              l10n.followersTitle,
                               'FollowerListPage',
                             ),
                           ),
@@ -128,7 +142,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                             child: _tappbleText(
                               context,
                               '${state.userModel?.getFollowing() ?? 0}',
-                              ' Takipler',
+                              l10n.followingCountLabel,
                               'FollowingListPage',
                             ),
                           ),
@@ -160,6 +174,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
+          HapticFeedback.lightImpact();
           Provider.of<AuthState>(context, listen: false).getProfileUser();
           _navigateTo(navigateTo);
         },
@@ -202,44 +217,54 @@ class _SidebarMenuState extends State<SidebarMenu> {
     IconData? icon,
     bool isEnable = true,
   }) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed != null ? () => onPressed() : null,
-        borderRadius: BorderRadius.circular(radiusSmall),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: _headerPaddingH, vertical: 14),
-          child: Row(
-            children: <Widget>[
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isEnable
-                      ? Colors.grey.shade300
-                      : Colors.grey.shade500,
-                ),
-                SizedBox(width: 16),
-              ],
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isEnable
-                        ? Colors.white
-                        : Colors.grey.shade500,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed != null
+              ? () {
+                  HapticFeedback.lightImpact();
+                  onPressed();
+                }
+              : null,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: AppNeon.cyan.withOpacity(0.12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: MockupDesign.card.withOpacity(0.72),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: MockupDesign.cardBorder.withOpacity(0.7),
+                width: 1,
+              ),
+            ),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              minVerticalPadding: 0,
+              leading: icon != null
+                  ? Icon(
+                      icon,
+                      size: 22,
+                      color: isEnable ? AppNeon.cyan : Colors.grey.shade500,
+                    )
+                  : null,
+              title: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isEnable ? Colors.white : Colors.grey.shade500,
                 ),
               ),
-              Icon(
+              trailing: Icon(
                 Icons.chevron_right,
                 size: 20,
                 color: Colors.grey.shade600,
               ),
-            ],
+              tileColor: Colors.transparent,
+            ),
           ),
         ),
       ),
@@ -292,102 +317,191 @@ class _SidebarMenuState extends State<SidebarMenu> {
     Navigator.of(context).pushNamed('/$path');
   }
 
+  Widget _walletCard(AuthState authState) {
+    final l10n = AppLocalizations.of(context)!;
+    final pegCount = authState.userModel?.pegCount ?? 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: MockupDesign.card.withOpacity(0.72),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: MockupDesign.cardBorder.withOpacity(0.75),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.drawerWalletTitle,
+                  style: TextStyle(
+                    color: MockupDesign.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$pegCount',
+                  style: TextStyle(
+                    color: AppNeon.orange,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppNeon.cyan.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppNeon.cyan.withOpacity(0.25)),
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _logoutFooter() {
+    final l10n = AppLocalizations.of(context)!;
+    final neonRed = AppNeon.red;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _logOut();
+          },
+          borderRadius: BorderRadius.circular(16),
+          splashColor: neonRed.withOpacity(0.18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: neonRed.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: neonRed.withOpacity(0.45), width: 1),
+            ),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              minVerticalPadding: 0,
+              leading: Icon(Icons.logout_rounded, size: 22, color: neonRed),
+              title: Text(
+                l10n.logout,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: neonRed,
+                ),
+              ),
+              trailing: Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: neonRed.withOpacity(0.9),
+              ),
+              tileColor: Colors.transparent,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const double _curveRadius = 250.0;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 80),
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          bottomRight: Radius.circular(_curveRadius),
-        ),
-        child: SizedBox(
-          width: 280,
-          child: Drawer(
-            backgroundColor: Colors.transparent,
-            child: SafeArea(
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  bottomRight: Radius.circular(_curveRadius),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.85),
-                      borderRadius: BorderRadius.only(
-                        bottomRight: Radius.circular(_curveRadius),
-                      ),
+    final authState = Provider.of<AuthState>(context);
+    final l10n = AppLocalizations.of(context)!;
+    final isSignedIn = authState.userModel != null && authState.userId.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.only(
+        bottomRight: Radius.circular(_curveRadius),
+      ),
+      child: SizedBox(
+        width: 280,
+        child: Drawer(
+          backgroundColor: Colors.transparent,
+          child: SafeArea(
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(_curveRadius),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: MockupDesign.background.withOpacity(0.90),
+                    borderRadius: BorderRadius.only(
+                      bottomRight: Radius.circular(_curveRadius),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: 8,
-                            top: 8,
-                            right: _headerPaddingH,
-                            bottom: 8,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              IconButton(
-                                onPressed: () { if (Navigator.canPop(context)) Navigator.pop(context); },
-                                icon: Icon(
-                                  Icons.close,
-                                  color: Colors.grey.shade400,
-                                  size: 24,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(0.06),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(radiusSmall),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      _menuHeader(),
+                      if (isSignedIn) _walletCard(authState),
+                      if (isSignedIn)
                         Expanded(
                           child: ListView(
                             physics: BouncingScrollPhysics(),
-                            padding: EdgeInsets.only(bottom: 24),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                             children: <Widget>[
-                              _menuHeader(),
-                              Divider(
-                                height: 24,
-                                thickness: 0.5,
-                                color: Colors.white.withOpacity(0.08),
+                              _menuListRowButton(
+                                l10n.drawerActiveBets,
+                                icon: Icons.play_arrow_rounded,
+                                onPressed: () => _navigateTo('profile/${authState.userId}'),
                               ),
                               _menuListRowButton(
-                                AppLocalizations.of(context)!.profile,
-                                icon: Icons.person_outline,
-                                isEnable: true,
-                                onPressed: () => _navigateTo('ProfilePage'),
+                                l10n.drawerWeeklyLeague,
+                                icon: Icons.emoji_events_outlined,
+                                onPressed: () => _navigateTo('LeaderboardPage'),
                               ),
                               _menuListRowButton(
-                                AppLocalizations.of(context)!.settings,
+                                l10n.drawerSettingsAndPrivacy,
                                 icon: Icons.settings_outlined,
-                                isEnable: true,
                                 onPressed: () => _navigateTo('SettingsAndPrivacyPage'),
                               ),
-                              Divider(
-                                height: 24,
-                                thickness: 0.5,
-                                color: Colors.white.withOpacity(0.08),
-                              ),
                               _menuListRowButton(
-                                AppLocalizations.of(context)!.logout,
-                                icon: Icons.logout_rounded,
-                                onPressed: _logOut,
-                                isEnable: true,
+                                l10n.profile,
+                                icon: Icons.person_outline,
+                                onPressed: () => _navigateTo('profile/${authState.userId}'),
+                              ),
+                              FutureBuilder<bool>(
+                                future: authState.isAdminUser(),
+                                builder: (context, snap) {
+                                  final isAdmin = snap.data == true;
+                                  if (!isAdmin) return const SizedBox.shrink();
+                                  return _menuListRowButton(
+                                    l10n.adminModeration,
+                                    icon: Icons.admin_panel_settings_outlined,
+                                    onPressed: () => _navigateTo('AdminModerationPage'),
+                                  );
+                                },
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
+                        )
+                      else
+                        const Expanded(child: SizedBox.shrink()),
+                      if (isSignedIn) _logoutFooter(),
+                    ],
                   ),
                 ),
               ),

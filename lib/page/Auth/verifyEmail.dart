@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
-import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/Auth/signin.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -32,7 +31,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             ? <Widget>[
                 NotifyText(
                   title: AppLocalizations.of(context)!.emailVerifiedTitle,
-                  subTitle: AppLocalizations.of(context)!.emailVerifiedSubtitle,
+                  // Blue tick congratulations subtitle removed per UX request.
+                  subTitle: '',
                 ),
               ]
             : <Widget>[
@@ -91,12 +91,19 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () {
-            var state = Provider.of<AuthState>(context, listen: false);
+            final state = Provider.of<AuthState>(context, listen: false);
+            // If we can go back in the navigation stack, return to the previous screen.
+            // This prevents misrouting (e.g. Account -> Verify -> SignIn).
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+              return;
+            }
+
+            // Fallback: no back stack available, route to SignIn.
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    SignIn(loginCallback: state.getCurrentUser),
+                builder: (context) => SignIn(loginCallback: state.getCurrentUser),
               ),
             );
           },

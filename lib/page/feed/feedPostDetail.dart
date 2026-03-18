@@ -17,9 +17,9 @@ import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/tweet/tweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
-import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/reply_vote_buttons.dart';
+import 'package:toldya/helper/bet_flow.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -219,8 +219,7 @@ class _PredictionDetailBody extends StatelessWidget {
     final evetColor = AppNeon.green;
     final hayirColor = AppNeon.red;
     final balance = authState.userModel?.pegCount ?? 0;
-    final xp = authState.userModel?.xp ?? 0;
-    final maxBet = [balance, Tokenomics.maxBetByRank(balance, xp), Tokenomics.maxBetByPool(total)].reduce((a, b) => a < b ? a : b);
+    final maxBet = (balance * 0.75).floor();
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
     final authorUserId = model.userId ?? model.user?.userId ?? '';
@@ -252,7 +251,6 @@ class _PredictionDetailBody extends StatelessWidget {
               final author = authorSnap.data ?? model.user;
               final displayHandle = formatHandle(author?.userName, author?.displayName);
               final handleToShow = displayHandle.isEmpty ? AppLocalizations.of(context)!.userHandlePlaceholder : displayHandle;
-              final authorXp = author?.xp ?? 0;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -285,11 +283,6 @@ class _PredictionDetailBody extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            SizedBox(width: 6),
-                            RankBadgeWidget(
-                              xp: authorXp,
-                              compact: true,
-                            ),
                           ],
                         ),
                         if (model.topic != null && (model.topic ?? '').isNotEmpty)
@@ -302,7 +295,11 @@ class _PredictionDetailBody extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    kapanisText.isNotEmpty ? AppLocalizations.of(context)!.closingAt(kapanisText) : '',
+                    model.statu == Statu.statusPendingAiReview
+                        ? AppLocalizations.of(context)!.statuUnderReview
+                        : (kapanisText.isNotEmpty
+                            ? AppLocalizations.of(context)!.closingAt(kapanisText)
+                            : ''),
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
                     textAlign: TextAlign.end,
                   ),
@@ -440,41 +437,12 @@ class _PredictionDetailBody extends StatelessWidget {
   }
 
   void _openBet(BuildContext context, AuthState authState, int flag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            closed ? AppLocalizations.of(context)!.closedNoSelection : AppLocalizations.of(context)!.tokenInsufficient,
-            style: TextStyle(color: Colors.white),
-          ),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.black87,
-        ),
-      );
-      return;
-    }
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            AppLocalizations.of(context)!.betOnOneSideOnly,
-            style: TextStyle(color: Colors.white),
-          ),
-          duration: Duration(seconds: 4),
-          backgroundColor: Colors.orange.shade800,
-        ),
-      );
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-      commentFlag,
-      context,
-      type: ToldyaType.Detail,
+    openBetFlowWithFeedback(
+      context: context,
       model: model,
+      commentFlag: commentFlag,
+      type: ToldyaType.Detail,
       scaffoldKey: scaffoldKey,
     );
   }

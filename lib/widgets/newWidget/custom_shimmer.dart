@@ -146,6 +146,8 @@ class FeedShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      primary: false,
+      shrinkWrap: true,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: itemCount,
@@ -232,6 +234,8 @@ class LeagueShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomShimmer(
       child: ListView.builder(
+        primary: false,
+        shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         physics: const NeverScrollableScrollPhysics(),
         itemCount: itemCount,

@@ -154,6 +154,486 @@ abstract class AppLocalizations {
   /// **'Profil'**
   String get profile;
 
+  /// No description provided for @adminModeration.
+  ///
+  /// In tr, this message translates to:
+  /// **'Admin Moderasyon'**
+  String get adminModeration;
+
+  /// No description provided for @adminJobsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Admin İşleri'**
+  String get adminJobsTitle;
+
+  /// No description provided for @adminSegmentModeration.
+  ///
+  /// In tr, this message translates to:
+  /// **'Moderasyon'**
+  String get adminSegmentModeration;
+
+  /// No description provided for @adminSegmentResolve.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçlandır'**
+  String get adminSegmentResolve;
+
+  /// No description provided for @adminSegmentQuickFix.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hızlı Düzeltme'**
+  String get adminSegmentQuickFix;
+
+  /// No description provided for @adminSegmentDistribute.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtım'**
+  String get adminSegmentDistribute;
+
+  /// No description provided for @adminJobSecretLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Job Secret'**
+  String get adminJobSecretLabel;
+
+  /// No description provided for @adminJobSecretHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Secret girin'**
+  String get adminJobSecretHint;
+
+  /// No description provided for @adminJobSecretSessionNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sadece bu oturumda bellekte tutulur.'**
+  String get adminJobSecretSessionNote;
+
+  /// No description provided for @adminJobSecretMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için job secret gerekli.'**
+  String get adminJobSecretMissing;
+
+  /// No description provided for @adminResolveTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçlandır'**
+  String get adminResolveTitle;
+
+  /// No description provided for @adminResolveDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadesi geçmiş ve henüz sonuçlandırılmamış tahminleri listeler. Admin olarak Evet/Hayır sonucunu seçip manuel sonuçlandırabilirsiniz.'**
+  String get adminResolveDesc;
+
+  /// No description provided for @adminResolvePreviewButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önizle'**
+  String get adminResolvePreviewButton;
+
+  /// No description provided for @adminResolveRunButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştır'**
+  String get adminResolveRunButton;
+
+  /// No description provided for @adminResolveManualYes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet kazandı'**
+  String get adminResolveManualYes;
+
+  /// No description provided for @adminResolveManualNo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hayır kazandı'**
+  String get adminResolveManualNo;
+
+  /// No description provided for @adminResolveManualApply.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçlandır'**
+  String get adminResolveManualApply;
+
+  /// No description provided for @adminResolveManualSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin sonuçlandırıldı.'**
+  String get adminResolveManualSuccess;
+
+  /// No description provided for @adminDistributeTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtım'**
+  String get adminDistributeTitle;
+
+  /// No description provided for @adminDistributeDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçlanan tahminlerin kazançlarını tek tek dağıtabilirsiniz.'**
+  String get adminDistributeDesc;
+
+  /// No description provided for @adminDistributeIdempotentNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not: Bu işlem idempotent çalışır.'**
+  String get adminDistributeIdempotentNote;
+
+  /// No description provided for @adminDistributePreviewButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önizle'**
+  String get adminDistributePreviewButton;
+
+  /// No description provided for @adminDistributeRunButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çalıştır'**
+  String get adminDistributeRunButton;
+
+  /// No description provided for @adminDistributeManualApply.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kazancı dağıt'**
+  String get adminDistributeManualApply;
+
+  /// No description provided for @adminDistributeManualSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kazanç dağıtıldı.'**
+  String get adminDistributeManualSuccess;
+
+  /// No description provided for @adminDistributeManualNoop.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtılacak kazanç bulunamadı.'**
+  String get adminDistributeManualNoop;
+
+  /// No description provided for @adminQuickFixTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hızlı Düzeltme'**
+  String get adminQuickFixTitle;
+
+  /// No description provided for @adminQuickFixDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'statu=1 olup tarih alanları eksik/bozuk olan kayıtları düzeltir. Tarihleri ayarlayıp isterseniz yayına alarak normal kilitleme → oracle → dağıtım akışını başlatabilirsiniz.'**
+  String get adminQuickFixDesc;
+
+  /// No description provided for @adminQuickFixCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eksik tarihli kayıtlar: {n}'**
+  String adminQuickFixCount(String n);
+
+  /// No description provided for @adminQuickFixSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'ID veya açıklamada ara'**
+  String get adminQuickFixSearchHint;
+
+  /// No description provided for @adminQuickFixFilterEndDatePassed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sadece endDate geçmiş olanlar'**
+  String get adminQuickFixFilterEndDatePassed;
+
+  /// No description provided for @adminQuickFixEndDateLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'End date'**
+  String get adminQuickFixEndDateLabel;
+
+  /// No description provided for @adminQuickFixResolutionDateLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Resolution date'**
+  String get adminQuickFixResolutionDateLabel;
+
+  /// No description provided for @adminQuickFixAutofillEndNowPlus.
+  ///
+  /// In tr, this message translates to:
+  /// **'EndDate = şimdi + 5dk'**
+  String get adminQuickFixAutofillEndNowPlus;
+
+  /// No description provided for @adminQuickFixAutofillResolutionPlus1h.
+  ///
+  /// In tr, this message translates to:
+  /// **'ResolutionDate = endDate + 1s'**
+  String get adminQuickFixAutofillResolutionPlus1h;
+
+  /// No description provided for @adminQuickFixSetOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sadece ayarla'**
+  String get adminQuickFixSetOnly;
+
+  /// No description provided for @adminQuickFixSetAndPublish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarla ve yayına al'**
+  String get adminQuickFixSetAndPublish;
+
+  /// No description provided for @adminQuickFixConfirmPublish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yayına almayı onaylıyorum'**
+  String get adminQuickFixConfirmPublish;
+
+  /// No description provided for @adminQuickFixValidationEndRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'EndDate gerekli.'**
+  String get adminQuickFixValidationEndRequired;
+
+  /// No description provided for @adminQuickFixValidationResolutionRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'ResolutionDate gerekli.'**
+  String get adminQuickFixValidationResolutionRequired;
+
+  /// No description provided for @adminQuickFixValidationResolutionAfterEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'ResolutionDate, EndDate\'ten sonra olmalı.'**
+  String get adminQuickFixValidationResolutionAfterEnd;
+
+  /// No description provided for @adminQuickFixValidationMin1h.
+  ///
+  /// In tr, this message translates to:
+  /// **'ResolutionDate, EndDate\'ten en az 1 saat sonra olmalı.'**
+  String get adminQuickFixValidationMin1h;
+
+  /// No description provided for @adminQuickFixSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıt güncellendi.'**
+  String get adminQuickFixSuccess;
+
+  /// No description provided for @adminQuickFixWarningPublish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem tahmini yayına alır ve lock/oracle job\'ları ile otomatik ilerler.'**
+  String get adminQuickFixWarningPublish;
+
+  /// No description provided for @adminQuickFixCreatedAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oluşturma: {t}'**
+  String adminQuickFixCreatedAt(String t);
+
+  /// No description provided for @adminQuickFixChipStatu1.
+  ///
+  /// In tr, this message translates to:
+  /// **'statu: 1'**
+  String get adminQuickFixChipStatu1;
+
+  /// No description provided for @adminQuickFixChipEndMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'endDate: eksik'**
+  String get adminQuickFixChipEndMissing;
+
+  /// No description provided for @adminQuickFixChipEndInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'endDate: geçersiz'**
+  String get adminQuickFixChipEndInvalid;
+
+  /// No description provided for @adminQuickFixChipEndOk.
+  ///
+  /// In tr, this message translates to:
+  /// **'endDate: ok'**
+  String get adminQuickFixChipEndOk;
+
+  /// No description provided for @adminQuickFixChipEndPassed.
+  ///
+  /// In tr, this message translates to:
+  /// **'endDate: geçti'**
+  String get adminQuickFixChipEndPassed;
+
+  /// No description provided for @adminQuickFixChipResMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'resolutionDate: eksik'**
+  String get adminQuickFixChipResMissing;
+
+  /// No description provided for @adminQuickFixChipResInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'resolutionDate: geçersiz'**
+  String get adminQuickFixChipResInvalid;
+
+  /// No description provided for @adminQuickFixChipTopicMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'topic: eksik'**
+  String get adminQuickFixChipTopicMissing;
+
+  /// No description provided for @adminDistributeTotalPoolEstimate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam havuz tahmini: {n}'**
+  String adminDistributeTotalPoolEstimate(String n);
+
+  /// No description provided for @adminPreviewCandidates.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aday sayısı: {n}'**
+  String adminPreviewCandidates(String n);
+
+  /// No description provided for @adminJobResultResolved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuçlandırıldı: {n}'**
+  String adminJobResultResolved(String n);
+
+  /// No description provided for @adminJobResultDistributed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtıldı: {n}'**
+  String adminJobResultDistributed(String n);
+
+  /// No description provided for @adminJobSkippedTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Atlananlar'**
+  String get adminJobSkippedTitle;
+
+  /// No description provided for @adminJobShowMore.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha fazla göster'**
+  String get adminJobShowMore;
+
+  /// No description provided for @adminJobShowLess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha az göster'**
+  String get adminJobShowLess;
+
+  /// No description provided for @adminJobErrorWithMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hata: {msg}'**
+  String adminJobErrorWithMessage(String msg);
+
+  /// No description provided for @adminModerationQueueEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyen moderasyon yok.'**
+  String get adminModerationQueueEmpty;
+
+  /// No description provided for @adminModerationReject.
+  ///
+  /// In tr, this message translates to:
+  /// **'Reddet'**
+  String get adminModerationReject;
+
+  /// No description provided for @adminModerationRejectReasonHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Reddetme gerekçesi'**
+  String get adminModerationRejectReasonHint;
+
+  /// No description provided for @adminModerationApprove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayla'**
+  String get adminModerationApprove;
+
+  /// No description provided for @adminModerationApproveTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yayına al'**
+  String get adminModerationApproveTitle;
+
+  /// No description provided for @adminModerationTopicLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori'**
+  String get adminModerationTopicLabel;
+
+  /// No description provided for @adminModerationEndDateLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapanış'**
+  String get adminModerationEndDateLabel;
+
+  /// No description provided for @adminModerationResolutionDateLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuç zamanı'**
+  String get adminModerationResolutionDateLabel;
+
+  /// No description provided for @adminModerationOracleSourceOptional.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oracle kaynağı (opsiyonel)'**
+  String get adminModerationOracleSourceOptional;
+
+  /// No description provided for @adminModerationOracleApiUrlOptional.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oracle API URL (opsiyonel)'**
+  String get adminModerationOracleApiUrlOptional;
+
+  /// No description provided for @adminModerationCollateralOptional.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teminat (opsiyonel)'**
+  String get adminModerationCollateralOptional;
+
+  /// No description provided for @adminModerationInvalidForm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lütfen gerekli alanları doldurun.'**
+  String get adminModerationInvalidForm;
+
+  /// No description provided for @adminModerationDateRule.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuç zamanı kapanıştan en az 1 saat sonra olmalı.'**
+  String get adminModerationDateRule;
+
+  /// No description provided for @adminModerationConflictRetry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çakışma oldu, tekrar deneyin.'**
+  String get adminModerationConflictRetry;
+
+  /// No description provided for @adminModerationActionFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem başarısız.'**
+  String get adminModerationActionFailed;
+
+  /// No description provided for @adminModerationMetaUser.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı'**
+  String get adminModerationMetaUser;
+
+  /// No description provided for @adminModerationMetaCreatedAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oluşturma'**
+  String get adminModerationMetaCreatedAt;
+
+  /// No description provided for @adminModerationMetaTopic.
+  ///
+  /// In tr, this message translates to:
+  /// **'Konu'**
+  String get adminModerationMetaTopic;
+
+  /// No description provided for @adminModerationMetaOracleApiUrl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oracle URL'**
+  String get adminModerationMetaOracleApiUrl;
+
   /// No description provided for @settings.
   ///
   /// In tr, this message translates to:
@@ -165,6 +645,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ayarlar ve gizlilik'**
   String get settingsAndPrivacy;
+
+  /// No description provided for @drawerActiveBets.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktif Tahminlerim'**
+  String get drawerActiveBets;
+
+  /// No description provided for @drawerWeeklyLeague.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık Lig'**
+  String get drawerWeeklyLeague;
+
+  /// No description provided for @drawerSettingsAndPrivacy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlar ve Gizlilik'**
+  String get drawerSettingsAndPrivacy;
+
+  /// No description provided for @drawerWalletTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Token'**
+  String get drawerWalletTitle;
 
   /// No description provided for @logout.
   ///
@@ -447,6 +951,72 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.'**
   String get betOnOneSideOnly;
+
+  /// No description provided for @betPleaseWait.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bahis işlemi sürüyor, lütfen bekleyin.'**
+  String get betPleaseWait;
+
+  /// No description provided for @betLimitHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maksimum bahis limiti bakiye, rütbe ve havuza göre belirlenir.'**
+  String get betLimitHint;
+
+  /// No description provided for @availableBalanceTokens.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanılabilir bakiye: {pegCount} 🪙'**
+  String availableBalanceTokens(String pegCount);
+
+  /// No description provided for @betSheetSideYes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet'**
+  String get betSheetSideYes;
+
+  /// No description provided for @betSheetSideNo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hayır'**
+  String get betSheetSideNo;
+
+  /// No description provided for @betSheetSubmitYes.
+  ///
+  /// In tr, this message translates to:
+  /// **'EVET\'E BAHİS YAP'**
+  String get betSheetSubmitYes;
+
+  /// No description provided for @betSheetSubmitNo.
+  ///
+  /// In tr, this message translates to:
+  /// **'HAYIR\'A BAHİS YAP'**
+  String get betSheetSubmitNo;
+
+  /// No description provided for @potentialReturnEstimate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olası kazanç: ~{amount} 🪙'**
+  String potentialReturnEstimate(String amount);
+
+  /// No description provided for @potentialReturnUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'—'**
+  String get potentialReturnUnavailable;
+
+  /// No description provided for @potentialReturnDisclaimer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşık tahmin; garanti değildir.'**
+  String get potentialReturnDisclaimer;
+
+  /// No description provided for @betSheetMaxButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'MAKS'**
+  String get betSheetMaxButton;
 
   /// No description provided for @betPlaced.
   ///
@@ -879,6 +1449,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bahis gönderilemedi.'**
   String get betErrorGeneric;
+
+  /// No description provided for @betErrorUnauthenticated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bahis yapmak için giriş yapmanız gerekiyor.'**
+  String get betErrorUnauthenticated;
+
+  /// No description provided for @betErrorDeadlineExceeded.
+  ///
+  /// In tr, this message translates to:
+  /// **'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.'**
+  String get betErrorDeadlineExceeded;
+
+  /// No description provided for @betErrorResourceExhausted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin.'**
+  String get betErrorResourceExhausted;
+
+  /// No description provided for @betErrorFailedPrecondition.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tahmin için şu anda bahis yapılamıyor. Lütfen daha sonra tekrar deneyin.'**
+  String get betErrorFailedPrecondition;
+
+  /// No description provided for @statuPending.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beklemede'**
+  String get statuPending;
+
+  /// No description provided for @statuUnderReview.
+  ///
+  /// In tr, this message translates to:
+  /// **'İncelemede'**
+  String get statuUnderReview;
+
+  /// No description provided for @statuRejectedByAi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Reddedildi'**
+  String get statuRejectedByAi;
 
   /// No description provided for @gmsError.
   ///
@@ -2290,6 +2902,12 @@ abstract class AppLocalizations {
   /// **'@kullanıcı'**
   String get defaultUserHandle;
 
+  /// No description provided for @someone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kullanıcı'**
+  String get someone;
+
   /// No description provided for @youAreBlocked.
   ///
   /// In tr, this message translates to:
@@ -2566,6 +3184,30 @@ abstract class AppLocalizations {
   /// **'Bahis miktarı'**
   String get betAmountLabel;
 
+  /// No description provided for @amountPlayed.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} oynandı'**
+  String amountPlayed(String amount);
+
+  /// No description provided for @liveLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'CANLI'**
+  String get liveLabel;
+
+  /// No description provided for @timeLeftLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kalan'**
+  String get timeLeftLabel;
+
+  /// No description provided for @predictionEnded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bitti'**
+  String get predictionEnded;
+
   /// No description provided for @approvalPendingStatus.
   ///
   /// In tr, this message translates to:
@@ -2709,6 +3351,222 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.'**
   String get emptyPredictionsDefaultSubtitle;
+
+  /// No description provided for @interactionAndSocialHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'Etkileşim ve Sosyal'**
+  String get interactionAndSocialHeader;
+
+  /// No description provided for @commentPermissionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahminlerime Yorum Yapabilenler'**
+  String get commentPermissionTitle;
+
+  /// No description provided for @commentPermissionEveryone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Herkes'**
+  String get commentPermissionEveryone;
+
+  /// No description provided for @commentPermissionFollowed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip Ettiklerim'**
+  String get commentPermissionFollowed;
+
+  /// No description provided for @commentPermissionNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiç Kimse'**
+  String get commentPermissionNone;
+
+  /// No description provided for @mentionPermissionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Benden Bahsedebilenler (@mention)'**
+  String get mentionPermissionTitle;
+
+  /// No description provided for @contentModerationHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'İçerik Denetimi'**
+  String get contentModerationHeader;
+
+  /// No description provided for @hideSensitiveContentTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hassas İçerikleri Gizle'**
+  String get hideSensitiveContentTitle;
+
+  /// No description provided for @aiModerationTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay Zeka Moderasyonu'**
+  String get aiModerationTitle;
+
+  /// No description provided for @aiModerationSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönderiler, topluluk kurallarına uygunluk için yapay zeka tarafından kontrol edilir.'**
+  String get aiModerationSubtitle;
+
+  /// No description provided for @dataAndSystemHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'Veri ve Sistem'**
+  String get dataAndSystemHeader;
+
+  /// No description provided for @locationDataTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Konum Verileri'**
+  String get locationDataTitle;
+
+  /// No description provided for @legalHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal Bilgiler'**
+  String get legalHeader;
+
+  /// No description provided for @privacyPolicyRowTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik Politikası'**
+  String get privacyPolicyRowTitle;
+
+  /// No description provided for @userAgreementRowTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı Sözleşmesi'**
+  String get userAgreementRowTitle;
+
+  /// No description provided for @legalUrlMissingSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yakında eklenecek.'**
+  String get legalUrlMissingSubtitle;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabımı Sil'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem tamamlandığında tüm tokenlarınız, stash\'iniz ve geçmişiniz kalıcı olarak silinecektir.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountCannotBeUndone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem geri alınamaz.'**
+  String get deleteAccountCannotBeUndone;
+
+  /// No description provided for @deleteAccountBusy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Siliniyor…'**
+  String get deleteAccountBusy;
+
+  /// No description provided for @deleteAccountDeleteButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sil'**
+  String get deleteAccountDeleteButton;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabınız silindi.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountErrorGeneric.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabınızı silerken bir hata oluştu. Lütfen tekrar deneyin.'**
+  String get deleteAccountErrorGeneric;
+
+  /// No description provided for @mutedWordsComingSoonTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sessize alınan kelimeler (yakında)'**
+  String get mutedWordsComingSoonTitle;
+
+  /// No description provided for @mutedWordsComingSoonSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu özellik henüz hazır değil.'**
+  String get mutedWordsComingSoonSubtitle;
+
+  /// No description provided for @blockedAccountsEmptyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz engellenen hesap yok'**
+  String get blockedAccountsEmptyTitle;
+
+  /// No description provided for @blockedAccountsEmptySubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Engellediğiniz hesaplar burada görünecek.'**
+  String get blockedAccountsEmptySubtitle;
+
+  /// No description provided for @unblockButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Engeli kaldır'**
+  String get unblockButton;
+
+  /// No description provided for @unblockSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcının engeli kaldırıldı.'**
+  String get unblockSuccess;
+
+  /// No description provided for @legalUrlMissingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal metin URL\'si eksik'**
+  String get legalUrlMissingTitle;
+
+  /// No description provided for @openLegalButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarayıcıda aç'**
+  String get openLegalButton;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre Değiştir'**
+  String get changePasswordTitle;
+
+  /// No description provided for @languageOptionTurkish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Türkçe'**
+  String get languageOptionTurkish;
+
+  /// No description provided for @languageOptionEnglish.
+  ///
+  /// In tr, this message translates to:
+  /// **'İngilizce'**
+  String get languageOptionEnglish;
+
+  /// No description provided for @languageOptionGerman.
+  ///
+  /// In tr, this message translates to:
+  /// **'Almanca'**
+  String get languageOptionGerman;
+
+  /// No description provided for @logoutActionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış Yap'**
+  String get logoutActionTitle;
 }
 
 class _AppLocalizationsDelegate

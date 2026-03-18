@@ -54,22 +54,29 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
 
   @override
   void initState() {
-    var feedState = Provider.of<FeedState>(context, listen: false);
-    var composeState = Provider.of<ComposeToldyaState>(context, listen: false);
+    super.initState();
+    final feedState = Provider.of<FeedState>(context, listen: false);
+    final composeState = Provider.of<ComposeToldyaState>(context, listen: false);
+
     if (feedState.toldyaToEditModel != null) {
       model = feedState.toldyaToEditModel!;
       _isEditMode = true;
-      feedState.clearToldyaToEdit();
       final initial = model.description ?? '';
       _textEditingController = TextEditingController(text: initial);
-      composeState.setInitialDescription(initial);
+
+      // Defer provider mutations until after first frame to avoid
+      // "setState()/markNeedsBuild called during build" from notifyListeners().
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        feedState.clearToldyaToEdit();
+        composeState.setInitialDescription(initial);
+      });
     } else {
       model = feedState.toldyaToReplyModel ?? FeedModel();
       _textEditingController = TextEditingController();
     }
     scrollcontroller = ScrollController();
     scrollcontroller..addListener(_scrollListener);
-    super.initState();
   }
 
   _scrollListener() {
@@ -218,7 +225,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 ? model.key
                 : null,
         userId: myUser.userId);
-    if (widget.isToldya && _challengeeUser?.userId != null) {
+    if (kEnableChallenges && widget.isToldya && _challengeeUser?.userId != null) {
       reply.challengeeUserId = _challengeeUser!.userId;
     }
     return reply;
@@ -264,7 +271,15 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     final searchState = Provider.of<SearchState>(context, listen: false);
     final authState = Provider.of<AuthState>(context, listen: false);
     final myId = authState.userId;
-    final followingIds = authState.profileUserModel?.followingList ?? [];
+    // IMPORTANT: Challenge picker must always use *current logged-in user* following list.
+    // profileUserModel can be "last visited profile", so it is not reliable here.
+    final currentUser = authState.userModel;
+    final followingIds = currentUser?.followingList ?? const <String>[];
+    final isFollowingListLoaded = currentUser != null && currentUser.followingList != null;
+    if (!isFollowingListLoaded) {
+      // Keep profile list consistent if it drifted; picker still relies on userModel.
+      authState.ensureProfileIsCurrentUser();
+    }
     if (searchState.userlist == null) {
       searchState.getDataFromDatabase();
     }
@@ -304,9 +319,11 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                   Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      followingIds.isEmpty
-                          ? AppLocalizations.of(context)!.followingListEmpty
-                          : AppLocalizations.of(context)!.followingListLoadingOrEmpty,
+                      !isFollowingListLoaded
+                          ? AppLocalizations.of(context)!.followingListLoadingOrEmpty
+                          : (followingIds.isEmpty
+                              ? AppLocalizations.of(context)!.followingListEmpty
+                              : AppLocalizations.of(context)!.followingListLoadingOrEmpty),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
@@ -374,7 +391,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.isToldya) _buildChallengeeRow(),
+                      if (kEnableChallenges && widget.isToldya) _buildChallengeeRow(),
                       widget.isRetoldya
                           ? _ComposeRetoldya(this)
                           : _ComposeToldya(this),

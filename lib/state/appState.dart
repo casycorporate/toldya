@@ -18,12 +18,13 @@ class AppState extends ChangeNotifier {
   int _pageIndex = 0;
   int get pageIndex => _pageIndex;
 
-  /// Last bottom bar tab index before switching to Profile (0=Feed, 1=Search, 2=Notifications). Used when "back" from Profile tab.
+  /// Last bottom bar tab index before switching to Profile (0=Home). Used when "back" from Profile tab.
   int _lastTabBeforeProfile = 0;
   int get lastTabBeforeProfile => _lastTabBeforeProfile;
 
   set setpageIndex(int index) {
-    if (index == 3) {
+    // Profile tab is index 1.
+    if (index == 1) {
       _lastTabBeforeProfile = _pageIndex;
     } else {
       _lastTabBeforeProfile = index;

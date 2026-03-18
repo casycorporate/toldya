@@ -7,27 +7,19 @@ import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
-import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/feed/feedPage.dart';
-import 'package:toldya/page/message/chatListPage.dart';
 import 'package:toldya/page/profile/profilePage.dart';
 import 'package:toldya/state/appState.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/chats/chatState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/state/notificationState.dart';
-import 'package:toldya/state/searchState.dart';
 import 'package:toldya/widgets/bottomMenuBar/bottomMenuBar.dart';
-import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
 import '../helper/locator.dart';
 import '../helper/push_notification_service.dart';
 import '../model/PushNotificationModel.dart';
-import '../services/notification_service.dart';
 import 'common/sidebar.dart';
-import 'notification/notificationPage.dart';
-import 'search/SearchPage.dart';
-import 'profile/leaderboard/leaderboardPage.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -41,22 +33,42 @@ class _HomePageState extends State<HomePage> {
   final refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
   int pageIndex = 0;
   late StreamSubscription<PushNotificationModel> pushNotificationSubscription;
+  bool _startupInitScheduled = false;
   bool _pendingExit = false;
   /// When on Feed tab, false = hide bar on scroll down, true = show on scroll up. Ignored when not on Feed.
   bool _bottomBarVisible = true;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _startupInitScheduled) return;
+      _startupInitScheduled = true;
       var state = Provider.of<AppState>(context, listen: false);
       state.setpageIndex = 0;
-      initToldyas();
-      initProfile();
-      initSearch();
-      initNotificaiton();
-      initChat();
+      _stagedStartupInit();
     });
 
     super.initState();
+  }
+
+  Future<void> _stagedStartupInit() async {
+    // Stage 1: profile (needed for header/userId)
+    if (!mounted) return;
+    initProfile();
+
+    // Stage 2: feed shortly after (lets first frame breathe)
+    await Future.delayed(const Duration(milliseconds: 60));
+    if (!mounted) return;
+    initToldyas();
+
+    // Stage 3: notifications
+    await Future.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+    initNotificaiton();
+
+    // Stage 4: chat (often heaviest; includes server key fetch)
+    await Future.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+    initChat();
   }
 
   void initToldyas() {
@@ -70,20 +82,15 @@ class _HomePageState extends State<HomePage> {
     state.databaseInit();
   }
 
-  void initSearch() {
-    var searchState = Provider.of<SearchState>(context, listen: false);
-    searchState.getDataFromDatabase();
-  }
-
   void initNotificaiton() {
     var state = Provider.of<NotificationState>(context, listen: false);
     var authstate = Provider.of<AuthState>(context, listen: false);
     final userId = authstate.userId;
-    state.databaseInit(userId);
-    state.initfirebaseService();
     if (userId.isNotEmpty) {
-      NotificationService.instance.getTokenAndPersist();
+      state.databaseInit(userId);
     }
+    state.initfirebaseService();
+    // Token persist is already handled in NotificationService.init (deferred in main.dart).
     pushNotificationSubscription = getIt<PushNotificationService>()
         .pushNotificationResponseStream
         .listen(listenPushNotification);
@@ -116,6 +123,9 @@ class _HomePageState extends State<HomePage> {
     /// `model.data.senderId` is user id who tagged you in a tweet
     else if (model.type == NotificationType.Mention.toString() &&
         model.receiverId == authstate.user?.uid) {
+      if (!kEnablePostDetail) {
+        return;
+      }
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(model.toldyaId);
       Navigator.of(context).pushNamed('/FeedPostDetail/' + model.toldyaId);
@@ -126,6 +136,7 @@ class _HomePageState extends State<HomePage> {
   void initChat() {
     final chatState = Provider.of<ChatState>(context, listen: false);
     final state = Provider.of<AuthState>(context, listen: false);
+    if (state.userId.isEmpty) return;
     chatState.databaseInit(state.userId, state.userId);
 
     /// It will update fcm token in database
@@ -135,7 +146,11 @@ class _HomePageState extends State<HomePage> {
     /// It get fcm server key
     /// Server key is required to configure firebase notification
     /// Without fcm server notification can not be sent
-    chatState.getFCMServerKey();
+    // Defer to avoid blocking startup frame budget.
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      chatState.getFCMServerKey();
+    });
   }
 
   /// On app launch it checks if app is launch by tapping on notification from notification tray
@@ -197,8 +212,6 @@ class _HomePageState extends State<HomePage> {
           children: [
             _getPage(0),
             _getPage(1),
-            _getPage(2),
-            _getPage(3),
           ],
         ),
       ),
@@ -212,19 +225,10 @@ class _HomePageState extends State<HomePage> {
           scaffoldKey: _scaffoldKey,
           refreshIndicatorKey: refreshIndicatorKey,
         );
-        break;
       case 1:
-        return SearchPage(scaffoldKey: _scaffoldKey);
-        break;
-      case 2:
-        return LeaderboardPage();
-        break;
-      case 3:
         return ProfilePage(isTabContent: true, parentScaffoldKey: _scaffoldKey);
-        break;
       default:
         return FeedPage(scaffoldKey: _scaffoldKey);
-        break;
     }
   }
 

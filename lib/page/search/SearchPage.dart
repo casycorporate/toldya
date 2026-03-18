@@ -348,6 +348,9 @@ class _SearchPageState extends State<SearchPage> {
           ...predictionList.take(10).map((model) => _SuggestionPredictionTile(
                 model: model,
                 onTap: () {
+                  if (!kEnablePostDetail) {
+                    return;
+                  }
                   Provider.of<FeedState>(context, listen: false)
                       .getpostDetailFromDatabase(model.key ?? '', model: model);
                   Navigator.of(context).pushNamed('/FeedPostDetail/${model.key}');

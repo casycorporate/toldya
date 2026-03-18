@@ -13,36 +13,33 @@ class DirectMessagesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: AppLocalizations.of(context)!.directMessagesTitle,
+        title: l10n.directMessagesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
           HeaderWidget(
-            AppLocalizations.of(context)!.directMessagesTitle,
+            l10n.directMessagesTitle,
             secondHeader: true,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.receiveMessageRequestsTitle,
+            l10n.receiveMessageRequestsTitle,
             navigateTo: null,
             showDivider: false,
-            visibleSwitch: true,
             vPadding: 20,
-            subtitle:
-                AppLocalizations.of(context)!.receiveMessageRequestsSubtitle,
+            subtitle: l10n.featureComingSoon(l10n.receiveMessageRequestsTitle),
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.showReadReceiptsTitle,
+            l10n.showReadReceiptsTitle,
             navigateTo: null,
             showDivider: false,
-            visibleSwitch: true,
-            subtitle:
-                AppLocalizations.of(context)!.showReadReceiptsSubtitle,
+            subtitle: l10n.featureComingSoon(l10n.showReadReceiptsTitle),
           ),
         ],
       ),

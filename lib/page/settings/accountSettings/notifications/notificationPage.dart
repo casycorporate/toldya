@@ -13,39 +13,39 @@ class NotificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: AppLocalizations.of(context)!.notificationsTitle,
+        title: l10n.notificationsTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         children: <Widget>[
-          HeaderWidget(AppLocalizations.of(context)!.filtersHeader),
+          HeaderWidget(l10n.filtersHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.qualityFilterTitle,
-            showCheckBox: true,
-            subtitle: AppLocalizations.of(context)!.qualityFilterSubtitle,
+            l10n.qualityFilterTitle,
+            subtitle: l10n.featureComingSoon(l10n.qualityFilterTitle),
             // navigateTo: 'AccountSettingsPage',
           ),
           Divider(height: 0),
-          SettingRowWidget(AppLocalizations.of(context)!.advancedFilterTitle),
-          SettingRowWidget(AppLocalizations.of(context)!.mutedWordTitle),
+          SettingRowWidget(l10n.advancedFilterTitle, subtitle: l10n.featureComingSoon(l10n.advancedFilterTitle)),
+          SettingRowWidget(l10n.mutedWordTitle, subtitle: l10n.featureComingSoon(l10n.mutedWordTitle)),
           HeaderWidget(
-            AppLocalizations.of(context)!.preferencesHeader,
+            l10n.preferencesHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.unreadBadgeTitle,
+            l10n.unreadBadgeTitle,
             showCheckBox: false,
-            subtitle: AppLocalizations.of(context)!.unreadBadgeSubtitle,
+            subtitle: l10n.unreadBadgeSubtitle,
           ),
           SettingRowWidget(AppLocalizations.of(context)!.pushNotificationsTitle),
           SettingRowWidget(AppLocalizations.of(context)!.smsNotificationsTitle),
           SettingRowWidget(
-            AppLocalizations.of(context)!.emailNotificationsTitle,
-            subtitle: AppLocalizations.of(context)!.emailNotificationsSubtitle,
+            l10n.emailNotificationsTitle,
+            subtitle: l10n.emailNotificationsSubtitle,
           ),
         ],
       ),

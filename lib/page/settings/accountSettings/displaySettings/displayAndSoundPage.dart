@@ -107,62 +107,57 @@ class DisplayAndSoundPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          AppLocalizations.of(context)!.displayAndSoundTitle,
+          l10n.displayAndSoundTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget(AppLocalizations.of(context)!.mediaHeader),
+          HeaderWidget(l10n.mediaHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.mediaPreviewsTitle,
+            l10n.mediaPreviewsTitle,
             showCheckBox: false,
           ),
           Divider(height: 0),
-          HeaderWidget(AppLocalizations.of(context)!.displayHeader),
+          HeaderWidget(l10n.displayHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.darkModeTitle,
-            subtitle: AppLocalizations.of(context)!.off,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
+            l10n.darkModeTitle,
+            subtitle: l10n.featureComingSoon(l10n.darkModeTitle),
             showDivider: false,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.darkModeAppearance,
-            subtitle: AppLocalizations.of(context)!.dim,
-            onPressed: () {
-              openDarkModeAppearanceSettings(context);
-            },
+            l10n.darkModeAppearance,
+            subtitle: l10n.featureComingSoon(l10n.darkModeAppearance),
             showDivider: false,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.emojiTitle,
-            subtitle: AppLocalizations.of(context)!.emojiSubtitle,
+            l10n.emojiTitle,
+            subtitle: l10n.featureComingSoon(l10n.emojiTitle),
             showDivider: false,
             showCheckBox: false,
           ),
           HeaderWidget(
-            AppLocalizations.of(context)!.soundHeader,
+            l10n.soundHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.soundEffectsTitle,
+            l10n.soundEffectsTitle,
             // vPadding: 15,
             showCheckBox: false,
           ),
           HeaderWidget(
-            AppLocalizations.of(context)!.webBrowserHeader,
+            l10n.webBrowserHeader,
             secondHeader: false,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.useInAppBrowserTitle,
-            subtitle: AppLocalizations.of(context)!.useInAppBrowserSubtitle,
+            l10n.useInAppBrowserTitle,
+            subtitle: l10n.featureComingSoon(l10n.useInAppBrowserTitle),
             showCheckBox: false,
           ),
         ],

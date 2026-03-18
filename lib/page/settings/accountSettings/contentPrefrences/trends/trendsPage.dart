@@ -23,10 +23,10 @@ class TrendsPage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
+            color: MockupDesign.card,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
           ),
           child: child,

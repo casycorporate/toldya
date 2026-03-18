@@ -108,7 +108,8 @@ exports.onPredictionResolved = functions.database
     const title = (after.description && String(after.description).trim()) || "Tahmin";
     const notifTitle = "Tahmin Sonuçlandı!";
     const notifBody = `'${title.substring(0, 50)}${title.length > 50 ? "…" : ""}' tahmininin sonucu belli oldu. Kazanıp kazanmadığını gör!`;
-    const dataPayload = { type: "prediction_result", id: toldyaId };
+    // Standard payload: { type, id } + legacy keys for backward compatibility
+    const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "prediction_result" };
 
     try {
       const likeList = Array.isArray(after.likeList) ? after.likeList : [];
@@ -168,7 +169,8 @@ exports.onBetCreated = functions.database
 
       const notifTitle = "Tahminine Bahis Yapıldı!";
       const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine token yatırdı.`;
-      const dataPayload = { type: "prediction_result", id: toldyaId };
+      // Bet on a prediction -> open toldya detail
+      const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "bet" };
 
       const token = await getFcmToken(ownerId);
       if (token) {
@@ -224,6 +226,7 @@ exports.onToldyaCreated = functions.database
           toldyaId: toldyaId,
           parentKey: parentKey,
           commenterUserId: commenterId || "",
+          data: { type: "toldya", id: parentKey, toldyaId: parentKey, replyId: toldyaId, senderId: commenterId || "" },
           updatedAt: new Date().toISOString(),
         };
         await getDb().ref().update(updates);
@@ -231,8 +234,12 @@ exports.onToldyaCreated = functions.database
         const token = await getFcmToken(ownerId);
         if (token) {
           await sendFcm(token, notifTitle, notifBody, {
-            type: "prediction_result",
+            type: "toldya",
             id: parentKey,
+            toldyaId: parentKey,
+            replyId: toldyaId,
+            senderId: commenterId || "",
+            legacyType: "reply",
           });
           console.log("[onToldyaCreated] reply notification sent to", ownerId, "toldyaId=", toldyaId);
         }
@@ -264,6 +271,7 @@ exports.onToldyaCreated = functions.database
         challengerUserId: creatorId,
         challengerDisplayName: challengerDisplayName,
         toldyaId: toldyaId,
+      data: { type: "toldya", id: toldyaId, toldyaId: toldyaId, senderId: creatorId, legacyType: "challenge" },
         updatedAt: new Date().toISOString(),
       };
       await getDb().ref().update(updates);
@@ -271,8 +279,11 @@ exports.onToldyaCreated = functions.database
       const token = await getFcmToken(challengeeUserId);
       if (token) {
         await sendFcm(token, notifTitle, notifBody, {
-          type: "challenge",
-          id: toldyaId,
+        type: "toldya",
+        id: toldyaId,
+        toldyaId: toldyaId,
+        senderId: creatorId,
+        legacyType: "challenge",
         });
         console.log("[onToldyaCreated] challenge sent to", challengeeUserId, "toldyaId=", toldyaId);
       }
@@ -313,13 +324,14 @@ exports.onFollowerCreated = functions.database
 
       const notifTitle = "Yeni Takipçi!";
       const notifBody = `${followerDisplayName} seni takip etmeye başladı.`;
-      const dataPayload = { type: "new_follower", id: followerId };
+      const dataPayload = { type: "profile", id: followerId, senderId: followerId, legacyType: "new_follower" };
 
       const updates = {};
       updates[`notification/${followedUserId}/${followerId}`] = {
         type: "Follow",
         followerId: followerId,
         followerDisplayName: followerDisplayName,
+        data: { type: "profile", id: followerId, senderId: followerId, legacyType: "follow" },
         updatedAt: new Date().toISOString(),
       };
       await getDb().ref().update(updates);

@@ -36,10 +36,290 @@ class AppLocalizationsTr extends AppLocalizations {
   String get profile => 'Profil';
 
   @override
+  String get adminModeration => 'Admin Moderasyon';
+
+  @override
+  String get adminJobsTitle => 'Admin İşleri';
+
+  @override
+  String get adminSegmentModeration => 'Moderasyon';
+
+  @override
+  String get adminSegmentResolve => 'Sonuçlandır';
+
+  @override
+  String get adminSegmentQuickFix => 'Hızlı Düzeltme';
+
+  @override
+  String get adminSegmentDistribute => 'Dağıtım';
+
+  @override
+  String get adminJobSecretLabel => 'Job Secret';
+
+  @override
+  String get adminJobSecretHint => 'Secret girin';
+
+  @override
+  String get adminJobSecretSessionNote =>
+      'Sadece bu oturumda bellekte tutulur.';
+
+  @override
+  String get adminJobSecretMissing => 'Devam etmek için job secret gerekli.';
+
+  @override
+  String get adminResolveTitle => 'Sonuçlandır';
+
+  @override
+  String get adminResolveDesc =>
+      'Vadesi geçmiş ve henüz sonuçlandırılmamış tahminleri listeler. Admin olarak Evet/Hayır sonucunu seçip manuel sonuçlandırabilirsiniz.';
+
+  @override
+  String get adminResolvePreviewButton => 'Önizle';
+
+  @override
+  String get adminResolveRunButton => 'Çalıştır';
+
+  @override
+  String get adminResolveManualYes => 'Evet kazandı';
+
+  @override
+  String get adminResolveManualNo => 'Hayır kazandı';
+
+  @override
+  String get adminResolveManualApply => 'Sonuçlandır';
+
+  @override
+  String get adminResolveManualSuccess => 'Tahmin sonuçlandırıldı.';
+
+  @override
+  String get adminDistributeTitle => 'Dağıtım';
+
+  @override
+  String get adminDistributeDesc =>
+      'Sonuçlanan tahminlerin kazançlarını tek tek dağıtabilirsiniz.';
+
+  @override
+  String get adminDistributeIdempotentNote =>
+      'Not: Bu işlem idempotent çalışır.';
+
+  @override
+  String get adminDistributePreviewButton => 'Önizle';
+
+  @override
+  String get adminDistributeRunButton => 'Çalıştır';
+
+  @override
+  String get adminDistributeManualApply => 'Kazancı dağıt';
+
+  @override
+  String get adminDistributeManualSuccess => 'Kazanç dağıtıldı.';
+
+  @override
+  String get adminDistributeManualNoop => 'Dağıtılacak kazanç bulunamadı.';
+
+  @override
+  String get adminQuickFixTitle => 'Hızlı Düzeltme';
+
+  @override
+  String get adminQuickFixDesc =>
+      'statu=1 olup tarih alanları eksik/bozuk olan kayıtları düzeltir. Tarihleri ayarlayıp isterseniz yayına alarak normal kilitleme → oracle → dağıtım akışını başlatabilirsiniz.';
+
+  @override
+  String adminQuickFixCount(String n) {
+    return 'Eksik tarihli kayıtlar: $n';
+  }
+
+  @override
+  String get adminQuickFixSearchHint => 'ID veya açıklamada ara';
+
+  @override
+  String get adminQuickFixFilterEndDatePassed =>
+      'Sadece endDate geçmiş olanlar';
+
+  @override
+  String get adminQuickFixEndDateLabel => 'End date';
+
+  @override
+  String get adminQuickFixResolutionDateLabel => 'Resolution date';
+
+  @override
+  String get adminQuickFixAutofillEndNowPlus => 'EndDate = şimdi + 5dk';
+
+  @override
+  String get adminQuickFixAutofillResolutionPlus1h =>
+      'ResolutionDate = endDate + 1s';
+
+  @override
+  String get adminQuickFixSetOnly => 'Sadece ayarla';
+
+  @override
+  String get adminQuickFixSetAndPublish => 'Ayarla ve yayına al';
+
+  @override
+  String get adminQuickFixConfirmPublish => 'Yayına almayı onaylıyorum';
+
+  @override
+  String get adminQuickFixValidationEndRequired => 'EndDate gerekli.';
+
+  @override
+  String get adminQuickFixValidationResolutionRequired =>
+      'ResolutionDate gerekli.';
+
+  @override
+  String get adminQuickFixValidationResolutionAfterEnd =>
+      'ResolutionDate, EndDate\'ten sonra olmalı.';
+
+  @override
+  String get adminQuickFixValidationMin1h =>
+      'ResolutionDate, EndDate\'ten en az 1 saat sonra olmalı.';
+
+  @override
+  String get adminQuickFixSuccess => 'Kayıt güncellendi.';
+
+  @override
+  String get adminQuickFixWarningPublish =>
+      'Bu işlem tahmini yayına alır ve lock/oracle job\'ları ile otomatik ilerler.';
+
+  @override
+  String adminQuickFixCreatedAt(String t) {
+    return 'Oluşturma: $t';
+  }
+
+  @override
+  String get adminQuickFixChipStatu1 => 'statu: 1';
+
+  @override
+  String get adminQuickFixChipEndMissing => 'endDate: eksik';
+
+  @override
+  String get adminQuickFixChipEndInvalid => 'endDate: geçersiz';
+
+  @override
+  String get adminQuickFixChipEndOk => 'endDate: ok';
+
+  @override
+  String get adminQuickFixChipEndPassed => 'endDate: geçti';
+
+  @override
+  String get adminQuickFixChipResMissing => 'resolutionDate: eksik';
+
+  @override
+  String get adminQuickFixChipResInvalid => 'resolutionDate: geçersiz';
+
+  @override
+  String get adminQuickFixChipTopicMissing => 'topic: eksik';
+
+  @override
+  String adminDistributeTotalPoolEstimate(String n) {
+    return 'Toplam havuz tahmini: $n';
+  }
+
+  @override
+  String adminPreviewCandidates(String n) {
+    return 'Aday sayısı: $n';
+  }
+
+  @override
+  String adminJobResultResolved(String n) {
+    return 'Sonuçlandırıldı: $n';
+  }
+
+  @override
+  String adminJobResultDistributed(String n) {
+    return 'Dağıtıldı: $n';
+  }
+
+  @override
+  String get adminJobSkippedTitle => 'Atlananlar';
+
+  @override
+  String get adminJobShowMore => 'Daha fazla göster';
+
+  @override
+  String get adminJobShowLess => 'Daha az göster';
+
+  @override
+  String adminJobErrorWithMessage(String msg) {
+    return 'Hata: $msg';
+  }
+
+  @override
+  String get adminModerationQueueEmpty => 'Bekleyen moderasyon yok.';
+
+  @override
+  String get adminModerationReject => 'Reddet';
+
+  @override
+  String get adminModerationRejectReasonHint => 'Reddetme gerekçesi';
+
+  @override
+  String get adminModerationApprove => 'Onayla';
+
+  @override
+  String get adminModerationApproveTitle => 'Yayına al';
+
+  @override
+  String get adminModerationTopicLabel => 'Kategori';
+
+  @override
+  String get adminModerationEndDateLabel => 'Kapanış';
+
+  @override
+  String get adminModerationResolutionDateLabel => 'Sonuç zamanı';
+
+  @override
+  String get adminModerationOracleSourceOptional =>
+      'Oracle kaynağı (opsiyonel)';
+
+  @override
+  String get adminModerationOracleApiUrlOptional =>
+      'Oracle API URL (opsiyonel)';
+
+  @override
+  String get adminModerationCollateralOptional => 'Teminat (opsiyonel)';
+
+  @override
+  String get adminModerationInvalidForm => 'Lütfen gerekli alanları doldurun.';
+
+  @override
+  String get adminModerationDateRule =>
+      'Sonuç zamanı kapanıştan en az 1 saat sonra olmalı.';
+
+  @override
+  String get adminModerationConflictRetry => 'Çakışma oldu, tekrar deneyin.';
+
+  @override
+  String get adminModerationActionFailed => 'İşlem başarısız.';
+
+  @override
+  String get adminModerationMetaUser => 'Kullanıcı';
+
+  @override
+  String get adminModerationMetaCreatedAt => 'Oluşturma';
+
+  @override
+  String get adminModerationMetaTopic => 'Konu';
+
+  @override
+  String get adminModerationMetaOracleApiUrl => 'Oracle URL';
+
+  @override
   String get settings => 'Ayarlar';
 
   @override
   String get settingsAndPrivacy => 'Ayarlar ve gizlilik';
+
+  @override
+  String get drawerActiveBets => 'Aktif Tahminlerim';
+
+  @override
+  String get drawerWeeklyLeague => 'Haftalık Lig';
+
+  @override
+  String get drawerSettingsAndPrivacy => 'Ayarlar ve Gizlilik';
+
+  @override
+  String get drawerWalletTitle => 'Token';
 
   @override
   String get logout => 'Çıkış';
@@ -186,6 +466,44 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get betOnOneSideOnly =>
       'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.';
+
+  @override
+  String get betPleaseWait => 'Bahis işlemi sürüyor, lütfen bekleyin.';
+
+  @override
+  String get betLimitHint =>
+      'Maksimum bahis limiti bakiye, rütbe ve havuza göre belirlenir.';
+
+  @override
+  String availableBalanceTokens(String pegCount) {
+    return 'Kullanılabilir bakiye: $pegCount 🪙';
+  }
+
+  @override
+  String get betSheetSideYes => 'Evet';
+
+  @override
+  String get betSheetSideNo => 'Hayır';
+
+  @override
+  String get betSheetSubmitYes => 'EVET\'E BAHİS YAP';
+
+  @override
+  String get betSheetSubmitNo => 'HAYIR\'A BAHİS YAP';
+
+  @override
+  String potentialReturnEstimate(String amount) {
+    return 'Olası kazanç: ~$amount 🪙';
+  }
+
+  @override
+  String get potentialReturnUnavailable => '—';
+
+  @override
+  String get potentialReturnDisclaimer => 'Yaklaşık tahmin; garanti değildir.';
+
+  @override
+  String get betSheetMaxButton => 'MAKS';
 
   @override
   String get betPlaced => 'Bahis alındı.';
@@ -416,6 +734,31 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get betErrorGeneric => 'Bahis gönderilemedi.';
+
+  @override
+  String get betErrorUnauthenticated =>
+      'Bahis yapmak için giriş yapmanız gerekiyor.';
+
+  @override
+  String get betErrorDeadlineExceeded =>
+      'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+
+  @override
+  String get betErrorResourceExhausted =>
+      'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin.';
+
+  @override
+  String get betErrorFailedPrecondition =>
+      'Bu tahmin için şu anda bahis yapılamıyor. Lütfen daha sonra tekrar deneyin.';
+
+  @override
+  String get statuPending => 'Beklemede';
+
+  @override
+  String get statuUnderReview => 'İncelemede';
+
+  @override
+  String get statuRejectedByAi => 'Reddedildi';
 
   @override
   String gmsError(String message) {
@@ -1196,6 +1539,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get defaultUserHandle => '@kullanıcı';
 
   @override
+  String get someone => 'Bir kullanıcı';
+
+  @override
   String get youAreBlocked => 'Engellendin';
 
   @override
@@ -1350,6 +1696,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String get betAmountLabel => 'Bahis miktarı';
 
   @override
+  String amountPlayed(String amount) {
+    return '$amount oynandı';
+  }
+
+  @override
+  String get liveLabel => 'CANLI';
+
+  @override
+  String get timeLeftLabel => 'Kalan';
+
+  @override
+  String get predictionEnded => 'Bitti';
+
+  @override
   String get approvalPendingStatus => 'Seçim yapılmak üzere bekleyen statüde';
 
   @override
@@ -1427,4 +1787,116 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get emptyPredictionsDefaultSubtitle =>
       'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.';
+
+  @override
+  String get interactionAndSocialHeader => 'Etkileşim ve Sosyal';
+
+  @override
+  String get commentPermissionTitle => 'Tahminlerime Yorum Yapabilenler';
+
+  @override
+  String get commentPermissionEveryone => 'Herkes';
+
+  @override
+  String get commentPermissionFollowed => 'Takip Ettiklerim';
+
+  @override
+  String get commentPermissionNone => 'Hiç Kimse';
+
+  @override
+  String get mentionPermissionTitle => 'Benden Bahsedebilenler (@mention)';
+
+  @override
+  String get contentModerationHeader => 'İçerik Denetimi';
+
+  @override
+  String get hideSensitiveContentTitle => 'Hassas İçerikleri Gizle';
+
+  @override
+  String get aiModerationTitle => 'Yapay Zeka Moderasyonu';
+
+  @override
+  String get aiModerationSubtitle =>
+      'Gönderiler, topluluk kurallarına uygunluk için yapay zeka tarafından kontrol edilir.';
+
+  @override
+  String get dataAndSystemHeader => 'Veri ve Sistem';
+
+  @override
+  String get locationDataTitle => 'Konum Verileri';
+
+  @override
+  String get legalHeader => 'Yasal Bilgiler';
+
+  @override
+  String get privacyPolicyRowTitle => 'Gizlilik Politikası';
+
+  @override
+  String get userAgreementRowTitle => 'Kullanıcı Sözleşmesi';
+
+  @override
+  String get legalUrlMissingSubtitle => 'Yakında eklenecek.';
+
+  @override
+  String get deleteAccountTitle => 'Hesabımı Sil';
+
+  @override
+  String get deleteAccountWarning =>
+      'Bu işlem tamamlandığında tüm tokenlarınız, stash\'iniz ve geçmişiniz kalıcı olarak silinecektir.';
+
+  @override
+  String get deleteAccountCannotBeUndone => 'Bu işlem geri alınamaz.';
+
+  @override
+  String get deleteAccountBusy => 'Siliniyor…';
+
+  @override
+  String get deleteAccountDeleteButton => 'Sil';
+
+  @override
+  String get deleteAccountSuccess => 'Hesabınız silindi.';
+
+  @override
+  String get deleteAccountErrorGeneric =>
+      'Hesabınızı silerken bir hata oluştu. Lütfen tekrar deneyin.';
+
+  @override
+  String get mutedWordsComingSoonTitle => 'Sessize alınan kelimeler (yakında)';
+
+  @override
+  String get mutedWordsComingSoonSubtitle => 'Bu özellik henüz hazır değil.';
+
+  @override
+  String get blockedAccountsEmptyTitle => 'Henüz engellenen hesap yok';
+
+  @override
+  String get blockedAccountsEmptySubtitle =>
+      'Engellediğiniz hesaplar burada görünecek.';
+
+  @override
+  String get unblockButton => 'Engeli kaldır';
+
+  @override
+  String get unblockSuccess => 'Kullanıcının engeli kaldırıldı.';
+
+  @override
+  String get legalUrlMissingTitle => 'Yasal metin URL\'si eksik';
+
+  @override
+  String get openLegalButton => 'Tarayıcıda aç';
+
+  @override
+  String get changePasswordTitle => 'Şifre Değiştir';
+
+  @override
+  String get languageOptionTurkish => 'Türkçe';
+
+  @override
+  String get languageOptionEnglish => 'İngilizce';
+
+  @override
+  String get languageOptionGerman => 'Almanca';
+
+  @override
+  String get logoutActionTitle => 'Çıkış Yap';
 }

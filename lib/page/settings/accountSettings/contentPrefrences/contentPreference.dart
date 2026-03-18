@@ -13,45 +13,47 @@ class ContentPrefrencePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: AppLocalizations.of(context)!.contentPreferencesTitle,
+        title: l10n.contentPreferencesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget(AppLocalizations.of(context)!.exploreHeader),
+          HeaderWidget(l10n.exploreHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.leaderboardTitle,
+            l10n.leaderboardTitle,
             navigateTo: 'LeaderboardPage',
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.trendsTitle,
+            l10n.trendsTitle,
             navigateTo: 'TrendsPage',
           ),
           Divider(height: 0),
           SettingRowWidget(
-            AppLocalizations.of(context)!.searchSettingsTitle,
-            navigateTo: '',
+            l10n.searchSettingsTitle,
+            subtitle: l10n.featureComingSoon(l10n.searchSettingsTitle),
+            navigateTo: null,
           ),
           HeaderWidget(
-            AppLocalizations.of(context)!.languagesHeader,
+            l10n.languagesHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.recommendationsTitle,
+            l10n.recommendationsTitle,
             vPadding: 15,
-            subtitle: AppLocalizations.of(context)!.recommendationsSubtitle,
+            subtitle: l10n.featureComingSoon(l10n.recommendationsTitle),
           ),
           HeaderWidget(
-            AppLocalizations.of(context)!.safetyHeader,
+            l10n.safetyHeader,
             secondHeader: true,
           ),
-          SettingRowWidget(AppLocalizations.of(context)!.blockedAccountsTitle),
-          SettingRowWidget(AppLocalizations.of(context)!.mutedAccountsTitle),
+          SettingRowWidget(l10n.blockedAccountsTitle, subtitle: l10n.featureComingSoon(l10n.blockedAccountsTitle)),
+          SettingRowWidget(l10n.mutedAccountsTitle, subtitle: l10n.featureComingSoon(l10n.mutedAccountsTitle)),
         ],
       ),
     );

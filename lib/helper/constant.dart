@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// Feature flags
+/// - Keep as `const` so tree-shaking / compile-time guards work.
+const bool kEnableChallenges = false;
+/// Post detail (FeedPostDetail) feature gate.
+const bool kEnablePostDetail = false;
+
 /// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
 const String kToldyaLogo = 'assets/images/toldya.svg';
 
@@ -22,6 +28,13 @@ List<String> dummyProfilePicList = [
 ];
 
 /// Toldya logosu – yeni mavi baykuş (light/dark varyantlar).
+/// Evet / Hayır bahis butonları (sabit renkler)
+class BetButtonPalette {
+  BetButtonPalette._();
+  static const Color yes = Color(0xFF2ED573);
+  static const Color no = Color(0xFFFF4757);
+}
+
 class ToldyaBranding {
   ToldyaBranding._();
   static const String appIcon = kToldyaLogo;
@@ -113,8 +126,13 @@ class Tokenomics {
   }
   static int maxBetByRank(int balance, int xp) =>
       (balance * rankMultiplierForXp(xp)).floor();
-  static int maxBetByPool(int totalPool) =>
-      totalPool < AppIcon.poolThreshold ? AppIcon.maxBetSmallPool : 0x7FFFFFFF;
+  static int maxBetByPool(int totalPool) {
+    if (totalPool < AppIcon.poolThreshold) {
+      final scaled = (totalPool * 0.5).floor();
+      return scaled > AppIcon.maxBetSmallPool ? scaled : AppIcon.maxBetSmallPool;
+    }
+    return 0x7FFFFFFF;
+  }
 }
 
 class Role{

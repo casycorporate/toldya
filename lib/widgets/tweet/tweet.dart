@@ -15,20 +15,41 @@ import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:toldya/widgets/tweet/widgets/parentTweet.dart';
 import 'package:toldya/widgets/tweet/widgets/tweetIconsRow.dart';
+import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../customWidgets.dart';
 import 'widgets/retweetWidget.dart';
 import 'widgets/tweetImage.dart';
-import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 
 /// Statü etiketinin (Beklemede/İncelemede/AI reddi) kartta gösterilmesi gerekiyor mu?
 bool _showStatuBadge(int? statu) {
   if (statu == null) return false;
-  return statu == Statu.statusPending ||
-      statu == Statu.statusPendingAiReview ||
-      statu == Statu.statusRejectedByAi;
+  // NOTE: case labels must be compile-time constants; use literal statu values.
+  // 1=pending, 6=AI review, 7=AI rejected
+  return statu == 1 || statu == 6 || statu == 7;
+}
+
+String _statuBadgeLabel(BuildContext context, int? statu) {
+  final l10n = AppLocalizations.of(context)!;
+  if (statu == null) return '';
+  switch (statu) {
+    case 1:
+      return l10n.statuPending;
+    case 6:
+      return l10n.statuUnderReview;
+    case 7:
+      return l10n.statuRejectedByAi;
+    default:
+      return '';
+  }
+}
+
+Color _statuAccent(int? statu) {
+  if (statu == 7) return const Color(0xFFFF6B6B);
+  // Pending + AI review: warm tone; main accent is used for rejected.
+  return const Color(0xFFFFB74D);
 }
 
 class Toldya extends StatelessWidget {
@@ -59,6 +80,9 @@ class Toldya extends StatelessWidget {
   void onTapToldya(BuildContext context) {
     var feedstate = Provider.of<FeedState>(context, listen: false);
     if (type == ToldyaType.Detail || type == ToldyaType.ParentToldya) {
+      return;
+    }
+    if (!kEnablePostDetail) {
       return;
     }
     if (type == ToldyaType.Toldya && !isDisplayOnProfile) {
@@ -111,6 +135,7 @@ class Toldya extends StatelessWidget {
                         model: model,
                         trailing: trailing ?? SizedBox.shrink(),
                         type: type,
+                        scaffoldKey: scaffoldKey,
                       )
                     : _ToldyaDetailBody(
                         isDisplayOnProfile: isDisplayOnProfile,
@@ -162,10 +187,16 @@ class _ToldyaBody extends StatelessWidget {
   final Widget trailing;
   final ToldyaType type;
   final bool isDisplayOnProfile;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
 
-  const _ToldyaBody(
-      {Key? key, required this.model, Widget? trailing, required this.type, required this.isDisplayOnProfile})
-      : trailing = trailing ?? const SizedBox.shrink(),
+  const _ToldyaBody({
+    Key? key,
+    required this.model,
+    Widget? trailing,
+    required this.type,
+    required this.isDisplayOnProfile,
+    this.scaffoldKey,
+  })  : trailing = trailing ?? const SizedBox.shrink(),
         super(key: key);
 
   @override
@@ -237,11 +268,6 @@ class _ToldyaBody extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 4),
-                RankBadgeWidget(
-                  xp: data.xp ?? 0,
-                  compact: true,
-                ),
               ],
             ),
           );
@@ -290,59 +316,30 @@ class _ToldyaBody extends StatelessWidget {
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
-                        if ((model.user?.currentStreak ?? 0) >= 3)
-                          Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Icon(
-                              Icons.local_fire_department,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        SizedBox(width: 6),
-                        _CountdownChip(endDate: model.endDate),
-                      ],
-                    ),
-                  ),
-                  FittedBox(
-                    fit: BoxFit.fill,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        CupertinoButton(
-                          minSize: double.minPositive,
-                          padding: EdgeInsets.all(5.0),
-                          child: Icon(
-                            (model.favList ?? [])
-                                .any((userId) => userId == authstate.userId)
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: AppColor.primary,
-                              size: 20
-                          ),
-                          onPressed: () {
-                              addFavToldya(context);
-                          },
+                            if ((model.user?.currentStreak ?? 0) >= 3)
+                              Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.local_fire_department,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                          ],
                         ),
-                        CupertinoButton(
-                          minSize: double.minPositive,
-                          padding: EdgeInsets.all(5.0),
-                          child: Icon(
-                            Icons.send_to_mobile,
-                            color: AppColor.darkGrey,
-                              size: 20
-                          ),
-                          onPressed: () {
-                            shareToldya(context);
-                          },
-                        ),
-                        Container(child: trailing == null ? SizedBox() : trailing),
-                      ],
-                    ),
+                      ),
+                      if (scaffoldKey != null)
+                        ToldyaBottomSheet().toldyaOptionIcon(
+                          context,
+                          model: model,
+                          type: type,
+                          scaffoldKey: scaffoldKey!,
+                        )
+                      else
+                        Container(child: trailing),
+                    ],
                   ),
-                ],
-              ),
-              if (model.topic != null && (model.topic ?? '').isNotEmpty)
+                if (model.topic != null && (model.topic ?? '').isNotEmpty)
                 Padding(
                   padding: EdgeInsets.only(top: 6),
                   child: Container(
@@ -369,9 +366,7 @@ class _ToldyaBody extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: model.statu == Statu.statusRejectedByAi
-                              ? Colors.red.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                          color: _statuAccent(model.statu).withOpacity(0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -380,15 +375,15 @@ class _ToldyaBody extends StatelessWidget {
                             Icon(
                               model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
                               size: 14,
-                              color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                              color: _statuAccent(model.statu),
                             ),
                             SizedBox(width: 4),
                             Text(
-                              getStatuLabel(model.statu),
+                              _statuBadgeLabel(context, model.statu),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                                color: _statuAccent(model.statu),
                               ),
                             ),
                           ],
@@ -399,7 +394,10 @@ class _ToldyaBody extends StatelessWidget {
                         Expanded(
                           child: Text(
                             model.aiModerationReason!,
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -574,8 +572,12 @@ class _ToldyaDetailBody extends StatelessWidget {
                         ),
                         SizedBox(width: 2),
 
-                        customText('· ${getEndTime(model.endDate ?? '')}',
-                            style: userNameStyle),
+                        customText(
+                          model.statu == Statu.statusPendingAiReview
+                              ? AppLocalizations.of(context)!.statuUnderReview
+                              : getEndTime(model.endDate ?? ''),
+                          style: userNameStyle,
+                        ),
                         SizedBox(
                           width: (author?.isVerified ?? false) ? 1 : 0,
                         ),
@@ -631,9 +633,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: model.statu == Statu.statusRejectedByAi
-                              ? Colors.red.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                          color: _statuAccent(model.statu).withOpacity(0.18),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -642,15 +642,15 @@ class _ToldyaDetailBody extends StatelessWidget {
                             Icon(
                               model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
                               size: 14,
-                              color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                              color: _statuAccent(model.statu),
                             ),
                             SizedBox(width: 4),
                             Text(
-                              getStatuLabel(model.statu),
+                              _statuBadgeLabel(context, model.statu),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: model.statu == Statu.statusRejectedByAi ? Colors.red : Colors.orange,
+                                color: _statuAccent(model.statu),
                               ),
                             ),
                           ],
@@ -661,7 +661,10 @@ class _ToldyaDetailBody extends StatelessWidget {
                         Expanded(
                           child: Text(
                             model.aiModerationReason!,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                            ),
                           ),
                         ),
                       ],

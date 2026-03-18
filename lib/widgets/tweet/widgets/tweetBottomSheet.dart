@@ -36,10 +36,11 @@ class ToldyaBottomSheet {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
           ),
-          child: customIcon(context,
-              icon: AppIcon.arrowDown,
-              istwitterIcon: true,
-              iconColor: AppColor.lightGrey),
+          child: Icon(
+              Icons.more_horiz,
+              size: 24,
+              color: AppColor.lightGrey,
+            ),
         ));
   }
 
@@ -278,11 +279,6 @@ class ToldyaBottomSheet {
     final total = totalLike + totalUnlike;
     final evetPercent = total > 0 ? (totalLike * 100 / total).round() : 50;
     final hayirPercent = total > 0 ? (totalUnlike * 100 / total).round() : 50;
-    final isEvet = commentFlag == 0;
-    const evetGreen = Color(0xFF2E7D32);
-    const hayirGray = Color(0xFF3D3D4A);
-    const evetBorder = Color(0xFF4CAF50);
-    const hayirBorder = Color(0xFFE53935);
     final textPrimary = AppColor.textPrimaryDark;
 
     return SingleChildScrollView(
@@ -299,52 +295,13 @@ class ToldyaBottomSheet {
               height: 1.3,
             ),
           ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isEvet ? evetGreen.withOpacity(0.3) : hayirGray,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isEvet ? evetBorder : Colors.white24,
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(AppLocalizations.of(context)!.yes, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
-                      Text('$evetPercent%', style: TextStyle(fontSize: 14, color: isEvet ? Color(0xFF81C784) : AppColor.textSecondaryDark)),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: !isEvet ? hayirBorder.withOpacity(0.25) : hayirGray,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: !isEvet ? hayirBorder : Colors.white24,
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(AppLocalizations.of(context)!.no, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
-                      Text('$hayirPercent%', style: TextStyle(fontSize: 14, color: !isEvet ? Color(0xFFE57373) : AppColor.textSecondaryDark)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
           SizedBox(height: 24),
-          SliderInNavigationBar(model: model, commentFlag: commentFlag),
+          SliderInNavigationBar(
+            model: model,
+            commentFlag: commentFlag,
+            yesPercent: evetPercent,
+            noPercent: hayirPercent,
+          ),
         ],
       ),
     );
@@ -736,354 +693,603 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
   }
 }
 
+enum _BetSide { yes, no }
+
 class SliderInNavigationBar extends StatefulWidget {
   final FeedModel model;
   final int commentFlag;
+  final int yesPercent;
+  final int noPercent;
 
-  SliderInNavigationBar({Key? key, required this.model, this.commentFlag = 0})
+  SliderInNavigationBar({
+    Key? key,
+    required this.model,
+    this.commentFlag = 0,
+    required this.yesPercent,
+    required this.noPercent,
+  })
       : super(key: key);
 
   @override
   _SliderInNavigationBarScreenState createState() =>
-      new _SliderInNavigationBarScreenState();
+      _SliderInNavigationBarScreenState();
 }
 
 class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
-  int _currentIndex = 0;
+  static const Color _neonYes = Color(0xFF2ED573);
+  static const Color _neonNo = Color(0xFFFF4757);
 
-  //List<Widget> _children;
-  int _period = 0;
-  int maxVal = 0;
-  bool isPressed = false;
+  late TextEditingController _amountController;
+  late _BetSide _side;
   bool _isPlacingBet = false;
   bool _showSuccess = false;
+  String? _inlineError;
 
   @override
   void initState() {
     super.initState();
+    _amountController = TextEditingController(text: '0');
+    _side = widget.commentFlag == AppIcon.hayirCommentFlag
+        ? _BetSide.no
+        : _BetSide.yes;
   }
 
-  static const Color _greenPrimary = Color(0xFF4CAF50);
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  int _commentFlagForSide(_BetSide s) =>
+      s == _BetSide.yes ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
+
+  int _maxVal(int balance, int xp, int totalPool) {
+    if (balance <= 0) return 0;
+    // TEMP: Aggressive max bet cap = 75% of spendable balance.
+    // (Rank/pool limits are intentionally disabled for now; can be re-enabled later.)
+    return (balance * 0.75).floor();
+  }
+
+  int _parseAmount() {
+    final t = _amountController.text.trim();
+    if (t.isEmpty) return 0;
+    return int.tryParse(t) ?? 0;
+  }
+
+  void _setAmountClamped(int v, int maxVal) {
+    final c = v.clamp(0, maxVal);
+    _amountController.text = c == 0 ? '0' : '$c';
+    _amountController.selection = TextSelection.collapsed(
+        offset: _amountController.text.length);
+  }
+
+  /// Rough pari-mutuel estimate if selected side wins (after fee).
+  double? _estimateReturn(int stake, _BetSide side, FeedModel m) {
+    if (stake <= 0) return null;
+    final totalYes = sumOfVote(m.likeList ?? []);
+    final totalNo = sumOfVote(m.unlikeList ?? []);
+    if (totalYes + totalNo <= 0) return null;
+    final fee = AppIcon.commissionRate;
+    if (side == _BetSide.yes) {
+      final newYes = totalYes + stake;
+      if (newYes <= 0) return null;
+      return stake + (stake / newYes) * totalNo * (1 - fee);
+    } else {
+      final newNo = totalNo + stake;
+      if (newNo <= 0) return null;
+      return stake + (stake / newNo) * totalYes * (1 - fee);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    var authState = Provider.of<AuthState>(context, listen: false);
-    var state = Provider.of<FeedState>(context, listen: false);
-
-    void _send() async {
-      debugPrint('=== BEN DEDIM BUTONUNA BASILDI ===');
-      debugPrint('_period: $_period');
-      debugPrint('maxVal: $maxVal');
-      debugPrint('commentFlag: ${widget.commentFlag}');
-      debugPrint('userId: ${authState.userId}');
-      debugPrint('model.key: ${widget.model.key}');
-      
-      // Miktar kontrolü
-      if (_period <= 0) {
-        debugPrint('[HATA] Bahis miktarı 0 veya negatif!');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-        return;
-      }
-      
-      if (_period > maxVal) {
-        debugPrint('[HATA] Bahis miktarı maksimumdan fazla! $_period > $maxVal');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.maxBetTokens('$maxVal')),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-        return;
-      }
-
-      // Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapılabilir
-      final userId = authState.userId;
-      if (userAlreadyBetOnOtherSide(widget.model, userId, widget.commentFlag)) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.betOnOneSideOnly,
-              ),
-              duration: Duration(seconds: 4),
-              backgroundColor: Colors.orange.shade800,
-            ),
-          );
-        }
-        return;
-      }
-
-      if (!mounted) return;
-      setState(() => _isPlacingBet = true);
-
-      try {
-        debugPrint('[BAHIS] placeBet çağrılıyor...');
-        await state.placeBet(
-          authState,
-          widget.model,
-          authState.userId ?? '',
-          _period,
-          widget.commentFlag,
+    final l10n = AppLocalizations.of(context)!;
+    return Selector<AuthState, ({int peg, int xp})>(
+      selector: (_, a) => (
+        peg: a.userModel?.pegCount ?? 0,
+        xp: a.userModel?.xp ?? 0,
+      ),
+      builder: (context, bal, __) {
+        final authState = Provider.of<AuthState>(context, listen: false);
+        final state = Provider.of<FeedState>(context, listen: false);
+        final betInFlight = context.select<FeedState, bool>(
+          (s) => s.isBetInFlight(widget.model.key),
         );
-        debugPrint('[BAHIS] placeBet başarılı!');
+        final userId = authState.userId;
+        final totalPool = sumOfVote(widget.model.likeList ?? []) +
+            sumOfVote(widget.model.unlikeList ?? []);
+        final maxVal = _maxVal(bal.peg, bal.xp, totalPool);
+        final canYes = userId == null ||
+            !userAlreadyBetOnOtherSide(
+                widget.model, userId, AppIcon.evetCommentFlag);
+        final canNo = userId == null ||
+            !userAlreadyBetOnOtherSide(
+                widget.model, userId, AppIcon.hayirCommentFlag);
 
-        state.setToldyaToReply = widget.model;
-        debugPrint('[BAHIS] Bildirim gönderiliyor...');
-        authState.getuserDetail(widget.model.userId ?? '').then((user) {
-          final ownUser = authState.userModel;
-          if (user != null && ownUser != null && context.mounted) {
-            Provider.of<ComposeToldyaState>(context, listen: false)
-                .sendNotificationToFeed(
-                    widget.model, user, ownUser, widget.commentFlag, _period)
-                .then((_) {
-                  debugPrint('[BAHIS] Bildirim gönderildi');
-                });
-          }
-        });
-
-        if (context.mounted) {
-          setState(() => _showSuccess = true);
-          Future.delayed(const Duration(milliseconds: 350), () {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppLocalizations.of(context)!.betPlaced)),
-            );
-            if (Navigator.canPop(context)) Navigator.pop(context);
+        if (!canYes && _side == _BetSide.yes && canNo) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _side = _BetSide.no);
+          });
+        } else if (!canNo && _side == _BetSide.no && canYes) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _side = _BetSide.yes);
           });
         }
-      } on PlatformException catch (e) {
-        // Native Android hataları PlatformException olarak gelir
-        debugPrint('[BAHIS HATASI] PlatformException');
-        debugPrint('[BAHIS HATASI] code: ${e.code}');
-        debugPrint('[BAHIS HATASI] message: ${e.message}');
-        debugPrint('[BAHIS HATASI] details: ${e.details}');
-        debugPrint('[BAHIS HATASI] stacktrace: ${e.stacktrace}');
-        if (context.mounted) {
-          setState(() => _isPlacingBet = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.gmsError(e.message ?? e.code ?? AppLocalizations.of(context)!.unknownError)),
-              duration: Duration(seconds: 6),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } on FirebaseFunctionsException catch (e) {
-        // Konsol + Logcat'te görünmesi için (Android Studio Run/Debug sekmesi)
-        debugPrint('[BAHIS HATASI] FirebaseFunctionsException');
-        debugPrint('[BAHIS HATASI] code: ${e.code}');
-        debugPrint('[BAHIS HATASI] message: ${e.message}');
-        debugPrint('[BAHIS HATASI] details: ${e.details}');
-        if (context.mounted) {
-          final l10n = AppLocalizations.of(context)!;
-          final code = e.code.toLowerCase().replaceAll('_', '-');
-          String errorMessage = l10n.betErrorGeneric;
-          if (e.code == 'internal' || e.code == 'INTERNAL') {
-            errorMessage = l10n.gmsUpdateMessage;
-          } else if (e.code == 'unauthenticated') {
-            errorMessage = l10n.loginRequired;
-          } else if (e.code == 'deadline-exceeded') {
-            errorMessage = l10n.betTimeout;
-          } else if (code == 'insufficient-balance' || code.contains('insufficient')) {
-            errorMessage = l10n.tokenInsufficient;
-          } else if (code.contains('bet-limit') || code.contains('limit')) {
-            errorMessage = e.message != null && e.message!.isNotEmpty ? e.message! : l10n.betErrorGeneric;
-          } else if (e.message != null && e.message!.isNotEmpty) {
-            errorMessage = e.message!;
-          } else if (e.code.isNotEmpty) {
-            errorMessage = l10n.errorWithMessage(e.code);
-          }
-          setState(() => _isPlacingBet = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              duration: Duration(seconds: 6),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e, stackTrace) {
-        debugPrint('[BAHIS HATASI] Genel Exception');
-        debugPrint('[BAHIS HATASI] Type: ${e.runtimeType}');
-        debugPrint('[BAHIS HATASI] Message: $e');
-        debugPrint('[BAHIS HATASI] Stack trace: $stackTrace');
-        if (context.mounted) {
-          setState(() => _isPlacingBet = false);
-          final msg = e.toString().length > 120
-              ? '${e.toString().substring(0, 120)}...'
-              : e.toString();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.errorWithMessage(msg)),
-              duration: Duration(seconds: 6),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
 
-    Widget confirmBtn = AnimatedBounceButton(
-      enabled: !_isPlacingBet,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _isPlacingBet
-              ? null
-              : () {
-                  HapticFeedback.mediumImpact();
-                  if (_period <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppLocalizations.of(context)!.pleaseSelectBetAmount), duration: Duration(seconds: 2)),
-                    );
-                    return;
-                  }
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Text(AppLocalizations.of(context)!.confirmBet, style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18)),
-                      content: Text(
-                        AppLocalizations.of(context)!.confirmBetMessage('$_period'),
-                        style: TextStyle(color: Color(0xFF616161)),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () { if (Navigator.canPop(ctx)) Navigator.pop(ctx); },
-                          child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Color(0xFF757575))),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            if (Navigator.canPop(ctx)) Navigator.pop(ctx);
-                            _send();
-                          },
-                          child: Text(AppLocalizations.of(context)!.confirm, style: TextStyle(color: _greenPrimary, fontWeight: FontWeight.w600)),
+        Future<void> send() async {
+          final amount = _parseAmount();
+          if (amount <= 0) {
+            setState(() => _inlineError = l10n.pleaseSelectBetAmount);
+            return;
+          }
+          if (amount > maxVal) {
+            setState(() => _inlineError = l10n.maxBetTokens('$maxVal'));
+            return;
+          }
+          final flag = _commentFlagForSide(_side);
+          if (userAlreadyBetOnOtherSide(widget.model, userId, flag)) {
+            setState(() => _inlineError = l10n.betOnOneSideOnly);
+            return;
+          }
+          if (!mounted) return;
+          setState(() {
+            _isPlacingBet = true;
+            _inlineError = null;
+          });
+          try {
+            await state.placeBet(
+              authState,
+              widget.model,
+              authState.userId ?? '',
+              amount,
+              flag,
+              context: context,
+            );
+            state.setToldyaToReply = widget.model;
+            authState.getuserDetail(widget.model.userId ?? '').then((user) {
+              final ownUser = authState.userModel;
+              if (user != null && ownUser != null && context.mounted) {
+                Provider.of<ComposeToldyaState>(context, listen: false)
+                    .sendNotificationToFeed(
+                        widget.model, user, ownUser, flag, amount)
+                    .then((_) {});
+              }
+            });
+            if (context.mounted) {
+              setState(() => _showSuccess = true);
+              Future.delayed(const Duration(milliseconds: 350), () {
+                if (!context.mounted) return;
+                if (Navigator.canPop(context)) Navigator.pop(context);
+              });
+            }
+          } on PlatformException catch (e) {
+            if (mounted) {
+              setState(() {
+                _isPlacingBet = false;
+                _inlineError = l10n.gmsError(
+                    e.message ?? e.code ?? l10n.unknownError);
+              });
+            }
+          } on FirebaseFunctionsException catch (e) {
+            if (context.mounted) {
+              String errorMessage = l10n.betErrorGeneric;
+              if (e.code.toLowerCase() == 'internal') {
+                errorMessage = l10n.gmsUpdateMessage;
+              } else if (e.message != null && e.message!.isNotEmpty) {
+                errorMessage = e.message!;
+              } else if (e.code.isNotEmpty) {
+                errorMessage = l10n.errorWithMessage(e.code);
+              }
+              setState(() {
+                _isPlacingBet = false;
+                _inlineError = errorMessage;
+              });
+            }
+          } catch (e) {
+            if (context.mounted) {
+              final msg = e.toString().length > 120
+                  ? '${e.toString().substring(0, 120)}...'
+                  : e.toString();
+              setState(() {
+                _isPlacingBet = false;
+                _inlineError = l10n.errorWithMessage(msg);
+              });
+            }
+          }
+        }
+
+        final stake = _parseAmount();
+        final est = _estimateReturn(stake, _side, widget.model);
+        final estRounded =
+            est != null ? est.round().clamp(0, 999999999).toString() : null;
+        final busy = _isPlacingBet || betInFlight;
+        final textSecondary = AppColor.textSecondaryDark;
+        final surfaceColor = MockupDesign.card;
+        const presetAmounts = [10, 25, 50, 100];
+        final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
+
+        Widget submitBtn = Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: busy
+                ? null
+                : () {
+                    HapticFeedback.mediumImpact();
+                    setState(() => _inlineError = null);
+                    send();
+                  },
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: busy
+                    ? Colors.grey.shade700
+                    : (_side == _BetSide.yes ? _neonYes : _neonNo),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: busy
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: (_side == _BetSide.yes ? _neonYes : _neonNo)
+                              .withOpacity(0.45),
+                          blurRadius: 16,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 4),
                         ),
                       ],
+              ),
+              child: busy
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.white),
+                    )
+                  : Text(
+                      _side == _BetSide.yes
+                          ? l10n.betSheetSubmitYes
+                          : l10n.betSheetSubmitNo,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+            ),
+          ),
+        );
+        if (_showSuccess) {
+          submitBtn = submitBtn
+              .animate()
+              .scale(duration: 300.ms, begin: const Offset(0.96, 0.96));
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_inlineError != null) ...[
+              Text(
+                _inlineError!,
+                style: const TextStyle(
+                  color: Color(0xFFFF6B6B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: _sideChip(
+                    label: l10n.betSheetSideYes,
+                    percent: widget.yesPercent,
+                    active: _side == _BetSide.yes,
+                    enabled: canYes,
+                    neon: _neonYes,
+                    onTap: busy
+                        ? null
+                        : () {
+                            if (!canYes) return;
+                            setState(() {
+                              _side = _BetSide.yes;
+                              _inlineError = null;
+                              _setAmountClamped(_parseAmount(), maxVal);
+                            });
+                          },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _sideChip(
+                    label: l10n.betSheetSideNo,
+                    percent: widget.noPercent,
+                    active: _side == _BetSide.no,
+                    enabled: canNo,
+                    neon: _neonNo,
+                    onTap: busy
+                        ? null
+                        : () {
+                            if (!canNo) return;
+                            setState(() {
+                              _side = _BetSide.no;
+                              _inlineError = null;
+                              _setAmountClamped(_parseAmount(), maxVal);
+                            });
+                          },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.availableBalanceTokens('${bal.peg}'),
+              style: TextStyle(
+                fontSize: 12,
+                color: textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.maxBetTokens('$maxVal'),
+              style: TextStyle(
+                fontSize: 12,
+                color: textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 2),
+            const SizedBox(height: 8),
+            Text(
+              l10n.betAmountLabel,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: textSecondary.withOpacity(0.85),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _amountController,
+              enabled: !busy && maxVal > 0,
+              keyboardType: const TextInputType.numberWithOptions(
+                signed: false,
+                decimal: false,
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                height: 1.1,
+              ),
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: '0',
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.2),
+                  fontSize: 48,
+                  fontWeight: FontWeight.w800,
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              onChanged: (s) {
+                if (s.isEmpty) {
+                  setState(() {});
+                  return;
+                }
+                var v = int.tryParse(s) ?? 0;
+                if (v > maxVal) {
+                  _amountController.value = TextEditingValue(
+                    text: '$maxVal',
+                    selection:
+                        TextSelection.collapsed(offset: '$maxVal'.length),
+                  );
+                  v = maxVal;
+                }
+                setState(() => _inlineError = null);
+              },
+            ),
+            if (maxVal <= 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  l10n.tokenInsufficient,
+                  style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                ...validPresets.map((add) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: busy || maxVal <= 0
+                          ? null
+                          : () {
+                              setState(() {
+                                final next =
+                                    (_parseAmount() + add).clamp(0, maxVal);
+                                _setAmountClamped(next, maxVal);
+                                _inlineError = null;
+                              });
+                            },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: surfaceColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: MockupDesign.cardBorder),
+                        ),
+                        child: Text(
+                          '+$add',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColor.textPrimaryDark,
+                          ),
+                        ),
+                      ),
                     ),
                   );
-                },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _isPlacingBet ? Colors.grey : _greenPrimary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: _isPlacingBet
-                ? SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Text(
-                    AppLocalizations.of(context)!.confirmBet,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
-    if (_showSuccess) {
-      confirmBtn = confirmBtn.animate().scale(duration: 300.ms, begin: Offset(0.95, 0.95), end: Offset(1, 1));
-    }
-
-    final balance = authState.userModel?.pegCount ?? 0;
-    final xp = authState.userModel?.xp ?? 0;
-    final totalPool = sumOfVote(widget.model.likeList ?? []) +
-        sumOfVote(widget.model.unlikeList ?? []);
-    maxVal = [
-      balance,
-      Tokenomics.maxBetByRank(balance, xp),
-      Tokenomics.maxBetByPool(totalPool),
-    ].reduce((a, b) => a < b ? a : b);
-
-    const presetAmounts = [10, 25, 50, 100];
-    final validPresets = presetAmounts.where((a) => a <= maxVal).toList();
-
-    final textSecondary = AppColor.textSecondaryDark;
-    final textPrimary = AppColor.textPrimaryDark;
-    final surfaceColor = MockupDesign.card;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          AppLocalizations.of(context)!.betAmountLabel,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: textSecondary,
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: MockupDesign.cardBorder),
-          ),
-          child: Text(
-            '$_period token',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: textPrimary,
-            ),
-          ),
-        ),
-        SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 8,
-          children: validPresets.map((amount) {
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => setState(() => _period = (_period + amount).clamp(0, maxVal)),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
+                }),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: busy || maxVal <= 0
+                        ? null
+                        : () {
+                            setState(() {
+                              _setAmountClamped(maxVal, maxVal);
+                              _inlineError = null;
+                            });
+                          },
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: MockupDesign.cardBorder),
-                  ),
-                  child: Text(
-                    '+$amount',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: MockupDesign.accentCyan.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: MockupDesign.accentCyan.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.betSheetMaxButton,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: MockupDesign.accentCyan,
+                        ),
+                      ),
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (stake > 0) ...[
+              Text(
+                estRounded != null
+                    ? l10n.potentialReturnEstimate(estRounded)
+                    : l10n.potentialReturnUnavailable,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: estRounded != null
+                      ? const Color(0xFF69F0AE)
+                      : textSecondary,
+                ),
+                textAlign: TextAlign.center,
               ),
-            );
-          }).toList(),
+              const SizedBox(height: 4),
+              Text(
+                l10n.potentialReturnDisclaimer,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: textSecondary.withOpacity(0.8),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+            ] else
+              const SizedBox(height: 8),
+            submitBtn,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _sideChip({
+    required String label,
+    required int percent,
+    required bool active,
+    required bool enabled,
+    required Color neon,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active && enabled
+                ? neon.withOpacity(0.22)
+                : MockupDesign.card,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: active && enabled
+                  ? neon
+                  : Colors.white.withOpacity(enabled ? 0.12 : 0.06),
+              width: active && enabled ? 2 : 1,
+            ),
+            boxShadow: active && enabled
+                ? [
+                    BoxShadow(
+                      color: neon.withOpacity(0.5),
+                      blurRadius: 14,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: !enabled
+                      ? Colors.white.withOpacity(0.25)
+                      : (active
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.45)),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$percent%',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: !enabled
+                      ? Colors.white.withOpacity(0.18)
+                      : (active
+                          ? Colors.white.withOpacity(0.95)
+                          : Colors.white.withOpacity(0.28)),
+                ),
+              ),
+            ],
+          ),
         ),
-        SizedBox(height: 24),
-        confirmBtn,
-      ],
+      ),
     );
   }
 }

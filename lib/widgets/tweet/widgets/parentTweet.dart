@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/feedState.dart';
@@ -18,6 +20,9 @@ class ParentToldyaWidget extends StatelessWidget {
 
   void onTweetPressed(BuildContext context, FeedModel model) {
     var feedstate = Provider.of<FeedState>(context, listen: false);
+    if (!kEnablePostDetail) {
+      return;
+    }
     feedstate.getpostDetailFromDatabase(model.key ?? '', model: model);
     Navigator.of(context).pushNamed('/FeedPostDetail/' + (model.key ?? ''));
   }

@@ -36,10 +36,290 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profile => 'Profil';
 
   @override
+  String get adminModeration => 'Admin-Moderation';
+
+  @override
+  String get adminJobsTitle => 'Admin-Jobs';
+
+  @override
+  String get adminSegmentModeration => 'Moderation';
+
+  @override
+  String get adminSegmentResolve => 'Auswerten';
+
+  @override
+  String get adminSegmentQuickFix => 'Schnellfix';
+
+  @override
+  String get adminSegmentDistribute => 'Ausschütten';
+
+  @override
+  String get adminJobSecretLabel => 'Job-Secret';
+
+  @override
+  String get adminJobSecretHint => 'Secret eingeben';
+
+  @override
+  String get adminJobSecretSessionNote =>
+      'Nur für diese Sitzung im Speicher gehalten.';
+
+  @override
+  String get adminJobSecretMissing =>
+      'Job-Secret ist zum Ausführen erforderlich.';
+
+  @override
+  String get adminResolveTitle => 'Auswerten';
+
+  @override
+  String get adminResolveDesc =>
+      'Listet abgelaufene, noch nicht ausgewertete Vorhersagen. Als Admin kannst du die Gewinnerseite (Ja/Nein) manuell auswählen und auswerten.';
+
+  @override
+  String get adminResolvePreviewButton => 'Vorschau';
+
+  @override
+  String get adminResolveRunButton => 'Starten';
+
+  @override
+  String get adminResolveManualYes => 'Ja gewinnt';
+
+  @override
+  String get adminResolveManualNo => 'Nein gewinnt';
+
+  @override
+  String get adminResolveManualApply => 'Auswerten';
+
+  @override
+  String get adminResolveManualSuccess => 'Vorhersage ausgewertet.';
+
+  @override
+  String get adminDistributeTitle => 'Ausschütten';
+
+  @override
+  String get adminDistributeDesc =>
+      'Schütte Gewinne für ausgewertete Vorhersagen einzeln aus.';
+
+  @override
+  String get adminDistributeIdempotentNote =>
+      'Hinweis: Dieser Job ist idempotent.';
+
+  @override
+  String get adminDistributePreviewButton => 'Vorschau';
+
+  @override
+  String get adminDistributeRunButton => 'Starten';
+
+  @override
+  String get adminDistributeManualApply => 'Gewinne ausschütten';
+
+  @override
+  String get adminDistributeManualSuccess => 'Gewinne ausgeschüttet.';
+
+  @override
+  String get adminDistributeManualNoop => 'Keine Gewinne zum Ausschütten.';
+
+  @override
+  String get adminQuickFixTitle => 'Schnellfix';
+
+  @override
+  String get adminQuickFixDesc =>
+      'Behebt Datensätze, die in statu=1 festhängen und fehlende/ungültige Datumsfelder haben. Setze Daten und veröffentliche optional, damit der normale Lock → Oracle → Ausschüttung Ablauf greift.';
+
+  @override
+  String adminQuickFixCount(String n) {
+    return 'Fehlende Datensätze: $n';
+  }
+
+  @override
+  String get adminQuickFixSearchHint => 'Nach ID oder Beschreibung suchen';
+
+  @override
+  String get adminQuickFixFilterEndDatePassed =>
+      'Nur Einträge mit abgelaufenem endDate';
+
+  @override
+  String get adminQuickFixEndDateLabel => 'Enddatum';
+
+  @override
+  String get adminQuickFixResolutionDateLabel => 'Auswertungsdatum';
+
+  @override
+  String get adminQuickFixAutofillEndNowPlus => 'EndDate = jetzt + 5 Min';
+
+  @override
+  String get adminQuickFixAutofillResolutionPlus1h =>
+      'ResolutionDate = endDate + 1h';
+
+  @override
+  String get adminQuickFixSetOnly => 'Nur setzen';
+
+  @override
+  String get adminQuickFixSetAndPublish => 'Setzen & veröffentlichen';
+
+  @override
+  String get adminQuickFixConfirmPublish => 'Veröffentlichen bestätigen';
+
+  @override
+  String get adminQuickFixValidationEndRequired => 'EndDate ist erforderlich.';
+
+  @override
+  String get adminQuickFixValidationResolutionRequired =>
+      'ResolutionDate ist erforderlich.';
+
+  @override
+  String get adminQuickFixValidationResolutionAfterEnd =>
+      'ResolutionDate muss nach EndDate liegen.';
+
+  @override
+  String get adminQuickFixValidationMin1h =>
+      'ResolutionDate muss mindestens 1 Stunde nach EndDate liegen.';
+
+  @override
+  String get adminQuickFixSuccess => 'Datensatz aktualisiert.';
+
+  @override
+  String get adminQuickFixWarningPublish =>
+      'Dies veröffentlicht die Vorhersage und sie läuft automatisch über Lock/Oracle Jobs weiter.';
+
+  @override
+  String adminQuickFixCreatedAt(String t) {
+    return 'Erstellt: $t';
+  }
+
+  @override
+  String get adminQuickFixChipStatu1 => 'statu: 1';
+
+  @override
+  String get adminQuickFixChipEndMissing => 'endDate: fehlt';
+
+  @override
+  String get adminQuickFixChipEndInvalid => 'endDate: ungültig';
+
+  @override
+  String get adminQuickFixChipEndOk => 'endDate: ok';
+
+  @override
+  String get adminQuickFixChipEndPassed => 'endDate: abgelaufen';
+
+  @override
+  String get adminQuickFixChipResMissing => 'resolutionDate: fehlt';
+
+  @override
+  String get adminQuickFixChipResInvalid => 'resolutionDate: ungültig';
+
+  @override
+  String get adminQuickFixChipTopicMissing => 'topic: fehlt';
+
+  @override
+  String adminDistributeTotalPoolEstimate(String n) {
+    return 'Geschätzter Gesamtpool: $n';
+  }
+
+  @override
+  String adminPreviewCandidates(String n) {
+    return 'Kandidaten: $n';
+  }
+
+  @override
+  String adminJobResultResolved(String n) {
+    return 'Ausgewertet: $n';
+  }
+
+  @override
+  String adminJobResultDistributed(String n) {
+    return 'Ausgeschüttet: $n';
+  }
+
+  @override
+  String get adminJobSkippedTitle => 'Übersprungen';
+
+  @override
+  String get adminJobShowMore => 'Mehr anzeigen';
+
+  @override
+  String get adminJobShowLess => 'Weniger anzeigen';
+
+  @override
+  String adminJobErrorWithMessage(String msg) {
+    return 'Fehler: $msg';
+  }
+
+  @override
+  String get adminModerationQueueEmpty => 'Keine ausstehende Moderation.';
+
+  @override
+  String get adminModerationReject => 'Ablehnen';
+
+  @override
+  String get adminModerationRejectReasonHint => 'Ablehnungsgrund';
+
+  @override
+  String get adminModerationApprove => 'Genehmigen';
+
+  @override
+  String get adminModerationApproveTitle => 'Veröffentlichen';
+
+  @override
+  String get adminModerationTopicLabel => 'Kategorie';
+
+  @override
+  String get adminModerationEndDateLabel => 'Schließzeit';
+
+  @override
+  String get adminModerationResolutionDateLabel => 'Ergebniszeit';
+
+  @override
+  String get adminModerationOracleSourceOptional => 'Oracle-Quelle (optional)';
+
+  @override
+  String get adminModerationOracleApiUrlOptional => 'Oracle-API-URL (optional)';
+
+  @override
+  String get adminModerationCollateralOptional => 'Sicherheit (optional)';
+
+  @override
+  String get adminModerationInvalidForm => 'Bitte fülle die Pflichtfelder aus.';
+
+  @override
+  String get adminModerationDateRule =>
+      'Die Ergebniszeit muss mindestens 1 Stunde nach der Schließzeit liegen.';
+
+  @override
+  String get adminModerationConflictRetry =>
+      'Konflikt aufgetreten, bitte erneut versuchen.';
+
+  @override
+  String get adminModerationActionFailed => 'Aktion fehlgeschlagen.';
+
+  @override
+  String get adminModerationMetaUser => 'Nutzer';
+
+  @override
+  String get adminModerationMetaCreatedAt => 'Erstellt';
+
+  @override
+  String get adminModerationMetaTopic => 'Thema';
+
+  @override
+  String get adminModerationMetaOracleApiUrl => 'Oracle-URL';
+
+  @override
   String get settings => 'Einstellungen';
 
   @override
   String get settingsAndPrivacy => 'Einstellungen und Datenschutz';
+
+  @override
+  String get drawerActiveBets => 'Meine aktiven Wetten';
+
+  @override
+  String get drawerWeeklyLeague => 'Wochenliga';
+
+  @override
+  String get drawerSettingsAndPrivacy => 'Einstellungen & Datenschutz';
+
+  @override
+  String get drawerWalletTitle => 'Token';
 
   @override
   String get logout => 'Abmelden';
@@ -190,6 +470,44 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get betOnOneSideOnly =>
       'Du hast bei dieser Vorhersage bereits auf die andere Seite gewettet. Pro Vorhersage kannst du nur auf eine Seite (Ja oder Nein) wetten.';
+
+  @override
+  String get betPleaseWait => 'Wette läuft, bitte warten.';
+
+  @override
+  String get betLimitHint =>
+      'Dein maximaler Einsatz ist durch Guthaben, Rang und Poolgröße begrenzt.';
+
+  @override
+  String availableBalanceTokens(String pegCount) {
+    return 'Verfügbares Guthaben: $pegCount 🪙';
+  }
+
+  @override
+  String get betSheetSideYes => 'Ja';
+
+  @override
+  String get betSheetSideNo => 'Nein';
+
+  @override
+  String get betSheetSubmitYes => 'AUF JA WETTEN';
+
+  @override
+  String get betSheetSubmitNo => 'AUF NEIN WETTEN';
+
+  @override
+  String potentialReturnEstimate(String amount) {
+    return 'Mögliche Rendite: ~$amount 🪙';
+  }
+
+  @override
+  String get potentialReturnUnavailable => '—';
+
+  @override
+  String get potentialReturnDisclaimer => 'Nur Schätzung; keine Garantie.';
+
+  @override
+  String get betSheetMaxButton => 'MAX';
 
   @override
   String get betPlaced => 'Wette platziert.';
@@ -421,6 +739,31 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get betErrorGeneric => 'Wette konnte nicht platziert werden.';
+
+  @override
+  String get betErrorUnauthenticated =>
+      'Bitte melde dich an, um eine Wette zu platzieren.';
+
+  @override
+  String get betErrorDeadlineExceeded =>
+      'Zeitüberschreitung. Bitte erneut versuchen.';
+
+  @override
+  String get betErrorResourceExhausted =>
+      'Zu viele Anfragen. Bitte versuche es in Kürze erneut.';
+
+  @override
+  String get betErrorFailedPrecondition =>
+      'Du kannst derzeit keine Wette auf diese Vorhersage platzieren. Bitte versuche es später erneut.';
+
+  @override
+  String get statuPending => 'Ausstehend';
+
+  @override
+  String get statuUnderReview => 'In Prüfung';
+
+  @override
+  String get statuRejectedByAi => 'Abgelehnt';
 
   @override
   String gmsError(String message) {
@@ -1203,6 +1546,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get defaultUserHandle => '@Benutzer';
 
   @override
+  String get someone => 'Jemand';
+
+  @override
   String get youAreBlocked => 'Du bist blockiert';
 
   @override
@@ -1362,6 +1708,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get betAmountLabel => 'Wetteinsatz';
 
   @override
+  String amountPlayed(String amount) {
+    return '$amount gespielt';
+  }
+
+  @override
+  String get liveLabel => 'LIVE';
+
+  @override
+  String get timeLeftLabel => 'Verbleibend';
+
+  @override
+  String get predictionEnded => 'Beendet';
+
+  @override
   String get approvalPendingStatus => 'Auswahl ausstehend';
 
   @override
@@ -1439,4 +1799,120 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get emptyPredictionsDefaultSubtitle =>
       'Neue Vorhersagen erscheinen hier.\nTippe auf den Button unten, um eine Vorhersage zu erstellen.';
+
+  @override
+  String get interactionAndSocialHeader => 'Interaktion & Soziales';
+
+  @override
+  String get commentPermissionTitle =>
+      'Wer darf Kommentare zu meinen Vorhersagen abgeben';
+
+  @override
+  String get commentPermissionEveryone => 'Jeder';
+
+  @override
+  String get commentPermissionFollowed => 'Gefolgt';
+
+  @override
+  String get commentPermissionNone => 'Niemand';
+
+  @override
+  String get mentionPermissionTitle => 'Wer darf mich erwähnen (@mention)';
+
+  @override
+  String get contentModerationHeader => 'Inhaltsmoderation';
+
+  @override
+  String get hideSensitiveContentTitle => 'Sensible Inhalte ausblenden';
+
+  @override
+  String get aiModerationTitle => 'KI-Moderation';
+
+  @override
+  String get aiModerationSubtitle =>
+      'Beiträge werden von einer KI überprüft, um sicherzustellen, dass sie den Community-Richtlinien entsprechen.';
+
+  @override
+  String get dataAndSystemHeader => 'Daten & System';
+
+  @override
+  String get locationDataTitle => 'Standortdaten';
+
+  @override
+  String get legalHeader => 'Rechtliches';
+
+  @override
+  String get privacyPolicyRowTitle => 'Datenschutzrichtlinie';
+
+  @override
+  String get userAgreementRowTitle => 'Nutzungsvereinbarung';
+
+  @override
+  String get legalUrlMissingSubtitle => 'Bald verfügbar.';
+
+  @override
+  String get deleteAccountTitle => 'Konto löschen';
+
+  @override
+  String get deleteAccountWarning =>
+      'Nach Abschluss werden alle Ihre Token, Ihr Stash und Ihr Verlauf dauerhaft gelöscht.';
+
+  @override
+  String get deleteAccountCannotBeUndone =>
+      'Diese Aktion kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get deleteAccountBusy => 'Löschen…';
+
+  @override
+  String get deleteAccountDeleteButton => 'Löschen';
+
+  @override
+  String get deleteAccountSuccess => 'Ihr Konto wurde gelöscht.';
+
+  @override
+  String get deleteAccountErrorGeneric =>
+      'Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.';
+
+  @override
+  String get mutedWordsComingSoonTitle =>
+      'Stummgeschaltete Wörter (bald verfügbar)';
+
+  @override
+  String get mutedWordsComingSoonSubtitle =>
+      'Diese Funktion ist noch nicht bereit.';
+
+  @override
+  String get blockedAccountsEmptyTitle => 'Noch keine blockierten Konten';
+
+  @override
+  String get blockedAccountsEmptySubtitle =>
+      'Konten, die Sie blockieren, werden hier angezeigt.';
+
+  @override
+  String get unblockButton => 'Entsperren';
+
+  @override
+  String get unblockSuccess => 'Konto entsperrt.';
+
+  @override
+  String get legalUrlMissingTitle => 'Rechtliche URL fehlt';
+
+  @override
+  String get openLegalButton => 'Im Browser öffnen';
+
+  @override
+  String get changePasswordTitle => 'Passwort ändern';
+
+  @override
+  String get languageOptionTurkish => 'Türkisch';
+
+  @override
+  String get languageOptionEnglish => 'Englisch';
+
+  @override
+  String get languageOptionGerman => 'Deutsch';
+
+  @override
+  String get logoutActionTitle => 'Abmelden';
 }

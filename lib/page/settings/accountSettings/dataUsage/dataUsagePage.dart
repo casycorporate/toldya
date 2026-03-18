@@ -22,10 +22,10 @@ class DataUsagePage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
+            color: MockupDesign.card,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
           ),
           child: child,
@@ -107,77 +107,56 @@ class DataUsagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          AppLocalizations.of(context)!.dataUsageTitle,
+          l10n.dataUsageTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget(AppLocalizations.of(context)!.dataSaverHeader),
+          HeaderWidget(l10n.dataSaverHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.dataSaverTitle,
-            showCheckBox: true,
+            l10n.dataSaverTitle,
             vPadding: 15,
             showDivider: false,
-            subtitle: AppLocalizations.of(context)!.dataSaverSubtitle,
+            subtitle: l10n.featureComingSoon(l10n.dataSaverTitle),
           ),
           Divider(height: 0),
-          HeaderWidget(AppLocalizations.of(context)!.imagesHeader),
+          HeaderWidget(l10n.imagesHeader),
           SettingRowWidget(
-            AppLocalizations.of(context)!.highQualityImagesTitle,
-            subtitle: AppLocalizations.of(context)!.highQualityImagesSubtitle(
-              AppLocalizations.of(context)!.mobileDataWifi,
-            ),
+            l10n.highQualityImagesTitle,
+            subtitle: l10n.featureComingSoon(l10n.highQualityImagesTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
             showDivider: false,
           ),
-          HeaderWidget(
-            AppLocalizations.of(context)!.videoHeader,
-            secondHeader: true,
-          ),
+          HeaderWidget(l10n.videoHeader, secondHeader: true),
           SettingRowWidget(
-            AppLocalizations.of(context)!.highQualityVideoTitle,
-            subtitle: AppLocalizations.of(context)!.highQualityVideoSubtitle(
-              AppLocalizations.of(context)!.wifiOnly,
-            ),
+            l10n.highQualityVideoTitle,
+            subtitle: l10n.featureComingSoon(l10n.highQualityVideoTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.videoAutoplayTitle,
-            subtitle: AppLocalizations.of(context)!.videoAutoplaySubtitle(
-              AppLocalizations.of(context)!.wifiOnly,
-            ),
+            l10n.videoAutoplayTitle,
+            subtitle: l10n.featureComingSoon(l10n.videoAutoplayTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
-          HeaderWidget(
-            AppLocalizations.of(context)!.dataSyncHeader,
-            secondHeader: true,
+          HeaderWidget(l10n.dataSyncHeader, secondHeader: true),
+          SettingRowWidget(
+            l10n.syncDataTitle,
+            subtitle: l10n.featureComingSoon(l10n.syncDataTitle),
           ),
           SettingRowWidget(
-            AppLocalizations.of(context)!.syncDataTitle,
-            showCheckBox: true,
-          ),
-          SettingRowWidget(
-            AppLocalizations.of(context)!.syncIntervalTitle,
-            subtitle: AppLocalizations.of(context)!.daily,
+            l10n.syncIntervalTitle,
+            subtitle: l10n.featureComingSoon(l10n.syncIntervalTitle),
           ),
           SettingRowWidget(
             '',
-            subtitle: AppLocalizations.of(context)!.syncDataDescription,
+            subtitle: l10n.syncDataDescription,
             vPadding: 10,
           ),
         ],

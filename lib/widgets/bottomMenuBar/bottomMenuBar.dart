@@ -54,8 +54,6 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
   }
   final iconList = <IconData>[
     Icons.home_outlined,
-    Icons.search,
-    Icons.leaderboard_outlined,
     Icons.person_outline,
   ];
 
@@ -64,8 +62,6 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
     final l10n = AppLocalizations.of(context)!;
     final labels = <String>[
       l10n.bottomNavHome,
-      l10n.bottomNavSearch,
-      l10n.bottomNavLeaderboard,
       l10n.bottomNavProfile,
     ];
     var state = Provider.of<AppState>(context);
@@ -92,20 +88,18 @@ class _BottomMenubarState extends State<BottomMenubar>  with TickerProviderState
           children: [
             Expanded(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _navIcon(context, state, 0, labels),
-                  _navIcon(context, state, 1, labels),
                 ],
               ),
             ),
             const SizedBox(width: 64),
             Expanded(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _navIcon(context, state, 2, labels),
-                  _navIcon(context, state, 3, labels),
+                  _navIcon(context, state, 1, labels),
                 ],
               ),
             ),

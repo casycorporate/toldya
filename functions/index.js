@@ -1,5 +1,15 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { onRequestJob } = require("./jobs");
+const log = require("./logger");
+
+// Logic is being moved to modules; keep exports stable.
+const { runAiModerationLogic: runAiModerationLogicModule } = require("./moderation");
+const { runLockPredictionsLogic: runLockPredictionsLogicModule } = require("./jobs_logic");
+const { runOracleResolutionLogic: runOracleResolutionLogicModule } = require("./oracle");
+const { runDistributeWinningsLogic: runDistributeWinningsLogicModule, runStashDripLogic: runStashDripLogicModule } = require("./tokenomics");
+const { runLeagueAssignmentLogic: runLeagueAssignmentLogicModule, runWeeklyLeagueResetLogic: runWeeklyLeagueResetLogicModule } = require("./leagues");
+const { registerCallables } = require("./callables");
 
 // Cloud Functions ortamında default app yoksa hemen başlat (soğuk start'ta "default app does not exist" önlenir).
 if (!admin.apps.length) {
@@ -146,7 +156,7 @@ async function moderateWithOpenRouter(description, apiKey, model, referenceDateI
       ? (safeString(gerekceStr) || "Uygun")
       : (safeString(gerekceStr) || "Red nedeni AI tarafindan yazilmadi. Olasi nedenler: topluluk kurallari (nefret/hakaret), tahmin Evet/Hayir ile sonuclanamiyor, belirsiz veya kategori uygun degil.");
     if (!onay && !gerekceStr) {
-      console.warn("AI rejection without gerekce. Raw content:", rawContent);
+      log.warn("AI rejection without gerekce", { rawContent });
     }
     let endDateIso = null;
     let resolutionDateIso = null;
@@ -242,13 +252,13 @@ async function runAiModerationLogic(apiKey) {
         result = await moderateWithOpenRouter(description, apiKey, modelId, createdAt);
         if (result.approved) {
           approved = true;
-          console.log(`AI approved tweet ${key} with model ${modelId}, category: ${result.category}`);
+          log.debug("AI approved", { key, modelId, category: result.category });
           break;
         }
         lastReason = result.reason || lastReason;
-        console.log(`AI rejected tweet ${key} with model ${modelId}: ${result.reason}`);
+        log.debug("AI rejected", { key, modelId, reason: result.reason });
       } catch (e) {
-        console.warn(`OpenRouter error for tweet ${key}, model ${modelId}:`, e.message);
+        log.warn("OpenRouter error (moderation)", { key, modelId, message: e.message });
         lastReason = `Hata: ${e.message}`;
       }
     }
@@ -287,10 +297,10 @@ async function runAiModerationLogic(apiKey) {
       } else {
         updates[`toldya/${key}/statu`] = STATU_REJECTED_BY_AI;
         updates[`toldya/${key}/aiModerationReason`] = safeString(lastReason) || "Reddedildi";
-        console.log(`AI rejected tweet ${key} after all models: ${lastReason}`);
+        log.debug("AI rejected after all models", { key });
       }
     } catch (e) {
-      console.warn("OpenRouter error for tweet", key, e.message);
+      log.warn("OpenRouter error (moderation update)", { key, message: e.message });
       updates[`toldya/${key}/aiModerationReason`] = safeString(`Hata: ${e.message}`);
       updates[`toldya/${key}/statu`] = STATU_REJECTED_BY_AI;
     }
@@ -311,18 +321,19 @@ async function runAiModerationLogic(apiKey) {
  * OpenRouter key: firebase functions:secrets:set OPENROUTER_API_KEY
  * Modeller: MODERATION_MODELS listesinden rastgele biri ile başlar; red (7) gelirse sırayla diğerleri denenir.
  */
-exports.runAiModeration = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .https.onRequest(async (req, res) => {
+exports.runAiModeration = onRequestJob(
+  async (req, res) => {
     try {
       const apiKey = process.env.OPENROUTER_API_KEY;
-      const result = await runAiModerationLogic(apiKey);
+      const result = await runAiModerationLogicModule(apiKey);
       res.status(200).json({ ok: true, ...result });
     } catch (e) {
-      console.error("runAiModeration error", e);
+      log.error("runAiModeration error", e);
       res.status(500).json({ ok: false, error: e.message });
     }
-  });
+  },
+  { secrets: ["OPENROUTER_API_KEY", "JOBS_SHARED_SECRET"] }
+);
 
 // Zamanlanmış: Her 30 dakikada bir tüm batch fonksiyonları çalışır (manuel HTTP çağrıları da durur).
 const SCHEDULE_CRON = "every 30 minutes";
@@ -349,12 +360,12 @@ async function runLockPredictionsLogic() {
         updates[`toldya/${key}/statu`] = STATU_LOCKED;
       }
     } catch (e) {
-      console.warn("Invalid endDate for tweet", key, e);
+      log.warn("Invalid endDate for tweet", { key, endDate: tweet.endDate });
     }
   }
   if (Object.keys(updates).length > 0) {
     await getDb().ref().update(updates);
-    console.log(`Locked ${Object.keys(updates).length} predictions`);
+    log.info("Locked predictions", { locked: Object.keys(updates).length });
   }
   return { locked: Object.keys(updates).length };
 }
@@ -456,20 +467,20 @@ async function runLeagueAssignmentLogic() {
     await db.ref().update(profileUpdates);
   }
   const groupCount = Object.keys(groups).length;
-  console.log(`[runLeagueAssignment] weekId=${weekId}, groups=${groupCount}, users=${entries.length}`);
+  log.info("[runLeagueAssignment]", { weekId, groups: groupCount, users: entries.length });
   return { weekId, groups: groupCount, usersAssigned: entries.length };
 }
 
 /** Manuel tetikleme: Haftalık lig ataması. */
-exports.runLeagueAssignment = functions.https.onRequest(async (req, res) => {
+exports.runLeagueAssignment = onRequestJob(async (req, res) => {
   try {
-    const result = await runLeagueAssignmentLogic();
+    const result = await runLeagueAssignmentLogicModule();
     res.status(200).json({ ok: true, ...result });
   } catch (e) {
-    console.error("runLeagueAssignment error", e);
+    log.error("runLeagueAssignment error", e);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
+}, { secrets: ["JOBS_SHARED_SECRET"] });
 
 /**
  * Haftalık lig sıfırlama: Tüm weeklyXp=0, sonraki hafta için tier bazlı 30’luk gruplar atar.
@@ -594,39 +605,39 @@ async function runWeeklyLeagueResetLogic() {
   });
 
   const groupCount = Object.keys(groups).length;
-  console.log(`[runWeeklyLeagueReset] nextWeekId=${nextWeekId}, groups=${groupCount}, users=${keys.length / 3}`);
+  log.info("[runWeeklyLeagueReset]", { nextWeekId, groups: groupCount, users: keys.length / 3 });
   return { weekId: nextWeekId, groups: groupCount, usersAssigned: keys.length / 3 };
 }
 
 /** Manuel tetikleme: Haftalık lig sıfırlama. */
-exports.runWeeklyLeagueReset = functions.https.onRequest(async (req, res) => {
+exports.runWeeklyLeagueReset = onRequestJob(async (req, res) => {
   try {
-    const result = await runWeeklyLeagueResetLogic();
+    const result = await runWeeklyLeagueResetLogicModule();
     res.status(200).json({ ok: true, ...result });
   } catch (e) {
-    console.error("runWeeklyLeagueReset error", e);
+    log.error("runWeeklyLeagueReset error", e);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
+}, { secrets: ["JOBS_SHARED_SECRET"] });
 
 // Logic fonksiyonları script/manuel çalıştırma için export
-exports.runLockPredictionsLogic = runLockPredictionsLogic;
-exports.runOracleResolutionLogic = runOracleResolutionLogic;
-exports.runDistributeWinningsLogic = runDistributeWinningsLogic;
-exports.runStashDripLogic = runStashDripLogic;
-exports.runLeagueAssignmentLogic = runLeagueAssignmentLogic;
-exports.runWeeklyLeagueResetLogic = runWeeklyLeagueResetLogic;
+exports.runLockPredictionsLogic = runLockPredictionsLogicModule;
+exports.runOracleResolutionLogic = runOracleResolutionLogicModule;
+exports.runDistributeWinningsLogic = runDistributeWinningsLogicModule;
+exports.runStashDripLogic = runStashDripLogicModule;
+exports.runLeagueAssignmentLogic = runLeagueAssignmentLogicModule;
+exports.runWeeklyLeagueResetLogic = runWeeklyLeagueResetLogicModule;
 
 /** TEST: Manuel – Bitiş tarihi geçen tahminleri kilitler. (Production'da schedule'a çevrilecek.) */
-exports.runLockPredictions = functions.https.onRequest(async (req, res) => {
+exports.runLockPredictions = onRequestJob(async (req, res) => {
   try {
-    const result = await runLockPredictionsLogic();
+    const result = await runLockPredictionsLogicModule();
     res.status(200).json({ ok: true, ...result });
   } catch (e) {
-    console.error("runLockPredictions error", e);
+    log.error("runLockPredictions error", e);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
+}, { secrets: ["JOBS_SHARED_SECRET"] });
 
 // FeedResult değerleri (lib/helper/constant.dart ile uyumlu)
 const FEED_RESULT_LIKE = 1;  // Evet
@@ -715,7 +726,7 @@ async function runOracleResolutionLogic(apiKey, model) {
     if (result === FEED_RESULT_LIKE || result === FEED_RESULT_UNLIKE) {
       updates[`toldya/${key}/feedResult`] = result;
       updates[`toldya/${key}/statu`] = STATU_OK;
-      console.log(`Oracle resolved tweet ${key} as ${result === FEED_RESULT_LIKE ? "Evet" : "Hayır"}`);
+      log.debug("Oracle resolved", { key });
     } else {
       skipped.push({ key, reason: `sonuç geçersiz: ${JSON.stringify(result)} (1 veya 2 beklenir)` });
     }
@@ -730,19 +741,17 @@ async function runOracleResolutionLogic(apiKey, model) {
 }
 
 /** Tahmin sonuçlandırma: oracleApiUrl varsa harici API, yoksa OpenRouter AI. OPENROUTER_API_KEY secret gerekir (AI yolu için). */
-exports.runOracleResolution = functions
-  .runWith({ secrets: ["OPENROUTER_API_KEY"] })
-  .https.onRequest(async (req, res) => {
-    try {
-      const apiKey = process.env.OPENROUTER_API_KEY || null;
-      const model = process.env.OPENROUTER_MODEL || null;
-      const result = await runOracleResolutionLogic(apiKey, model);
-      res.status(200).json({ ok: true, ...result });
-    } catch (e) {
-      console.error("runOracleResolution error", e);
-      res.status(500).json({ ok: false, error: e.message });
-    }
-  });
+exports.runOracleResolution = onRequestJob(async (req, res) => {
+  try {
+    const apiKey = process.env.OPENROUTER_API_KEY || null;
+    const model = process.env.OPENROUTER_MODEL || null;
+    const result = await runOracleResolutionLogicModule(apiKey, model);
+    res.status(200).json({ ok: true, ...result });
+  } catch (e) {
+    log.error("runOracleResolution error", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+}, { secrets: ["OPENROUTER_API_KEY", "JOBS_SHARED_SECRET"] });
 
 const COMMISSION_RATE = 0.05;
 
@@ -843,7 +852,7 @@ async function runDistributeWinningsLogic() {
     if (Object.keys(profileUpdates).length > 0) {
       profileUpdates[`toldya/${key}/distributionDone`] = true;
       await getDb().ref().update(profileUpdates);
-      console.log(`Distributed winnings for tweet ${key}`);
+      log.debug("Distributed winnings", { key });
       distributed++;
     }
   }
@@ -851,234 +860,37 @@ async function runDistributeWinningsLogic() {
 }
 
 /** TEST: Manuel – Kazanç dağıtımı. (Production'da schedule'a çevrilecek.) */
-exports.runDistributeWinnings = functions.https.onRequest(async (req, res) => {
+exports.runDistributeWinnings = onRequestJob(async (req, res) => {
   try {
-    const result = await runDistributeWinningsLogic();
+    const result = await runDistributeWinningsLogicModule();
     res.status(200).json({ ok: true, ...result });
   } catch (e) {
-    console.error("runDistributeWinnings error", e);
+    log.error("runDistributeWinnings error", e);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
+}, { secrets: ["JOBS_SHARED_SECRET"] });
 
 // --- Callable: placeBet – Bahis tek noktadan, limit ve bakiye kontrolü ---
 // enforceAppCheck: false → App Check zorunluluğu kapalı (cihaz/GMS hatası geçene kadar)
-exports.placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
-  try {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
-    }
-    const userId = safeString(context.auth.uid).trim() || context.auth.uid;
-    const rawToldyaId = data?.toldyaId ?? data?.tweetId;
-    const toldyaId = safeString(String(rawToldyaId || "")).trim() || rawToldyaId;
-    const side = data?.side;
-    const amount = typeof data?.amount === "number" ? Math.floor(data.amount) : parseInt(data?.amount, 10);
-
-    if (!toldyaId || (side !== FEED_RESULT_LIKE && side !== FEED_RESULT_UNLIKE) || !Number.isInteger(amount) || amount <= 0) {
-      throw new functions.https.HttpsError("invalid-argument", "Geçersiz bahis miktarı veya parametre.");
-    }
-
-    const tweetSnap = await getDb().ref(`toldya/${toldyaId}`).once("value");
-    const tweet = tweetSnap.val();
-    if (!tweet || tweet.parentkey) {
-      throw new functions.https.HttpsError("not-found", "Tahmin bulunamadı.");
-    }
-    if (tweet.statu !== STATU_LIVE) {
-      throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık bahis kapatıldı.");
-    }
-
-    // Bir tahminde kullanıcı yalnızca tek tarafa (Evet veya Hayır) bahis yapabilir
-    const likeList = Array.isArray(tweet.likeList) ? tweet.likeList : [];
-    const unlikeList = Array.isArray(tweet.unlikeList) ? tweet.unlikeList : [];
-    const inLike = likeList.some((e) => (e && (e.userId || e)) === userId);
-    const inUnlike = unlikeList.some((e) => (e && (e.userId || e)) === userId);
-    if (side === FEED_RESULT_LIKE && inUnlike) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Bu tahminde zaten Hayır tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
-      );
-    }
-    if (side === FEED_RESULT_UNLIKE && inLike) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Bu tahminde zaten Evet tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
-      );
-    }
-
-    const profileSnap = await getDb().ref(`profile/${userId}`).once("value");
-    const profile = profileSnap.val();
-    if (!profile) {
-      throw new functions.https.HttpsError("not-found", "Profil bulunamadı.");
-    }
-
-    const spendableBalance = profile.pegCount || 0;
-    const xp = profile.xp || 0;
-    const rankMultiplier = getRankMultiplier(xp);
-    const maxBetByRank = Math.floor(spendableBalance * rankMultiplier);
-
-    if (amount > maxBetByRank) {
-      const pct = Math.round(rankMultiplier * 100);
-      throw new functions.https.HttpsError(
-        "resource-exhausted",
-        `En fazla bakiyenizin %${pct}'ini yatırabilirsiniz.`
-      );
-    }
-    if (amount > spendableBalance) {
-      throw new functions.https.HttpsError("resource-exhausted", "Yetersiz bakiye.");
-    }
-
-    const totalPool = sumOfVote(tweet.likeList) + sumOfVote(tweet.unlikeList);
-    const maxBetForPool = totalPool < POOL_THRESHOLD ? MAX_BET_SMALL_POOL : Number.MAX_SAFE_INTEGER;
-    if (amount > maxBetForPool) {
-      throw new functions.https.HttpsError(
-        "resource-exhausted",
-        `Havuz henüz küçük, maksimum ${MAX_BET_SMALL_POOL} token yatırılabilir.`
-      );
-    }
-
-    const listKey = side === FEED_RESULT_LIKE ? "likeList" : "unlikeList";
-    const countKey = side === FEED_RESULT_LIKE ? "likeCount" : "unlikeCount";
-    const rawList = Array.isArray(tweet[listKey]) ? tweet[listKey].slice() : [];
-    const list = rawList.map((e) => ({ userId: safeString(e.userId || e || "").trim() || String(e.userId || e), pegCount: e.pegCount || 0 }));
-    const idx = list.findIndex((e) => e.userId === userId);
-    const newPeg = (idx >= 0 ? list[idx].pegCount : 0) + amount;
-    if (idx >= 0) {
-      list[idx] = { userId: safeString(userId).trim() || userId, pegCount: newPeg };
-    } else {
-      list.push({ userId: safeString(userId).trim() || userId, pegCount: newPeg });
-    }
-
-    const newBalance = spendableBalance - amount;
-    const notifUserId = safeString(tweet.userId || "").trim() || "unknown";
-    const updates = {
-      [`profile/${userId}/pegCount`]: newBalance,
-      [`toldya/${toldyaId}/${listKey}`]: list,
-    };
-    const likeCount = side === FEED_RESULT_LIKE ? (tweet.likeCount || 0) + (idx >= 0 ? 0 : 1) : (tweet.likeCount || 0);
-    const unlikeCount = side === FEED_RESULT_UNLIKE ? (tweet.unlikeCount || 0) + (idx >= 0 ? 0 : 1) : (tweet.unlikeCount || 0);
-    if (listKey === "likeList") updates[`toldya/${toldyaId}/likeCount`] = likeCount;
-    else updates[`toldya/${toldyaId}/unlikeCount`] = unlikeCount;
-
-    // Bildirim: sadece başkası bahis yaptığında yaz (sahip kendi tahminine bahis yapınca bildirim gitmesin)
-    if (userId !== notifUserId) {
-      updates[`notification/${notifUserId}/${toldyaId}`] = {
-        type: side === FEED_RESULT_LIKE ? "NotificationType.Like" : "NotificationType.UnLike",
-        updatedAt: new Date().toISOString(),
-      };
-    }
-
-    const safeUpdates = {};
-    for (const [path, val] of Object.entries(updates)) {
-      const cleanPath = safeString(String(path)).trim() || path;
-      safeUpdates[cleanPath] = deepSanitize(val);
-    }
-    await getDb().ref().update(safeUpdates);
-
-    const newStashBalance = profile.stashCount || 0;
-    return {
-      ok: true,
-      newBalance,
-      newStashBalance,
-      message: "Bahis kabul edildi.",
-    };
-  } catch (err) {
-    if (err instanceof functions.https.HttpsError) throw err;
-    console.error("placeBet error:", err);
-    throw new functions.https.HttpsError("internal", err.message || "Bahis işlenirken hata oluştu.");
-  }
-});
+// Callable exports are registered from module (contract unchanged).
+const _callables = registerCallables(functions);
+exports.placeBet = _callables.placeBet;
 
 // --- Callable: voteReply – Yorum oylama (Katılıyorum / Katılmıyorum), sadece reply için ---
-exports.voteReply = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
-  }
-  const userId = safeString(context.auth.uid).trim() || context.auth.uid;
-  const rawToldyaId = data?.toldyaId;
-  const toldyaId = safeString(String(rawToldyaId || "")).trim() || rawToldyaId;
-  const vote = data?.vote;
-  if (!toldyaId || (vote !== 1 && vote !== -1)) {
-    throw new functions.https.HttpsError("invalid-argument", "Geçersiz toldyaId veya vote (1 veya -1).");
-  }
-
-  const snap = await getDb().ref(`toldya/${toldyaId}`).once("value");
-  const tweet = snap.val();
-  if (!tweet || !tweet.parentkey) {
-    throw new functions.https.HttpsError("failed-precondition", "Bu yalnızca yorum (reply) için kullanılır.");
-  }
-
-  const upvoteUserIds = Array.isArray(tweet.upvoteUserIds) ? [...tweet.upvoteUserIds] : [];
-  const downvoteUserIds = Array.isArray(tweet.downvoteUserIds) ? [...tweet.downvoteUserIds] : [];
-  let upvoteCount = typeof tweet.upvoteCount === "number" ? tweet.upvoteCount : 0;
-  let downvoteCount = typeof tweet.downvoteCount === "number" ? tweet.downvoteCount : 0;
-
-  if (upvoteUserIds.includes(userId)) {
-    upvoteUserIds.splice(upvoteUserIds.indexOf(userId), 1);
-    upvoteCount = Math.max(0, upvoteCount - 1);
-  }
-  if (downvoteUserIds.includes(userId)) {
-    downvoteUserIds.splice(downvoteUserIds.indexOf(userId), 1);
-    downvoteCount = Math.max(0, downvoteCount - 1);
-  }
-
-  if (vote === 1) {
-    upvoteUserIds.push(userId);
-    upvoteCount += 1;
-  } else {
-    downvoteUserIds.push(userId);
-    downvoteCount += 1;
-  }
-
-  await getDb().ref(`toldya/${toldyaId}`).update({
-    upvoteCount,
-    downvoteCount,
-    upvoteUserIds,
-    downvoteUserIds,
-  });
-
-  return { ok: true, upvoteCount, downvoteCount, upvoteUserIds, downvoteUserIds };
-});
+exports.voteReply = _callables.voteReply;
 
 // --- Callable: claimDailyBonus – Günlük giriş bonusu ---
-exports.claimDailyBonus = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
-  }
-  const userId = context.auth.uid;
-  const profileSnap = await getDb().ref(`profile/${userId}`).once("value");
-  const profile = profileSnap.val();
-  if (!profile) {
-    throw new functions.https.HttpsError("not-found", "Profil bulunamadı.");
-  }
+exports.claimDailyBonus = _callables.claimDailyBonus;
 
-  const now = new Date();
-  const lastClaim = profile.lastDailyClaimAt ? new Date(profile.lastDailyClaimAt) : null;
-  const sameDay = lastClaim &&
-    lastClaim.getUTCFullYear() === now.getUTCFullYear() &&
-    lastClaim.getUTCMonth() === now.getUTCMonth() &&
-    lastClaim.getUTCDate() === now.getUTCDate();
+// --- Callable: deleteAccount – Hesap silme (store requirement) ---
+exports.deleteAccount = _callables.deleteAccount;
 
-  if (sameDay) {
-    throw new functions.https.HttpsError(
-      "resource-exhausted",
-      "Bugünkü bonusu zaten aldınız."
-    );
-  }
+// --- Callable: moderateToldya – Admin manual moderation (statu=6) ---
+exports.moderateToldya = _callables.moderateToldya;
 
-  const currentPeg = profile.pegCount || 0;
-  const newPeg = currentPeg + DAILY_BONUS_AMOUNT;
-  const updates = {
-    [`profile/${userId}/pegCount`]: newPeg,
-    [`profile/${userId}/lastDailyClaimAt`]: now.toISOString(),
-  };
-  await getDb().ref().update(updates);
-
-  return {
-    ok: true,
-    newBalance: newPeg,
-    message: `Günlük bonus: +${DAILY_BONUS_AMOUNT} token.`,
-  };
-});
+// --- Callable: adminResolveToldya / adminDistributeWinningsForToldya ---
+exports.adminResolveToldya = _callables.adminResolveToldya;
+exports.adminDistributeWinningsForToldya = _callables.adminDistributeWinningsForToldya;
 
 // --- Stash Drip: Kademeli Cüzdan Sistemi ---
 // 
@@ -1158,7 +970,7 @@ async function runStashDripLogic() {
   // Tüm güncellemeleri atomik olarak uygula
   if (Object.keys(updates).length > 0) {
     await getDb().ref().update(updates);
-    console.log(`Stash drip tamamlandı: ${processedCount} kullanıcıya token aktarıldı.`);
+    log.info("Stash drip done", { dripped: processedCount });
   }
 
   return { dripped: processedCount };
@@ -1175,15 +987,15 @@ async function runStashDripLogic() {
  * NOT: Bu fonksiyon sadece manuel tetikleme için tasarlanmıştır.
  * Otomatik zamanlanmış çalışma için production'da schedule eklenebilir.
  */
-exports.runStashDrip = functions.https.onRequest(async (req, res) => {
+exports.runStashDrip = onRequestJob(async (req, res) => {
   try {
-    const result = await runStashDripLogic();
+    const result = await runStashDripLogicModule();
     res.status(200).json({ ok: true, ...result });
   } catch (e) {
-    console.error("runStashDrip error", e);
+    log.error("runStashDrip error", e);
     res.status(500).json({ ok: false, error: e.message });
   }
-});
+}, { secrets: ["JOBS_SHARED_SECRET"] });
 
 // --- Zamanlanmış: Her 10 dakikada bir çalışan sürümler ---
 exports.scheduledAiModeration = functions
@@ -1193,9 +1005,9 @@ exports.scheduledAiModeration = functions
     try {
       const apiKey = process.env.OPENROUTER_API_KEY;
       const result = await runAiModerationLogic(apiKey);
-      console.log("[scheduledAiModeration] done", result);
+      log.info("[scheduledAiModeration] done", result);
     } catch (e) {
-      console.error("[scheduledAiModeration] error", e);
+      log.error("[scheduledAiModeration] error", e);
     }
   });
 
@@ -1204,9 +1016,9 @@ exports.scheduledLockPredictions = functions.pubsub
   .onRun(async () => {
     try {
       const result = await runLockPredictionsLogic();
-      console.log("[scheduledLockPredictions] done", result);
+      log.info("[scheduledLockPredictions] done", result);
     } catch (e) {
-      console.error("[scheduledLockPredictions] error", e);
+      log.error("[scheduledLockPredictions] error", e);
     }
   });
 
@@ -1218,9 +1030,9 @@ exports.scheduledOracleResolution = functions
       const apiKey = process.env.OPENROUTER_API_KEY || null;
       const model = process.env.OPENROUTER_MODEL || null;
       const result = await runOracleResolutionLogic(apiKey, model);
-      console.log("[scheduledOracleResolution] done", result);
+      log.info("[scheduledOracleResolution] done", result);
     } catch (e) {
-      console.error("[scheduledOracleResolution] error", e);
+      log.error("[scheduledOracleResolution] error", e);
     }
   });
 
@@ -1229,9 +1041,9 @@ exports.scheduledDistributeWinnings = functions.pubsub
   .onRun(async () => {
     try {
       const result = await runDistributeWinningsLogic();
-      console.log("[scheduledDistributeWinnings] done", result);
+      log.info("[scheduledDistributeWinnings] done", result);
     } catch (e) {
-      console.error("[scheduledDistributeWinnings] error", e);
+      log.error("[scheduledDistributeWinnings] error", e);
     }
   });
 
@@ -1240,9 +1052,9 @@ exports.scheduledStashDrip = functions.pubsub
   .onRun(async () => {
     try {
       const result = await runStashDripLogic();
-      console.log("[scheduledStashDrip] done", result);
+      log.info("[scheduledStashDrip] done", result);
     } catch (e) {
-      console.error("[scheduledStashDrip] error", e);
+      log.error("[scheduledStashDrip] error", e);
     }
   });
 
@@ -1253,9 +1065,9 @@ exports.scheduledWeeklyLeagueReset = functions.pubsub
   .onRun(async () => {
     try {
       const result = await runWeeklyLeagueResetLogic();
-      console.log("[scheduledWeeklyLeagueReset] done", result);
+      log.info("[scheduledWeeklyLeagueReset] done", result);
     } catch (e) {
-      console.error("[scheduledWeeklyLeagueReset] error", e);
+      log.error("[scheduledWeeklyLeagueReset] error", e);
     }
   });
 
