@@ -92,50 +92,6 @@ class _ImageViewPgeState extends State<ImageViewPge> {
                         type: ToldyaType.Detail,
                         scaffoldKey: GlobalKey<ScaffoldState>(),
                       ),
-                      Container(
-                        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
-                        padding:
-                            EdgeInsets.only(right: 10, left: 10, bottom: 10),
-                        child: TextField(
-                          controller: _textEditingController,
-                          maxLines: null,
-                          style: TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            fillColor: Colors.blue,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(30.0),
-                              ),
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(30.0),
-                              ),
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                              ),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                _submitButton();
-                              },
-                              icon: Icon(Icons.send, color: Colors.white),
-                            ),
-                            focusColor: Colors.black,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 10,
-                            ),
-                            hintText: AppLocalizations.of(context)!.commentHint,
-                            hintStyle: TextStyle(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -159,61 +115,7 @@ class _ImageViewPgeState extends State<ImageViewPge> {
           );
   }
 
-  void _submitButton() async {
-    if (_textEditingController.text.isEmpty || _textEditingController.text.length > 280) {
-      return;
-    }
-    var state = Provider.of<FeedState>(context, listen: false);
-    var authState = Provider.of<AuthState>(context, listen: false);
-    var user = authState.userModel;
-    var name = authState.userModel?.displayName ??
-        ((authState.userModel?.email ?? '').split('@').isNotEmpty
-            ? (authState.userModel?.email ?? '').split('@')[0]
-            : '');
-    var pic = authState.userModel?.profilePic ?? dummyProfilePic;
-    var tags = getHashTags(_textEditingController.text);
-
-    UserModel commentedUser = UserModel(
-        displayName: name,
-        userName: authState.userModel?.userName ?? '',
-        isVerified: authState.userModel?.isVerified ?? false,
-        profilePic: pic,
-        userId: authState.userId);
-
-    var detailList = state.toldyaDetailModel;
-    final FeedModel? currentDetail = detailList?.isNotEmpty == true
-        ? detailList!.last
-        : state.toldyaToReplyModel;
-    var postId = currentDetail?.key;
-
-    FeedModel reply = FeedModel(
-      description: _textEditingController.text,
-      user: commentedUser,
-      createdAt: DateTime.now().toUtc().toString(),
-      tags: tags,
-      userId: commentedUser.userId,
-      parentkey: postId,
-    );
-    try {
-      await state.addcommentToPost(reply);
-      if (mounted) {
-        FocusScope.of(context).requestFocus(_focusNode);
-        setState(() => _textEditingController.text = '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.commentAdded)),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.commentFailed),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  void _submitButton() async {}
 
   @override
   Widget build(BuildContext context) {

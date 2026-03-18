@@ -20,6 +20,7 @@ import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class ComposeToldyaPage extends StatefulWidget {
   ComposeToldyaPage({Key? key, bool? isRetoldya, bool? isToldya = true})
@@ -40,8 +41,16 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isEditMode = false;
 
+  // Dark create-prediction spec
+  static const Color _screenBg = Color(0xFF0F172A);
+  static const Color _cardBg = Color(0xFF111827);
+  static const Color _primary = Color(0xFF2563EB);
+  static const Color _textColor = Color(0xFFE5E7EB);
+
   File? _image;
   late TextEditingController _textEditingController;
+  DateTime? _selectedEndDate;
+  int? _selectedEndPresetIndex;
   /// Meydan okuma: seçilen tek kullanıcı (1v1)
   UserModel? _challengeeUser;
 
@@ -77,6 +86,21 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     }
     scrollcontroller = ScrollController();
     scrollcontroller..addListener(_scrollListener);
+
+    // Default selected: 24s (24 hours) for create prediction.
+    if (widget.isToldya) {
+      if (!_isEditMode) {
+        final nowUtc = DateTime.now().toUtc();
+        _selectedEndPresetIndex = 1; // 24s
+        _selectedEndDate = nowUtc.add(const Duration(days: 1));
+      } else {
+        final endDateIso = model.endDate;
+        if (endDateIso != null) {
+          final parsed = DateTime.tryParse(endDateIso);
+          if (parsed != null) _selectedEndDate = parsed.toUtc();
+        }
+      }
+    }
   }
 
   _scrollListener() {
@@ -106,10 +130,186 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     });
   }
 
+  void _onEndPresetSelected(int index) {
+    HapticFeedback.selectionClick();
+    final now = DateTime.now().toUtc();
+    Duration delta;
+    switch (index) {
+      case 0:
+        delta = Duration(hours: 1);
+        break;
+      case 1:
+        delta = Duration(days: 1);
+        break;
+      case 2:
+        delta = Duration(hours: 72);
+        break;
+      default:
+        delta = Duration(hours: 1);
+    }
+    setState(() {
+      _selectedEndPresetIndex = index;
+      _selectedEndDate = now.add(delta);
+    });
+  }
+
+  Future<void> _pickCustomEndDate(BuildContext context) async {
+    HapticFeedback.selectionClick();
+    final now = DateTime.now();
+    final initialDate = (_selectedEndDate ?? now.add(Duration(hours: 1))).toLocal();
+    final firstDate = now;
+    final lastDate = now.add(Duration(days: 365 * 2));
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+    if (pickedDate == null) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDate),
+    );
+    if (pickedTime == null) return;
+
+    final local = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+    setState(() {
+      _selectedEndPresetIndex = null;
+      _selectedEndDate = local.toUtc();
+    });
+  }
+
+  Widget _buildEndDateSection(BuildContext context) {
+    if (!widget.isToldya) return SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final chips = <Widget>[];
+
+    final hourShort = l10n.pollHour.isNotEmpty ? l10n.pollHour[0] : 's';
+    final labels = <String>['1$hourShort', '24$hourShort', '72$hourShort'];
+
+    for (var i = 0; i < 3; i++) {
+      final isSelected = _selectedEndPresetIndex == i;
+      chips.add(Padding(
+        padding: const EdgeInsets.only(right: 8, bottom: 8),
+        child: ChoiceChip(
+          label: Text(
+            labels[i],
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : _textColor.withOpacity(0.9),
+            ),
+          ),
+          selected: isSelected,
+          onSelected: (_) => _onEndPresetSelected(i),
+          selectedColor: _primary,
+          backgroundColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isSelected
+                  ? _primary
+                  : _textColor.withOpacity(0.15),
+            ),
+          ),
+          pressElevation: 0,
+          shadowColor: Colors.transparent,
+        ),
+      ));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.timelapse_rounded,
+                  size: 18,
+                  color: _primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.adminModerationEndDateLabel,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: _textColor.withOpacity(0.95),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(children: chips),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  side: BorderSide(
+                    color: _primary.withOpacity(0.65),
+                    width: 1.1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  backgroundColor: Colors.transparent,
+                ),
+                onPressed: () => _pickCustomEndDate(context),
+                icon: Icon(Icons.calendar_today_rounded, size: 18, color: _primary),
+                label: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    '📅 Özel tarih seç',
+                    style: const TextStyle(
+                      color: _textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Submit tweet to save in firebase database
   void _submitButton() async {
     if (_textEditingController.text.isEmpty ||
         _textEditingController.text.length > ComposeToldyaState.kToldyaMaxLength) {
+      return;
+    }
+    if (widget.isToldya && _selectedEndDate == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.adminModerationInvalidForm)),
+      );
       return;
     }
     var state = Provider.of<FeedState>(context, listen: false);
@@ -140,7 +340,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       } else if (widget.isRetoldya) {
         await state.createReToldya(toldyaModel);
       } else {
-        await state.addcommentToPost(toldyaModel);
+        // Yorum oluşturma desteği kaldırıldı; bu durumda herhangi bir veri yazmıyoruz.
+        kScreenloader.hideLoader();
+        return;
       }
       debugPrint("[FeedDebug] Compose: post published, toldyaKey=${toldyaModel.key ?? 'unknown'}");
 
@@ -161,10 +363,6 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       } else if (widget.isRetoldya) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.shared)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.commentAdded)),
         );
       }
       if (Navigator.canPop(context)) Navigator.pop(context);
@@ -200,6 +398,14 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         isVerified: authState.userModel?.isVerified ?? false,
         userName: authState.userModel?.userName ?? '');
     var tags = getHashTags(_textEditingController.text);
+    final nowUtc = DateTime.now().toUtc();
+    final endDateIso = widget.isToldya && _selectedEndDate != null
+        ? _selectedEndDate!.toIso8601String()
+        : null;
+    final resolutionDateIso = endDateIso != null
+        ? (DateTime.parse(endDateIso).add(const Duration(minutes: 1))).toIso8601String()
+        : null;
+
     FeedModel reply = FeedModel(
         statu: (widget.isToldya || (state.toldyaToReplyModel != null && !widget.isRetoldya))
             ? Statu.statusPendingAiReview
@@ -207,9 +413,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         topic: widget.isToldya ? null : state.toldyaToReplyModel?.topic,
         description: _textEditingController.text,
         user: commentedUser,
-        createdAt: DateTime.now().toUtc().toString(),
-        endDate: null,
-        resolutionDate: null,
+        createdAt: nowUtc.toIso8601String(),
+        endDate: endDateIso,
+        resolutionDate: resolutionDateIso,
         oracleSource: null,
         oracleApiUrl: null,
         collateralAmount: null,
@@ -362,19 +568,20 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       resizeToAvoidBottomInset: true,
       appBar: CustomAppBar(
         title: customTitleText(''),
-        onActionPressed: _submitButton,
+        onActionPressed: widget.isToldya ? null : _submitButton,
         isCrossButton: true,
         submitButtonText: widget.isToldya
-            ? 'diyorum'
+            ? null
             : widget.isRetoldya
                 ? 'Retweet'
-                : 'Yorum Yap',
+                : null,
         isSubmitDisable:
             !Provider.of<ComposeToldyaState>(context).enableSubmitButton ||
                 Provider.of<FeedState>(context).isBusy,
         isbootomLine: Provider.of<ComposeToldyaState>(context).isScrollingDown,
       ),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: _screenBg,
+      bottomNavigationBar: widget.isToldya ? _buildStickyShareButton(context) : null,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
@@ -385,7 +592,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 controller: scrollcontroller,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    bottom: MediaQuery.of(context).viewInsets.bottom +
+                        (widget.isToldya ? 96 : 0),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,6 +616,53 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
             // ),
           ],
         ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStickyShareButton(BuildContext context) {
+    final feedState = Provider.of<FeedState>(context, listen: false);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Consumer<ComposeToldyaState>(
+          builder: (context, composeState, _) {
+            final hasText = composeState.description.isNotEmpty;
+            final hasClosing = _selectedEndDate != null;
+            final isTextReady = composeState.enableSubmitButton;
+            final isDisabled =
+                !hasText || !isTextReady || !hasClosing || feedState.isBusy;
+
+            return SizedBox(
+              height: 52,
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isDisabled
+                    ? null
+                    : () {
+                        HapticFeedback.mediumImpact();
+                        _submitButton();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      isDisabled ? _primary.withOpacity(0.25) : _primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Tahmini Paylaş',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -665,22 +920,39 @@ class _ComposeToldya
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           viewState.widget.isToldya ? SizedBox.shrink() : _tweerCard(context),
-          SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              customImage(context, authState.user?.photoURL ?? '', height: 40),
-              SizedBox(
-                width: 10,
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: _ComposeToldyaReplyPageState._cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.06),
+                width: 1,
               ),
-              Expanded(
-                child: _TextField(
-                  isToldya: widget.isToldya,
-                  textEditingController: viewState._textEditingController,
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: customImage(
+                    context,
+                    authState.user?.photoURL ?? '',
+                    height: 40,
+                  ),
                 ),
-              )
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _TextField(
+                    isToldya: widget.isToldya,
+                    textEditingController: viewState._textEditingController,
+                  ),
+                )
+              ],
+            ),
           ),
+          if (viewState.widget.isToldya) viewState._buildEndDateSection(context),
           Flexible(
             child: Stack(
               children: <Widget>[
@@ -721,50 +993,55 @@ class _TextField extends StatelessWidget {
       children: <Widget>[
         TextField(
           controller: textEditingController,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(ComposeToldyaState.kToldyaMaxLength),
+          ],
           onChanged: (text) {
             Provider.of<ComposeToldyaState>(context, listen: false)
                 .onDescriptionChanged(text, searchState);
           },
           maxLines: null,
           style: TextStyle(
-            color: theme.colorScheme.onSurface,
-            fontSize: 18,
+            color: _ComposeToldyaReplyPageState._textColor,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
               border: InputBorder.none,
               hintText: isToldya
-                  ? 'Gelecek tahminlerini paylaş'
+                  ? 'Ne olacak? (örn: Galatasaray kazanır mı?)'
                   : isRetoldya
                       ? 'Add a comment'
                       : 'Bu tahmine yorum yap',
               hintStyle: TextStyle(
                 fontSize: 18,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: _ComposeToldyaReplyPageState._textColor.withOpacity(0.6),
               )),
         ),
-        Consumer<ComposeToldyaState>(
-          builder: (context, state, _) {
-            final color = state.isOverLimit
-                ? theme.colorScheme.error
-                : state.isNearLimit
-                    ? Colors.orange
-                    : theme.colorScheme.onSurface.withOpacity(0.7);
-            return Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '${state.characterCount} / ${ComposeToldyaState.kToldyaMaxLength}',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+        if (isToldya)
+          Consumer<ComposeToldyaState>(
+            builder: (context, state, _) {
+              final color = state.isOverLimit
+                  ? theme.colorScheme.error
+                  : state.isNearLimit
+                      ? Colors.orange
+                      : _ComposeToldyaReplyPageState._textColor.withOpacity(0.7);
+              return Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${state.characterCount} / ${ComposeToldyaState.kToldyaMaxLength}',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
       ],
     );
     return Consumer<ComposeToldyaState>(
@@ -795,7 +1072,7 @@ class _UserList extends StatelessWidget {
         ? SizedBox.shrink()
         : Container(
             padding: EdgeInsetsDirectional.only(bottom: 50),
-            color: Theme.of(context).colorScheme.surface,
+            color: _ComposeToldyaReplyPageState._cardBg,
             constraints:
                 BoxConstraints(minHeight: 30, maxHeight: double.infinity),
             child: ListView.builder(

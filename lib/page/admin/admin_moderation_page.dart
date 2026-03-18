@@ -8,7 +8,7 @@ import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 
-enum _AdminSegment { moderation, resolve, distribute }
+enum _AdminSegment { moderation, resolve }
 
 class AdminModerationPage extends StatefulWidget {
   const AdminModerationPage({super.key});
@@ -23,7 +23,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
 
   bool _busyPreviewOracle = false;
   bool _busyPreviewQuickFix = false;
-  bool _busyPreviewDistribute = false;
 
   // Resolve (Sonuçlandır) lazy pagination
   bool _resolveInitialLoaded = false;
@@ -31,13 +30,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
   bool _resolveHasMore = true;
   int _resolveVisibleCount = 15;
   static const int _resolveFetchChunkSize = 250;
-
-  // Distribute (Dağıtım) lazy pagination
-  bool _distributeInitialLoaded = false;
-  String? _distributeLastKey;
-  bool _distributeHasMore = true;
-  int _distributeVisibleCount = 15;
-  static const int _distributeFetchChunkSize = 250;
 
   String? _jobInlineError;
   String? _jobInlineSuccess;
@@ -47,12 +39,9 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
   int _quickFixShowCount = 50;
   String _quickFixSearch = '';
   bool _quickFixOnlyEndPassed = false;
-  List<_JobCandidate> _distributeCandidates = const [];
-  int? _distributeTotalPoolEstimate;
 
   final Map<String, int> _manualResolveSelection = <String, int>{};
   final Set<String> _busyResolveIds = <String>{};
-  final Set<String> _busyDistributeIds = <String>{};
   final Set<String> _busyQuickFixIds = <String>{};
 
   static const Color _bg = Color(0xFF1A1F2E);
@@ -232,316 +221,72 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     required Map m,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    final existingTopic = (m['topic']?.toString() ?? '').trim();
-    final existingEnd = _parseIso(m['endDate']?.toString());
-    final existingRes = _parseIso(m['resolutionDate']?.toString());
-    final existingOracleApiUrl = (m['oracleApiUrl']?.toString() ?? '').trim();
-    final existingOracleSource = (m['oracleSource']?.toString() ?? '').trim();
-    final existingCollateral = m['collateralAmount'] is num ? (m['collateralAmount'] as num) : null;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) {
-        // NOTE: Keep these outside StatefulBuilder so setState doesn't reset them.
-        String topic = existingTopic;
-        DateTime? endDate = existingEnd;
-        DateTime? resolutionDate = existingRes;
-        final oracleApiUrlCtrl = TextEditingController(text: existingOracleApiUrl);
-        final oracleSourceCtrl = TextEditingController(text: existingOracleSource);
-        final collateralCtrl = TextEditingController(text: existingCollateral?.toString() ?? '');
-        String? inlineError;
-
-        bool isValid() {
-          if (topic.trim().isEmpty) return false;
-          if (endDate == null || resolutionDate == null) return false;
-          if (!resolutionDate!.isAfter(endDate!)) return false;
-          final diff = resolutionDate!.difference(endDate!);
-          if (diff < const Duration(hours: 1)) return false;
-          return true;
-        }
-
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final canSubmit = isValid();
-            final inputTheme = Theme.of(ctx).copyWith(
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: _bg,
-              cardColor: _surface,
-              inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: _surface,
-                labelStyle: TextStyle(color: Colors.white.withOpacity(0.75)),
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.35)),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: _border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _success, width: 1.5),
-                ),
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.adminModerationApproveTitle),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(l10n.cancel),
               ),
-            );
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 12,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(l10n.confirm),
               ),
-              child: Theme(
-                data: inputTheme,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _bg,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
-                    boxShadow: MockupDesign.cardShadow,
-                  ),
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.adminModerationApproveTitle,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            icon: const Icon(Icons.close, color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        value: (topic.isEmpty) ? null : topic,
-                        items: const [
-                          DropdownMenuItem(value: 'spor', child: Text('spor')),
-                          DropdownMenuItem(value: 'eco', child: Text('eco')),
-                          DropdownMenuItem(value: 'fun', child: Text('fun')),
-                          DropdownMenuItem(value: 'politic', child: Text('politic')),
-                        ],
-                        onChanged: (v) => setSheetState(() {
-                          topic = v ?? '';
-                          inlineError = null;
-                        }),
-                        decoration: InputDecoration(
-                          labelText: l10n.adminModerationTopicLabel,
-                        ),
-                        dropdownColor: _surface,
-                        style: const TextStyle(color: Colors.white),
-                        iconEnabledColor: Colors.white70,
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: _border),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              onPressed: () async {
-                                final picked = await _pickDateTime(initial: endDate, firstDate: DateTime.now());
-                                if (picked == null) return;
-                                setSheetState(() {
-                                  endDate = picked;
-                                  inlineError = null;
-                                  if (resolutionDate != null && !resolutionDate!.isAfter(endDate!)) {
-                                    resolutionDate = null;
-                                  }
-                                });
-                              },
-                              icon: const Icon(Icons.event, size: 18),
-                              label: Text(
-                                endDate == null ? l10n.adminModerationEndDateLabel : endDate!.toLocal().toString(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: _border),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              onPressed: (endDate == null)
-                                  ? null
-                                  : () async {
-                                      final picked = await _pickDateTime(initial: resolutionDate, firstDate: endDate);
-                                      if (picked == null) return;
-                                      setSheetState(() {
-                                        resolutionDate = picked;
-                                        inlineError = null;
-                                      });
-                                    },
-                              icon: const Icon(Icons.flag_outlined, size: 18),
-                              label: Text(
-                                resolutionDate == null ? l10n.adminModerationResolutionDateLabel : resolutionDate!.toLocal().toString(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: oracleSourceCtrl,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(labelText: l10n.adminModerationOracleSourceOptional),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: oracleApiUrlCtrl,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(labelText: l10n.adminModerationOracleApiUrlOptional),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: collateralCtrl,
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: l10n.adminModerationCollateralOptional),
-                      ),
-                      if (inlineError != null) ...[
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            inlineError!,
-                            style: const TextStyle(color: _danger, fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _success,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: canSubmit
-                              ? () async {
-                                  setSheetState(() => inlineError = null);
-                                  if (!isValid()) {
-                                    setSheetState(() => inlineError = l10n.adminModerationInvalidForm);
-                                    return;
-                                  }
-                                  if (endDate != null && resolutionDate != null) {
-                                    final diff = resolutionDate!.difference(endDate!);
-                                    if (diff < const Duration(hours: 1)) {
-                                      setSheetState(() => inlineError = l10n.adminModerationDateRule);
-                                      return;
-                                    }
-                                  }
-                                  final collateralText = collateralCtrl.text.trim();
-                                  num? collateral;
-                                  if (collateralText.isNotEmpty) collateral = num.tryParse(collateralText);
-                                  final out = await _moderate(
-                                    toldyaId: toldyaId,
-                                    decision: 'approve',
-                                    topic: topic.trim(),
-                                    endDate: endDate!.toUtc().toIso8601String(),
-                                    resolutionDate: resolutionDate!.toUtc().toIso8601String(),
-                                    oracleSource: oracleSourceCtrl.text.trim().isEmpty ? null : oracleSourceCtrl.text.trim(),
-                                    oracleApiUrl: oracleApiUrlCtrl.text.trim().isEmpty ? null : oracleApiUrlCtrl.text.trim(),
-                                    collateralAmount: collateral,
-                                  );
-                                  if (!mounted) return;
-                                  if (out.ok) {
-                                    Navigator.of(ctx).pop();
-                                  } else {
-                                    if (out.code == 'aborted' && (out.message ?? '').trim() == 'CONCURRENT_UPDATE_RETRY') {
-                                      setSheetState(() => inlineError = l10n.adminModerationConflictRetry);
-                                    } else {
-                                      setSheetState(() => inlineError = out.message ?? l10n.adminModerationActionFailed);
-                                    }
-                                  }
-                                }
-                              : null,
-                          child: Text(l10n.adminModerationApprove),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    final out = await _moderate(
+      toldyaId: toldyaId,
+      decision: 'approve',
+      // Kategori tüm gönderiler için "Genel" görünsün diye topic alanını
+      // boş bırakıyoruz; UI tarafında boş topic için topicGeneral gösteriliyor.
+      topic: '',
     );
+    if (!mounted) return;
+    if (!out.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(out.message ?? l10n.adminModerationActionFailed)),
+      );
+    }
   }
 
   Future<void> _rejectFlow(String toldyaId) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    final result = await showDialog<String?>(
-      context: context,
-      useRootNavigator: true,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.adminModerationReject),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: l10n.adminModerationRejectReasonHint,
+    final confirmed = await showDialog<bool>(
+          context: context,
+          useRootNavigator: true,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.adminModerationReject),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
+                child: Text(l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
+                child: Text(l10n.confirm),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(null),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(controller.text.trim()),
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) {
-      controller.dispose();
-      return;
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    try {
+      await FirebaseDatabase.instance.ref('toldya/$toldyaId').remove();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.adminModerationActionFailed)),
+      );
     }
-    controller.dispose();
-    if (result == null || result.isEmpty) return;
-    await _moderate(toldyaId: toldyaId, decision: 'reject', reason: result);
   }
 
   @override
@@ -576,11 +321,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                   label: Text(l10n.adminSegmentResolve),
                   icon: const Icon(Icons.fact_check_rounded),
                 ),
-                ButtonSegment<_AdminSegment>(
-                  value: _AdminSegment.distribute,
-                  label: Text(l10n.adminSegmentDistribute),
-                  icon: const Icon(Icons.payments_rounded),
-                ),
               ],
               selected: <_AdminSegment>{_segment},
               showSelectedIcon: false,
@@ -614,7 +354,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                   child: _moderationPanel(l10n: l10n, db: db),
                 ),
                 _resolvePanel(l10n: l10n),
-                _distributePanel(l10n: l10n),
               ],
             ),
           ),
@@ -758,38 +497,19 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
       _jobInlineSuccess = null;
     });
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('adminResolveToldya');
-      await callable.call(<String, dynamic>{'toldyaId': toldyaId, 'feedResult': feedResult});
-      setState(() {
-        _oracleCandidates = _oracleCandidates.where((c) => c.id != toldyaId).toList(growable: false);
-        _manualResolveSelection.remove(toldyaId);
-        _jobInlineSuccess = l10n.adminResolveManualSuccess;
-      });
-    } on FirebaseFunctionsException catch (e) {
-      setState(() => _jobInlineError = l10n.adminJobErrorWithMessage(e.message ?? e.code));
-    } catch (e) {
-      setState(() => _jobInlineError = l10n.adminJobErrorWithMessage(e.toString()));
-    } finally {
-      if (mounted) setState(() => _busyResolveIds.remove(toldyaId));
-    }
-  }
+      final resolveCallable = FirebaseFunctions.instance.httpsCallable('adminResolveToldya');
+      await resolveCallable.call(<String, dynamic>{'toldyaId': toldyaId, 'feedResult': feedResult});
 
-  Future<void> _distributeOne({required AppLocalizations l10n, required String toldyaId}) async {
-    if (_busyDistributeIds.contains(toldyaId)) return;
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _busyDistributeIds.add(toldyaId);
-      _jobInlineError = null;
-      _jobInlineSuccess = null;
-    });
-    try {
-      final callable = FirebaseFunctions.instance.httpsCallable('adminDistributeWinningsForToldya');
-      final res = await callable.call(<String, dynamic>{'toldyaId': toldyaId});
+      // Resolve başarılı ise aynı anda dağıtımı da tetikle.
+      final distributeCallable = FirebaseFunctions.instance.httpsCallable('adminDistributeWinningsForToldya');
+      final res = await distributeCallable.call(<String, dynamic>{'toldyaId': toldyaId});
       final data = (res.data is Map) ? Map<String, dynamic>.from(res.data as Map) : const <String, dynamic>{};
       final distributed = data['distributed'];
       final did = (distributed is num) ? distributed.toInt() : int.tryParse(distributed?.toString() ?? '') ?? 0;
+
       setState(() {
-        _distributeCandidates = _distributeCandidates.where((c) => c.id != toldyaId).toList(growable: false);
+        _oracleCandidates = _oracleCandidates.where((c) => c.id != toldyaId).toList(growable: false);
+        _manualResolveSelection.remove(toldyaId);
         _jobInlineSuccess = did > 0 ? l10n.adminDistributeManualSuccess : l10n.adminDistributeManualNoop;
       });
     } on FirebaseFunctionsException catch (e) {
@@ -797,7 +517,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     } catch (e) {
       setState(() => _jobInlineError = l10n.adminJobErrorWithMessage(e.toString()));
     } finally {
-      if (mounted) setState(() => _busyDistributeIds.remove(toldyaId));
+      if (mounted) setState(() => _busyResolveIds.remove(toldyaId));
     }
   }
 
@@ -1271,110 +991,8 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     );
   }
 
-  Future<void> _previewDistributeCandidates(AppLocalizations l10n) async {
-    if (_busyPreviewDistribute) return;
-    if (_distributeInitialLoaded) return;
-
-    setState(() {
-      _jobInlineError = null;
-      _jobInlineSuccess = null;
-      _distributeCandidates = const [];
-      _distributeTotalPoolEstimate = null;
-      _distributeLastKey = null;
-      _distributeHasMore = true;
-      _distributeVisibleCount = 15;
-      _distributeInitialLoaded = true;
-    });
-
-    await _loadMoreDistributeCandidates(l10n);
-  }
-
-  Future<void> _loadMoreDistributeCandidates(AppLocalizations l10n) async {
-    if (_busyPreviewDistribute) return;
-    if (!_distributeHasMore) return;
-
-    final prevLen = _distributeCandidates.length;
-    setState(() {
-      _busyPreviewDistribute = true;
-      _jobInlineError = null;
-    });
-
-    try {
-      Query query = FirebaseDatabase.instance.ref('toldya').orderByKey();
-      if (_distributeLastKey != null) {
-        query = query.startAfter(_distributeLastKey);
-      }
-      query = query.limitToFirst(_distributeFetchChunkSize);
-
-      final snap = await query.get();
-
-      final out = <_JobCandidate>[];
-      var totalPoolAdd = 0;
-      String? lastKey;
-      var fetchedCount = 0;
-
-      for (final child in snap.children) {
-        fetchedCount++;
-        lastKey = child.key;
-        final v = child.value;
-        if (v == null || v is! Map) continue;
-        if (v['parentkey'] != null) continue;
-
-        final statu = v['statu'];
-        if (!(statu == 2 || statu == '2')) continue;
-
-        final feedResult = v['feedResult'];
-        final okResult = (feedResult == 1 || feedResult == 2 || feedResult == '1' || feedResult == '2');
-        if (!okResult) continue;
-
-        if (v['distributionDone'] == true || v['distributionDone'] == 1 || v['distributionDone'] == 'true') continue;
-
-        final desc = (v['description']?.toString() ?? '').trim();
-        final resIso = (v['resolutionDate']?.toString() ?? '').trim();
-        final oracleApiUrl = (v['oracleApiUrl']?.toString() ?? '').trim();
-        out.add(_JobCandidate(
-          id: child.key ?? '',
-          description: desc,
-          resolutionDateIso: resIso,
-          statu: statu.toString(),
-          hasOracleApiUrl: oracleApiUrl.isNotEmpty,
-        ));
-
-        totalPoolAdd += _sumPegList(v['likeList']);
-        totalPoolAdd += _sumPegList(v['unlikeList']);
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _distributeCandidates = [..._distributeCandidates, ...out];
-        _distributeTotalPoolEstimate = (_distributeTotalPoolEstimate ?? 0) + totalPoolAdd;
-        _distributeLastKey = lastKey;
-        if (fetchedCount < _distributeFetchChunkSize) _distributeHasMore = false;
-        final shouldExpand = prevLen > 0 && _distributeVisibleCount >= prevLen;
-        _distributeVisibleCount = shouldExpand
-            ? math.min(_distributeVisibleCount + 15, _distributeCandidates.length)
-            : _distributeVisibleCount.clamp(0, _distributeCandidates.length);
-      });
-    } catch (e) {
-      setState(() => _jobInlineError = l10n.adminJobErrorWithMessage(e.toString()));
-    } finally {
-      if (mounted) setState(() => _busyPreviewDistribute = false);
-    }
-  }
-
-  int _sumPegList(dynamic list) {
-    var sum = 0;
-    if (list is List) {
-      for (final it in list) {
-        if (it is Map) {
-          final v = it['pegCount'];
-          if (v is num) sum += v.toInt();
-          if (v is String) sum += int.tryParse(v) ?? 0;
-        }
-      }
-    }
-    return sum;
-  }
+  // NOTE: Distribution işlemleri artık sonuçlandırma (_resolveManually) içinde
+  // otomatik olarak tetikleniyor. Ayrı bir dağıtım önizleme/paneli yok.
 
   Widget _resolvePanel({required AppLocalizations l10n}) {
     if (!_resolveInitialLoaded && !_busyPreviewOracle) {
@@ -1583,81 +1201,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     );
   }
 
-  Widget _distributePanel({required AppLocalizations l10n}) {
-    if (!_distributeInitialLoaded && !_busyPreviewDistribute) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _previewDistributeCandidates(l10n);
-      });
-    }
-
-    final loadedCount = _distributeCandidates.length;
-    final shown = _distributeCandidates.take(_distributeVisibleCount).toList(growable: false);
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scroll) {
-        final metrics = scroll.metrics;
-        final nearBottom = metrics.pixels >= metrics.maxScrollExtent - 250;
-        if (!nearBottom) return false;
-        if (_busyPreviewDistribute) return false;
-
-        if (!_distributeInitialLoaded && _distributeCandidates.isEmpty) {
-          _previewDistributeCandidates(l10n);
-          return false;
-        }
-
-        if (_distributeVisibleCount < _distributeCandidates.length) {
-          setState(() => _distributeVisibleCount = (_distributeVisibleCount + 15).clamp(0, _distributeCandidates.length));
-          return false;
-        }
-
-        if (_distributeHasMore) {
-          _loadMoreDistributeCandidates(l10n);
-        }
-        return false;
-      },
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: [
-          _panelHeader(title: l10n.adminDistributeTitle, desc: l10n.adminDistributeDesc),
-          const SizedBox(height: 6),
-          Text(
-            l10n.adminDistributeIdempotentNote,
-            style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12, height: 1.25),
-          ),
-          const SizedBox(height: 12),
-          if (_jobInlineError != null) _inlineBanner(_jobInlineError!, isError: true),
-          if (_jobInlineSuccess != null) _inlineBanner(_jobInlineSuccess!, isError: false),
-
-          if (_busyPreviewDistribute && loadedCount == 0) ...[
-            const SizedBox(height: 20),
-            const Center(child: CircularProgressIndicator(color: _success)),
-          ],
-
-          if (loadedCount > 0) ...[
-            const SizedBox(height: 12),
-            _inlineBanner(l10n.adminPreviewCandidates('$loadedCount'), isError: false, subtle: true),
-            if (_distributeTotalPoolEstimate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  l10n.adminDistributeTotalPoolEstimate('${_distributeTotalPoolEstimate ?? 0}'),
-                  style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-              ),
-            const SizedBox(height: 10),
-            ...shown.map((c) => _distributeCandidateTile(l10n: l10n, c: c)),
-          ],
-
-          if (_busyPreviewDistribute && loadedCount > 0) ...[
-            const SizedBox(height: 12),
-            const Center(child: CircularProgressIndicator(color: _success)),
-            const SizedBox(height: 10),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _panelHeader({required String title, required String desc}) {
     return Container(
       decoration: BoxDecoration(
@@ -1829,62 +1372,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check_rounded, size: 18),
               label: Text(l10n.adminResolveManualApply),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _distributeCandidateTile({required AppLocalizations l10n, required _JobCandidate c}) {
-    final busy = _busyDistributeIds.contains(c.id);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
-      ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            c.id,
-            style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 11, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            c.description.isEmpty ? '-' : c.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, height: 1.2),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (c.resolutionDateIso.isNotEmpty) _metaChip('resolution: ${_fmtShort(c.resolutionDateIso)}'),
-              _metaChip('statu: ${c.statu}'),
-              _metaChip('oracleApiUrl: ${c.hasOracleApiUrl ? '✓' : '—'}'),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _success,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              onPressed: busy ? null : () => _distributeOne(l10n: l10n, toldyaId: c.id),
-              icon: busy
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.payments_rounded, size: 18),
-              label: Text(l10n.adminDistributeManualApply),
             ),
           ),
         ],

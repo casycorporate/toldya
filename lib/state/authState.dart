@@ -92,7 +92,6 @@ class AuthState extends AppState {
   /// profileId null/boş = "kendi profilim" sayfası kapanıyor; dolu = başka kullanıcı profil sayfası. Liste boş kalırsa ensureProfileIsCurrentUser() ile ana ekran siyah kalmaz.
   /// State-holding screens: back (AppBar or system) should run this cleanup once, then Navigator.pop.
   void profilePageClosing(String? profileId) {
-    debugPrint('[Profile] profilePageClosing profileId=$profileId listLength=${_profileUserModelList?.length} lastUserId=${_profileUserModelList?.isNotEmpty == true ? _profileUserModelList!.last.userId : null}');
     _pendingProfileRequestId = null;
     final bool isMyProfile = profileId == null || profileId.isEmpty;
     if (_profileUserModelList != null && _profileUserModelList!.isNotEmpty) {
@@ -125,10 +124,8 @@ class AuthState extends AppState {
   void ensureProfileIsCurrentUser() {
     // Startup guard: don't mutate profile stack until we actually have a signed-in user.
     if (_userModel == null || userId.isEmpty) {
-      debugPrint('[Profile] ensureProfileIsCurrentUser skipped _userModel=${_userModel != null} userId=$userId');
       return;
     }
-    debugPrint('[Profile] ensureProfileIsCurrentUser _userModel=${_userModel != null} userId=${_userModel?.userId}');
     if (_profileUserModelList == null ||
         _profileUserModelList!.isEmpty ||
         _profileUserModelList!.last.userId != userId) {
@@ -387,7 +384,11 @@ class AuthState extends AppState {
       kAnalytics.logEvent(name: 'create_newUser');
       user.createdAt = DateTime.now().toUtc().toString();
     }
-    kDatabase.child('profile').child(user.userId ?? '').set(user.toJson());
+    // Important:
+    // `profile/{uid}` altında `isAdmin` gibi alanlar `UserModel` içinde olmayabilir.
+    // RTDB'de `set(...)` tüm child'ları overwrite ettiği için bu alanlar silinip
+    // admin flag yanlışlıkla `false`'a düşebiliyor. Bu yüzden merge/update yapıyoruz.
+    kDatabase.child('profile').child(user.userId ?? '').update(user.toJson());
     _userModel = user;
     if (_profileUserModelList != null) {
       _profileUserModelList!.last = _userModel!;
@@ -696,19 +697,6 @@ class AuthState extends AppState {
           .child(currentUser.userId ?? '')
           .child('followingList')
           .set(currentUser.followingList);
-      if (!removeFollower) {
-        kDatabase
-            .child('followers')
-            .child(profileUser.userId ?? '')
-            .child(currentUser.userId ?? '')
-            .set(ServerValue.timestamp);
-      } else {
-        kDatabase
-            .child('followers')
-            .child(profileUser.userId ?? '')
-            .child(currentUser.userId ?? '')
-            .remove();
-      }
       cprint(removeFollower ? 'user removed from following list' : 'user added to following list', event: removeFollower ? 'remove_follow' : 'add_follow');
       notifyListeners();
     } catch (error) {
@@ -745,19 +733,6 @@ class AuthState extends AppState {
           .child(currentUser.userId ?? '')
           .child('followingList')
           .set(currentUser.followingList);
-      if (!removeFollower) {
-        await kDatabase
-            .child('followers')
-            .child(targetUserId)
-            .child(currentUser.userId ?? '')
-            .set(ServerValue.timestamp);
-      } else {
-        await kDatabase
-            .child('followers')
-            .child(targetUserId)
-            .child(currentUser.userId ?? '')
-            .remove();
-      }
       notifyListeners();
     } catch (error) {
       cprint(error, errorIn: 'followUserByUserId');
@@ -807,6 +782,8 @@ class AuthState extends AppState {
       final updatedUser = UserModel.fromJson(Map<String, dynamic>.from(event.snapshot.value as Map));
       if (updatedUser.userId == user!.uid) {
         _userModel = updatedUser;
+        // Clear cached admin flag so future checks re-read latest profile/isAdmin or role.
+        _isAdminCached = null;
       }
       cprint('UserModel Updated');
       notifyListeners();

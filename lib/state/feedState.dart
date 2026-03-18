@@ -1202,37 +1202,10 @@ class FeedState extends AppState {
     }
   }
 
-  /// Add [new comment tweet] to any tweet
-  /// Comment is a Tweet itself
+  /// (Kullanımdışı) Eski yorum ekleme API'si.
+  /// Artık client tarafında yeni yorum oluşturulmuyor; RTDB'ye yazmaz.
   Future<void> addcommentToPost(FeedModel replyToldya) async {
-    final toReply = _toldyaToReplyModel;
-    final feedlist = _feedlist;
-    if (toReply == null ||
-        toReply.key == null ||
-        feedlist == null ||
-        feedlist.isEmpty ||
-        !feedlist.any((x) => x.key == toReply.key)) {
-      return;
-    }
-    isBusy = true;
-    notifyListeners();
-    try {
-      FeedModel parentToldya = feedlist.firstWhere((x) => x.key == toReply.key);
-      var json = replyToldya.toJson();
-      final replyRef = kDatabase.child('toldya').push();
-      await replyRef.set(json);
-      final newKey = replyRef.key;
-      if (newKey != null) {
-        (parentToldya.replyToldyaKeyList ??= []).add(newKey);
-      }
-      await updateToldya(parentToldya);
-    } catch (error) {
-      cprint(error, errorIn: 'addcommentToPost');
-      rethrow;
-    } finally {
-      isBusy = false;
-      notifyListeners();
-    }
+    return;
   }
 
   /// Trigger when any tweet changes or update

@@ -5,7 +5,7 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
-/// Mockup’a uygun Token Kazanma: Reklam izle, Günlük bonus, Token paketleri.
+/// Mockup’a uygun Puan Kazanma: Reklam izle, Günlük bonus, Puan paketleri.
 class TokenEarnPage extends StatelessWidget {
   const TokenEarnPage({Key? key}) : super(key: key);
 
@@ -57,7 +57,7 @@ class TokenEarnPage extends StatelessWidget {
               icon: Icons.card_giftcard,
               iconColor: AppNeon.green,
               title: AppLocalizations.of(context)!.dailyBonusTitle,
-              subtitle: '+${AppIcon.dailyBonusAmount} Token',
+              subtitle: '+${AppIcon.dailyBonusAmount} ${AppLocalizations.of(context)!.tokenLabel}',
               buttonLabel: canClaimDaily
                   ? AppLocalizations.of(context)!.claim
                   : AppLocalizations.of(context)!.tryAgainTomorrow,
@@ -245,7 +245,7 @@ class _TokenPackCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '$amount Token',
+                          '$amount ${AppLocalizations.of(context)!.tokenLabel}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,

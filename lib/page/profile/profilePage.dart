@@ -83,7 +83,6 @@ class _ProfilePageState extends State<ProfilePage>
           ? IconButton(
               icon: Icon(Icons.arrow_back_rounded),
               onPressed: () {
-                debugPrint('[Profile] back (tab) pressed profileId=${widget.profileId} isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
                 final appState = Provider.of<AppState>(context, listen: false);
                 appState.setpageIndex = appState.lastTabBeforeProfile;
               },
@@ -91,9 +90,6 @@ class _ProfilePageState extends State<ProfilePage>
           : IconButton(
               icon: Icon(Icons.arrow_back_rounded),
               onPressed: () {
-                debugPrint('[Profile] back pressed profileId=${widget.profileId} isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
-                final routeName = ModalRoute.of(context)?.settings.name;
-                debugPrint('[Profile] about to pop, currentRoute=$routeName');
                 Provider.of<AuthState>(context, listen: false).profilePageClosing(widget.profileId);
                 if (Navigator.canPop(context)) Navigator.of(context).pop();
               },
@@ -151,7 +147,6 @@ class _ProfilePageState extends State<ProfilePage>
   void _onPopInvoked(bool didPop, dynamic result) {
     if (didPop) return;
     if (widget.isTabContent) {
-      debugPrint('[Profile] system back (tab) isTabContent=${widget.isTabContent} canPop=${Navigator.of(context).canPop()}');
       final appState = Provider.of<AppState>(context, listen: false);
       appState.setpageIndex = appState.lastTabBeforeProfile;
       return;
@@ -206,7 +201,6 @@ class _ProfilePageState extends State<ProfilePage>
         !isBlackList() &&
         authstate.profileUserModel != null &&
         profileMatchesPage;
-    debugPrint('[ProfilePage] build profileId=${widget.profileId} profileUserModel=${authstate.profileUserModel != null} isbusy=${authstate.isbusy} showHeader=$showHeader');
 
     if (id.isNotEmpty &&
         profileMatchesPage &&

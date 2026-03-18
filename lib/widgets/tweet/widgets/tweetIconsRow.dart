@@ -79,7 +79,7 @@ class ToldyaIconsRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(totalPool) + ' token')}',
+                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(totalPool))}',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.5),

@@ -464,7 +464,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                             children: <Widget>[
                               _menuListRowButton(
-                                l10n.drawerActiveBets,
+                                l10n.drawerActivePredictions,
                                 icon: Icons.play_arrow_rounded,
                                 onPressed: () => _navigateTo('profile/${authState.userId}'),
                               ),
@@ -484,7 +484,8 @@ class _SidebarMenuState extends State<SidebarMenu> {
                                 onPressed: () => _navigateTo('profile/${authState.userId}'),
                               ),
                               FutureBuilder<bool>(
-                                future: authState.isAdminUser(),
+                                // Force refresh: admin bayrağı sonradan verilse bile menü güncellensin.
+                                future: authState.isAdminUser(forceRefresh: true),
                                 builder: (context, snap) {
                                   final isAdmin = snap.data == true;
                                   if (!isAdmin) return const SizedBox.shrink();

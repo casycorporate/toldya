@@ -79,10 +79,7 @@ class SearchState extends AppState {
         _userlist!.length != _userFilterlist!.length) {
       _userFilterlist = List.from(_userlist!);
     }
-    if (_userlist == null || _userlist!.isEmpty) {
-      print("Empty userList");
-      return;
-    }
+    if (_userlist == null || _userlist!.isEmpty) return;
     if (name.isNotEmpty) {
       _userFilterlist = _userlist!
           .where((x) =>
@@ -154,10 +151,7 @@ class SearchState extends AppState {
 
   List<String> getUserInBlackList(UserModel? userIds) {
     List<String> rt=[];
-    if (_userlist == null || userIds == null) {
-      if (_userlist == null) print("Empty userList");
-      return rt;
-    }
+    if (_userlist == null || userIds == null) return rt;
     final list = _userlist!.where((x) {
       if(x.blackList?.isNotEmpty ?? false){
         if ( userIds.userId != null && x.blackList!.contains(userIds.userId)) {

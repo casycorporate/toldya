@@ -29,6 +29,8 @@ class FeedModel {
   /// Report reasons by userId (e.g. "spam", "harassment") for moderation
   Map<String, String>? reportReasons;
   List<String>? favList;
+  /// AI moderasyon kararı için kısa açıklama/başlık
+  String? aiModerationReason;
   /// Kanıt kaynağı (Oracle): Bahsin neye göre sonuçlanacağı
   String? oracleSource;
   /// API URL - otomatik sonuç için (opsiyonel)
@@ -39,8 +41,6 @@ class FeedModel {
   List<String>? disputeUserIds;
   /// Dağıtım yapıldı mı (Pari-Mutuel ödeme tamamlandı mı)
   bool? distributionDone;
-  /// AI moderasyon gerekçesi (onay veya red nedeni)
-  String? aiModerationReason;
   /// Meydan okuma: etiketlenen tek kullanıcı (1v1 düello)
   String? challengeeUserId;
   /// Yorum oylama: Katılıyorum sayısı (sadece reply için)
@@ -52,7 +52,8 @@ class FeedModel {
   /// Yorum oylama: Katılmıyorum veren kullanıcı ID'leri
   List<String>? downvoteUserIds;
 
-  FeedModel({this.key,
+  FeedModel({
+    this.key,
     this.description,
     this.userId,
     this.likeCount,
@@ -76,16 +77,17 @@ class FeedModel {
     this.feedResult,
     this.childRetoldyaKey,
     this.resolutionDate,
+    this.aiModerationReason,
     this.oracleSource,
     this.oracleApiUrl,
     this.collateralAmount,
     this.disputeUserIds,
     this.distributionDone,
-    this.aiModerationReason,
     this.upvoteCount,
     this.downvoteCount,
     this.upvoteUserIds,
-    this.downvoteUserIds});
+    this.downvoteUserIds,
+  });
 
   toJson() {
     return {
@@ -112,12 +114,12 @@ class FeedModel {
       "statu": statu,
       "feedResult": feedResult,
       "resolutionDate": resolutionDate,
+      "aiModerationReason": aiModerationReason,
       "oracleSource": oracleSource,
       "oracleApiUrl": oracleApiUrl,
       "collateralAmount": collateralAmount,
       "disputeUserIds": disputeUserIds,
       "distributionDone": distributionDone ?? false,
-      "aiModerationReason": aiModerationReason,
       "challengeeUserId": challengeeUserId,
       "upvoteCount": upvoteCount ?? 0,
       "downvoteCount": downvoteCount ?? 0,
@@ -152,11 +154,11 @@ class FeedModel {
     statu = _parseStatuMap(map['statu']);
     feedResult = map['feedResult'];
     resolutionDate = map['resolutionDate'];
+    aiModerationReason = map['aiModerationReason'];
     oracleSource = map['oracleSource'];
     oracleApiUrl = map['oracleApiUrl'];
     collateralAmount = map['collateralAmount'];
     distributionDone = map['distributionDone'] ?? false;
-    aiModerationReason = map['aiModerationReason']?.toString();
     challengeeUserId = map['challengeeUserId']?.toString();
     upvoteCount = map['upvoteCount'] ?? 0;
     downvoteCount = map['downvoteCount'] ?? 0;

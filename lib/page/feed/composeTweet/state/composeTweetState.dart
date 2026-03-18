@@ -9,8 +9,8 @@ import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/searchState.dart';
 
 class ComposeToldyaState extends ChangeNotifier {
-  static const int kToldyaMaxLength = 280;
-  static const int kToldyaWarnLength = 260;
+  static const int kToldyaMaxLength = 120;
+  static const int kToldyaWarnLength = 110;
 
   bool showUserList = false;
   bool enableSubmitButton = false;

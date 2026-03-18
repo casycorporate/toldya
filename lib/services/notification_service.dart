@@ -87,7 +87,6 @@ class NotificationService {
       if (token != null && token.isNotEmpty) {
         // Avoid noisy duplicate logs during startup (same token can be returned multiple times).
         if (_lastSavedToken != token) {
-          debugPrint('[FCM] Device token: $token');
           cprint('FCM token: $token', event: 'FCM_TOKEN');
         }
         await _persistTokenForCurrentUser(token);

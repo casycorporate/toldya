@@ -310,7 +310,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsAndPrivacy => 'Ayarlar ve gizlilik';
 
   @override
-  String get drawerActiveBets => 'Aktif Tahminlerim';
+  String get drawerActivePredictions => 'Aktif Tahminlerim';
 
   @override
   String get drawerWeeklyLeague => 'Haftalık Lig';
@@ -319,7 +319,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get drawerSettingsAndPrivacy => 'Ayarlar ve Gizlilik';
 
   @override
-  String get drawerWalletTitle => 'Token';
+  String get drawerWalletTitle => 'Puan';
 
   @override
   String get logout => 'Çıkış';
@@ -456,27 +456,27 @@ class AppLocalizationsTr extends AppLocalizations {
   String get userUnblocked => 'Engel kaldırıldı.';
 
   @override
-  String get pleaseSelectBetAmount => 'Lütfen bahis miktarı seçin!';
+  String get pleaseSelectBetAmount => 'Lütfen tahmin puanını seçin!';
 
   @override
   String maxBetTokens(String maxVal) {
-    return 'Maksimum bahis: $maxVal token';
+    return 'Maksimum tahmin: $maxVal puan';
   }
 
   @override
   String get betOnOneSideOnly =>
-      'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.';
+      'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek tarafı (Evet veya Hayır) seçebilirsiniz.';
 
   @override
-  String get betPleaseWait => 'Bahis işlemi sürüyor, lütfen bekleyin.';
+  String get betPleaseWait => 'Tahmin işlemi sürüyor, lütfen bekleyin.';
 
   @override
   String get betLimitHint =>
-      'Maksimum bahis limiti bakiye, rütbe ve havuza göre belirlenir.';
+      'Maksimum tahmin puanı bakiye, rütbe ve toplam tahmin sayısına göre belirlenir.';
 
   @override
   String availableBalanceTokens(String pegCount) {
-    return 'Kullanılabilir bakiye: $pegCount 🪙';
+    return 'Kullanılabilir puan: $pegCount 🪙';
   }
 
   @override
@@ -486,14 +486,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get betSheetSideNo => 'Hayır';
 
   @override
-  String get betSheetSubmitYes => 'EVET\'E BAHİS YAP';
+  String get betSheetSubmitYes => 'EVETİ SEÇ';
 
   @override
-  String get betSheetSubmitNo => 'HAYIR\'A BAHİS YAP';
+  String get betSheetSubmitNo => 'HAYIRI SEÇ';
 
   @override
   String potentialReturnEstimate(String amount) {
-    return 'Olası kazanç: ~$amount 🪙';
+    return 'Olası skor: ~$amount 🪙';
   }
 
   @override
@@ -506,14 +506,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get betSheetMaxButton => 'MAKS';
 
   @override
-  String get betPlaced => 'Bahis alındı.';
+  String get betPlaced => 'Tahmin gönderildi.';
 
   @override
-  String get confirmBet => 'Bahsi onayla';
+  String get confirmBet => 'Tahmini onayla';
 
   @override
   String confirmBetMessage(String amount) {
-    return 'Bu tahmine $amount token ile bahis yapmak istediğinize emin misiniz?';
+    return 'Bu tahmine $amount puan ayırmak istediğinize emin misiniz?';
   }
 
   @override
@@ -547,7 +547,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String tokensAdded(String amount) {
-    return '+$amount token eklendi!';
+    return '+$amount puan eklendi!';
   }
 
   @override
@@ -644,7 +644,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get predictors => 'Tahminciler';
 
   @override
-  String get bettors => 'Bahisçiler';
+  String get bettors => 'Tahminciler';
 
   @override
   String get dataPreference => 'Veri tercihi';
@@ -656,7 +656,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get wifiOnly => 'Yalnızca Wi-Fi';
 
   @override
-  String get tokenInsufficient => 'Token yetersiz';
+  String get tokenInsufficient => 'Puan yetersiz';
 
   @override
   String get closedNoSelection => 'Kapandığı için seçim yapılamaz';
@@ -730,14 +730,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tokenInsufficientForVote =>
-      'Token yetersiz olduğu için seçim yapılamaz';
+      'Puan yetersiz olduğu için seçim yapılamaz';
 
   @override
-  String get betErrorGeneric => 'Bahis gönderilemedi.';
+  String get betErrorGeneric => 'Tahmin gönderilemedi.';
 
   @override
   String get betErrorUnauthenticated =>
-      'Bahis yapmak için giriş yapmanız gerekiyor.';
+      'Tahmin yapmak için giriş yapmanız gerekiyor.';
 
   @override
   String get betErrorDeadlineExceeded =>
@@ -749,7 +749,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get betErrorFailedPrecondition =>
-      'Bu tahmin için şu anda bahis yapılamıyor. Lütfen daha sonra tekrar deneyin.';
+      'Bu gönderi için şu anda tahmin yapılamıyor. Lütfen daha sonra tekrar deneyin.';
 
   @override
   String get statuPending => 'Beklemede';
@@ -845,7 +845,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get loginRequired => 'Giriş yapmanız gerekiyor.';
 
   @override
-  String get betTimeout => 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+  String get betTimeout =>
+      'Tahmin isteği zaman aşımına uğradı. Lütfen tekrar deneyin.';
 
   @override
   String get gmsUpdateMessage =>
@@ -857,14 +858,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tokenEarnTitle => 'Token Kazan';
+  String get tokenEarnTitle => 'Puan Kazan';
 
   @override
   String get watchAdTitle => 'Reklam İzle';
 
   @override
   String tokenEarnFreeSubtitle(String amount) {
-    return '$amount Token ücretsiz';
+    return '$amount puan ücretsiz';
   }
 
   @override
@@ -880,7 +881,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tryAgainTomorrow => 'Yarın tekrar dene';
 
   @override
-  String get tokenPacksTitle => 'Token Paketleri';
+  String get tokenPacksTitle => 'Puan Paketleri';
 
   @override
   String get mostPopular => 'En popüler';
@@ -1304,7 +1305,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noPredictorScoreYet => 'Henüz tahminci skoru yok';
 
   @override
-  String get noBettorScoreYet => 'Henüz bahisçi skoru yok';
+  String get noBettorScoreYet => 'Henüz tahmin skoru yok';
 
   @override
   String get followersTitle => 'Takipçiler';
@@ -1396,11 +1397,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get noBetsYet => 'Henüz bahis yok.';
+  String get noBetsYet => 'Henüz tahmin yok.';
 
   @override
   String get noBetsYetHint =>
-      'Yukarıdaki \"Evet ile bahis yap\" veya \"Hayır ile bahis yap\" butonuna tıklayarak bahis yapabilirsiniz.';
+      'Yukarıdaki \"Evet\" veya \"Hayır\" butonuna dokunarak tahmin yapabilirsiniz.';
 
   @override
   String get dailyBonusClaimed => 'Günlük bonus alındı.';
@@ -1530,7 +1531,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Trendler sekmenizde hangi konumun görüneceğini seçerek belirli bir konumda nelerin trend olduğunu görebilirsiniz.';
 
   @override
-  String get myBetsTab => 'Bahislerim';
+  String get myBetsTab => 'Tahminlerim';
 
   @override
   String get myVotesTab => 'Oy verdiklerim';
@@ -1546,16 +1547,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String balanceToken(int count) {
-    return 'Bakiye: $count Token';
+    return 'Puan: $count';
   }
 
   @override
   String dailyBonusClaim(int amount) {
-    return 'Günlük bonusu al (+$amount token)';
+    return 'Günlük bonusu al (+$amount puan)';
   }
 
   @override
-  String get tokenManagement => 'Token Yönetimi';
+  String get tokenManagement => 'Puan Yönetimi';
 
   @override
   String get emptyActivePredictions => 'Aktif tahminin yok';
@@ -1642,7 +1643,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get followingCountLabel => 'Takipler';
 
   @override
-  String get tokenLabel => 'Token';
+  String get tokenLabel => 'Puan';
 
   @override
   String get bottomNavHome => 'Ana';
@@ -1693,7 +1694,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get unfollow => 'Takipten çık';
 
   @override
-  String get betAmountLabel => 'Bahis miktarı';
+  String get betAmountLabel => 'Tahmin puanı';
 
   @override
   String amountPlayed(String amount) {
@@ -1718,13 +1719,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get betYesLabel => 'Evet ile bahis yap';
+  String get betYesLabel => 'Evet tahmini yap';
 
   @override
-  String get betNoLabel => 'Hayır ile bahis yap';
+  String get betNoLabel => 'Hayır tahmini yap';
 
   @override
-  String get recentBetsTitle => 'Son Bahisler';
+  String get recentBetsTitle => 'Son Tahminler';
 
   @override
   String get conversationInformationTitle => 'Görüşme bilgisi';
@@ -1813,13 +1814,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hideSensitiveContentTitle => 'Hassas İçerikleri Gizle';
 
   @override
-  String get aiModerationTitle => 'Yapay Zeka Moderasyonu';
-
-  @override
-  String get aiModerationSubtitle =>
-      'Gönderiler, topluluk kurallarına uygunluk için yapay zeka tarafından kontrol edilir.';
-
-  @override
   String get dataAndSystemHeader => 'Veri ve Sistem';
 
   @override
@@ -1842,7 +1836,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAccountWarning =>
-      'Bu işlem tamamlandığında tüm tokenlarınız, stash\'iniz ve geçmişiniz kalıcı olarak silinecektir.';
+      'Bu işlem tamamlandığında tüm puanlarınız, stash\'iniz ve geçmişiniz kalıcı olarak silinecektir.';
 
   @override
   String get deleteAccountCannotBeUndone => 'Bu işlem geri alınamaz.';

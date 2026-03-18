@@ -160,19 +160,11 @@ class _FeedPage extends State<FeedPage> {
           },
         );
       }
-      final List<String> _tabValues = topic.topicMap.values.toList();
-      _tabValues.insert(0, topic.gundem);
-      _tabValues.insert(1, topic.favList);
-      _tabValues.insert(2, topic.followList);
+      // Feature flag: kategori tabları şimdilik kapalı (sadece akış).
+      final List<String> _tabValues = [topic.gundem];
       final l10n = AppLocalizations.of(context)!;
       final _tabLabels = _tabValues.map((String val) {
         if (val == topic.gundem) return l10n.categoryFlow;
-        if (val == topic.favList) return l10n.categoryFavorite;
-        if (val == topic.followList) return l10n.categoryFollow;
-        if (val == 'sports') return l10n.categorySports;
-        if (val == 'economy') return l10n.categoryEconomy;
-        if (val == 'entertainment') return l10n.categoryEntertainment;
-        if (val == 'politics') return l10n.categoryPolitics;
         return val;
       }).toList();
       final feedStateForScroll = Provider.of<FeedState>(context, listen: false);

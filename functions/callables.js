@@ -326,7 +326,6 @@ function registerCallables(functions) {
       hasResolutionDateInput: !!resolutionDateInput,
     });
 
-    const allowedTopics = new Set(["spor", "eco", "fun", "politic"]);
     function parseIsoUtc(str, fieldName) {
       if (!str) return null;
       const d = new Date(str);
@@ -357,24 +356,29 @@ function registerCallables(functions) {
 
     let approveFinal = null;
     if (decision === "approve") {
-      const finalTopic = (topicInput || safeString(String(pre.topic || "")).trim()).toLowerCase();
-      const finalEndDateRaw = endDateInput || safeString(String(pre.endDate || "")).trim();
-      const finalResolutionDateRaw = resolutionDateInput || safeString(String(pre.resolutionDate || "")).trim();
+      // Topic: tüm onaylanan kayıtlar için "genel" olarak ayarlanır.
+      const finalTopic = "genel";
 
-      if (!finalTopic || !finalEndDateRaw || !finalResolutionDateRaw) {
+      // Tarih mantığı:
+      // - Kullanıcının tahmini için girdiği tarih (userEventDate) esas alınır.
+      // - endDate  = userEventDate - 1 dakika
+      // - resolutionDate = userEventDate
+      const userEventRaw =
+        resolutionDateInput ||
+        endDateInput ||
+        safeString(String(pre.resolutionDate || pre.endDate || "")).trim();
+      if (!userEventRaw) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          "MISSING_REQUIRED_FIELDS",
-          { missing: { topic: !finalTopic, endDate: !finalEndDateRaw, resolutionDate: !finalResolutionDateRaw } }
+          "MISSING_USER_EVENT_DATE",
+          { missing: { userEventDate: true } }
         );
-      }
-      if (!allowedTopics.has(finalTopic)) {
-        throw new functions.https.HttpsError("failed-precondition", "INVALID_TOPIC");
       }
 
       const now = new Date();
-      const endD = parseIsoUtc(finalEndDateRaw, "endDate");
-      const resD = parseIsoUtc(finalResolutionDateRaw, "resolutionDate");
+      const eventD = parseIsoUtc(userEventRaw, "userEventDate");
+      const resD = eventD;
+      const endD = new Date(eventD.getTime() - 60 * 1000);
       if (endD <= now) throw new functions.https.HttpsError("failed-precondition", "endDate gelecekte olmalı.");
       if (resD <= now) throw new functions.https.HttpsError("failed-precondition", "resolutionDate gelecekte olmalı.");
       if (resD <= endD) throw new functions.https.HttpsError("failed-precondition", "resolutionDate endDate'ten sonra olmalı.");

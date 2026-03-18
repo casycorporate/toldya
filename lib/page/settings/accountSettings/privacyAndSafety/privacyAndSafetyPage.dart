@@ -72,11 +72,6 @@ class PrivacyAndSaftyPage extends StatelessWidget {
           _SettingsCard(
             title: l10n.dataAndSystemHeader,
             children: <Widget>[
-              _InfoRow(
-                title: l10n.aiModerationTitle,
-                subtitle: l10n.aiModerationSubtitle,
-              ),
-              const SizedBox(height: 12),
               _DisabledSwitchRow(
                 title: l10n.locationDataTitle,
                 subtitle: l10n.featureComingSoon(l10n.locationDataTitle),

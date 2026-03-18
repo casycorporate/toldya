@@ -309,7 +309,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAndPrivacy => 'Settings and privacy';
 
   @override
-  String get drawerActiveBets => 'My Active Bets';
+  String get drawerActivePredictions => 'My Active Predictions';
 
   @override
   String get drawerWeeklyLeague => 'Weekly League';
@@ -318,7 +318,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drawerSettingsAndPrivacy => 'Settings & Privacy';
 
   @override
-  String get drawerWalletTitle => 'Token';
+  String get drawerWalletTitle => 'Points';
 
   @override
   String get logout => 'Log out';
@@ -455,27 +455,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userUnblocked => 'User unblocked.';
 
   @override
-  String get pleaseSelectBetAmount => 'Please select a bet amount!';
+  String get pleaseSelectBetAmount => 'Please select a prediction amount!';
 
   @override
   String maxBetTokens(String maxVal) {
-    return 'Maximum bet: $maxVal tokens';
+    return 'Maximum prediction: $maxVal points';
   }
 
   @override
   String get betOnOneSideOnly =>
-      'You have already bet on the other side of this prediction. You can only bet on one side (Yes or No) per prediction.';
+      'You have already picked the other side of this prediction. You can only pick one side (Yes or No) per prediction.';
 
   @override
-  String get betPleaseWait => 'A bet is in progress. Please wait.';
+  String get betPleaseWait => 'A prediction is being submitted. Please wait.';
 
   @override
   String get betLimitHint =>
-      'Your maximum bet is limited by balance, rank, and pool size.';
+      'Your maximum prediction amount is limited by balance, rank, and total predictions.';
 
   @override
   String availableBalanceTokens(String pegCount) {
-    return 'Available balance: $pegCount 🪙';
+    return 'Available points: $pegCount 🪙';
   }
 
   @override
@@ -485,14 +485,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get betSheetSideNo => 'No';
 
   @override
-  String get betSheetSubmitYes => 'BET ON YES';
+  String get betSheetSubmitYes => 'PREDICT YES';
 
   @override
-  String get betSheetSubmitNo => 'BET ON NO';
+  String get betSheetSubmitNo => 'PREDICT NO';
 
   @override
   String potentialReturnEstimate(String amount) {
-    return 'Potential return: ~$amount 🪙';
+    return 'Potential score: ~$amount 🪙';
   }
 
   @override
@@ -505,14 +505,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get betSheetMaxButton => 'MAX';
 
   @override
-  String get betPlaced => 'Bet placed.';
+  String get betPlaced => 'Prediction submitted.';
 
   @override
-  String get confirmBet => 'Confirm bet';
+  String get confirmBet => 'Confirm prediction';
 
   @override
   String confirmBetMessage(String amount) {
-    return 'Are you sure you want to bet $amount tokens on this prediction?';
+    return 'Are you sure you want to commit $amount points to this prediction?';
   }
 
   @override
@@ -546,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tokensAdded(String amount) {
-    return '+$amount tokens added!';
+    return '+$amount points added!';
   }
 
   @override
@@ -643,7 +643,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get predictors => 'Predictors';
 
   @override
-  String get bettors => 'Bettors';
+  String get bettors => 'Predictors';
 
   @override
   String get dataPreference => 'Data preference';
@@ -655,7 +655,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiOnly => 'Wi-Fi only';
 
   @override
-  String get tokenInsufficient => 'Insufficient tokens';
+  String get tokenInsufficient => 'Insufficient points';
 
   @override
   String get closedNoSelection => 'Cannot select because it is closed';
@@ -729,13 +729,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tokenInsufficientForVote =>
-      'Cannot vote due to insufficient tokens';
+      'Cannot vote due to insufficient points';
 
   @override
-  String get betErrorGeneric => 'Bet could not be placed.';
+  String get betErrorGeneric => 'Prediction could not be submitted.';
 
   @override
-  String get betErrorUnauthenticated => 'You need to sign in to place a bet.';
+  String get betErrorUnauthenticated =>
+      'You need to sign in to make a prediction.';
 
   @override
   String get betErrorDeadlineExceeded => 'Request timed out. Please try again.';
@@ -746,7 +747,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get betErrorFailedPrecondition =>
-      'You can’t place a bet on this prediction right now. Please try again later.';
+      'You can’t make a prediction on this post right now. Please try again later.';
 
   @override
   String get statuPending => 'Pending';
@@ -842,7 +843,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginRequired => 'You need to sign in.';
 
   @override
-  String get betTimeout => 'Request timed out. Please try again.';
+  String get betTimeout => 'Prediction request timed out. Please try again.';
 
   @override
   String get gmsUpdateMessage =>
@@ -854,14 +855,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tokenEarnTitle => 'Earn tokens';
+  String get tokenEarnTitle => 'Gain points';
 
   @override
   String get watchAdTitle => 'Watch ad';
 
   @override
   String tokenEarnFreeSubtitle(String amount) {
-    return '$amount free tokens';
+    return '$amount free points';
   }
 
   @override
@@ -877,7 +878,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryAgainTomorrow => 'Try again tomorrow';
 
   @override
-  String get tokenPacksTitle => 'Token packs';
+  String get tokenPacksTitle => 'Points packs';
 
   @override
   String get mostPopular => 'Most popular';
@@ -1300,7 +1301,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPredictorScoreYet => 'No predictor score yet';
 
   @override
-  String get noBettorScoreYet => 'No bettor score yet';
+  String get noBettorScoreYet => 'No prediction score yet';
 
   @override
   String get followersTitle => 'Followers';
@@ -1392,11 +1393,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noBetsYet => 'No bets yet.';
+  String get noBetsYet => 'No predictions yet.';
 
   @override
   String get noBetsYetHint =>
-      'Place a bet using the \'Bet Yes\' or \'Bet No\' buttons above.';
+      'Make a prediction using the \'Predict Yes\' or \'Predict No\' buttons above.';
 
   @override
   String get dailyBonusClaimed => 'Daily bonus claimed.';
@@ -1526,7 +1527,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose which location appears in your Trending tab to see what\'s trending in a specific place.';
 
   @override
-  String get myBetsTab => 'My bets';
+  String get myBetsTab => 'My predictions';
 
   @override
   String get myVotesTab => 'My votes';
@@ -1542,16 +1543,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String balanceToken(int count) {
-    return 'Balance: $count tokens';
+    return 'Points: $count';
   }
 
   @override
   String dailyBonusClaim(int amount) {
-    return 'Claim daily bonus (+$amount tokens)';
+    return 'Claim daily bonus (+$amount points)';
   }
 
   @override
-  String get tokenManagement => 'Token management';
+  String get tokenManagement => 'Points management';
 
   @override
   String get emptyActivePredictions => 'You have no active predictions';
@@ -1638,7 +1639,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get followingCountLabel => 'Following';
 
   @override
-  String get tokenLabel => 'Token';
+  String get tokenLabel => 'Points';
 
   @override
   String get bottomNavHome => 'Home';
@@ -1691,7 +1692,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unfollow => 'Unfollow';
 
   @override
-  String get betAmountLabel => 'Bet amount';
+  String get betAmountLabel => 'Prediction amount';
 
   @override
   String amountPlayed(String amount) {
@@ -1716,13 +1717,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get betYesLabel => 'Bet Yes';
+  String get betYesLabel => 'Predict Yes';
 
   @override
-  String get betNoLabel => 'Bet No';
+  String get betNoLabel => 'Predict No';
 
   @override
-  String get recentBetsTitle => 'Recent bets';
+  String get recentBetsTitle => 'Recent predictions';
 
   @override
   String get conversationInformationTitle => 'Conversation information';
@@ -1811,13 +1812,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideSensitiveContentTitle => 'Hide sensitive content';
 
   @override
-  String get aiModerationTitle => 'AI Moderation';
-
-  @override
-  String get aiModerationSubtitle =>
-      'Posts are checked by AI to help ensure they follow community guidelines.';
-
-  @override
   String get dataAndSystemHeader => 'Data & System';
 
   @override
@@ -1840,7 +1834,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountWarning =>
-      'Once completed, all your tokens, stash, and history will be permanently deleted.';
+      'Once completed, all your points, stash, and history will be permanently deleted.';
 
   @override
   String get deleteAccountCannotBeUndone => 'This action cannot be undone.';

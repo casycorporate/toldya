@@ -373,7 +373,7 @@ class _ToldyaBody extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
+                              Icons.pending_actions,
                               size: 14,
                               color: _statuAccent(model.statu),
                             ),
@@ -389,20 +389,6 @@ class _ToldyaBody extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (model.statu == Statu.statusRejectedByAi && (model.aiModerationReason ?? '').isNotEmpty) ...[
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            model.aiModerationReason!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
