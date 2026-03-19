@@ -73,13 +73,13 @@ class _PrivacyAndSaftyPageState extends State<PrivacyAndSaftyPage> {
               _TappableRow(
                 title: l10n.privacyPolicyRowTitle,
                 subtitle: null,
-                onTap: () => _openExternalLink('https://toldya.app/privacy'),
+                onTap: () => _openExternalLink('https://gist.github.com/casycorporate/9d02dc12f089be7c0323b31f4895c275'),
               ),
               const SizedBox(height: 12),
               _TappableRow(
                 title: l10n.userAgreementRowTitle,
                 subtitle: null,
-                onTap: () => _openExternalLink('https://toldya.app/terms'),
+                onTap: () => _openExternalLink('https://gist.github.com/casycorporate/9d02dc12f089be7c0323b31f4895c275'),
               ),
             ],
           ),

@@ -8,6 +8,7 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/Auth/signin.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
+import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
@@ -79,7 +80,13 @@ class _SignupState extends State<Signup> {
                       controller: _confirmController, isPassword: true),
                   SizedBox(height: 20),
                   _submitButton(context),
-                  SizedBox(height: fullHeight(context) * .14),
+                  SizedBox(height: 12),
+                  _divider(),
+                  GoogleLoginButton(
+                    loginCallback: widget.loginCallback,
+                    loader: loader,
+                  ),
+                  SizedBox(height: fullHeight(context) * .08),
                   _loginAccountLabel(),
                 ],
               ),
@@ -158,6 +165,44 @@ class _SignupState extends State<Signup> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    final theme = Theme.of(context);
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: <Widget>[
+          SizedBox(width: 20),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Divider(
+                thickness: 1,
+                color: theme.dividerColor,
+              ),
+            ),
+          ),
+          Text(
+            'veya',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Divider(
+                thickness: 1,
+                color: theme.dividerColor,
+              ),
+            ),
+          ),
+          SizedBox(width: 20),
+        ],
       ),
     );
   }
