@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>395990044114-fd5pdm3nskrptftnk8bjho51ol1n7fbn.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.395990044114-fd5pdm3nskrptftnk8bjho51ol1n7fbn</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>395990044114-g81e6gatj1807f7ep0uk86s9ai5rrnnv.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyB7Qkn_xTH3D7QQbvxTVVIAS8S5BIhqAH4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>395990044114</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>cemaydinege-gmail.com</string>
+	<key>PROJECT_ID</key>
+	<string>casy-570c4</string>
+	<key>STORAGE_BUCKET</key>
+	<string>casy-570c4.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:395990044114:ios:b032ed712dc869cef64c0b</string>
+	<key>DATABASE_URL</key>
+	<string>https://casy-570c4-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
