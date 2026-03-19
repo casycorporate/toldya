@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>395990044114-fd5pdm3nskrptftnk8bjho51ol1n7fbn.apps.googleusercontent.com</string>
+	<string>395990044114-meuuvsebcsapr8iupii33ao4f05i8bih.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.395990044114-fd5pdm3nskrptftnk8bjho51ol1n7fbn</string>
+	<string>com.googleusercontent.apps.395990044114-meuuvsebcsapr8iupii33ao4f05i8bih</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>395990044114-g81e6gatj1807f7ep0uk86s9ai5rrnnv.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>cemaydinege-gmail.com</string>
+	<string>com.casycorporate.toldya</string>
 	<key>PROJECT_ID</key>
 	<string>casy-570c4</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,7 +31,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:395990044114:ios:b032ed712dc869cef64c0b</string>
+	<string>1:395990044114:ios:dc208d826583fbfcf64c0b</string>
 	<key>DATABASE_URL</key>
 	<string>https://casy-570c4-default-rtdb.firebaseio.com</string>
 </dict>
