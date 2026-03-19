@@ -21,7 +21,15 @@ class SettingsAndPrivacyPage extends StatelessWidget {
       backgroundColor: const Color(0xFF1A1F2E),
       appBar: CustomAppBar(
         isBackButton: true,
-        title: customTitleText(l10n.settingsAndPrivacy),
+        title: Text(
+          l10n.settingsAndPrivacy,
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'HelveticaNeue',
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(MockupDesign.screenPadding),

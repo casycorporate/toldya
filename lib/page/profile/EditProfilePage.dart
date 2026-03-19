@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
@@ -62,7 +63,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _body() {
     var authstate = Provider.of<AuthState>(context, listen: false);
-    final theme = Theme.of(context);
     return Container(
       color: MockupDesign.background,
       child: Column(
@@ -82,30 +82,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           SizedBox(height: spacing16),
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: MockupDesign.screenPadding,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: MockupDesign.card,
-                borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
-                border: Border.all(color: MockupDesign.cardBorder),
-                boxShadow: MockupDesign.cardShadow,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _entry(AppLocalizations.of(context)!.name, controller: _name),
-                  _entry(AppLocalizations.of(context)!.usernameLabel, controller: _userName, hint: AppLocalizations.of(context)!.exampleUsername),
-                  _entry(AppLocalizations.of(context)!.bio, controller: _bio, maxLine: 3),
-                  _entry(AppLocalizations.of(context)!.location, controller: _location),
-                  InkWell(
-                    onTap: showCalender,
-                    child: _entry(AppLocalizations.of(context)!.birthDate, isenable: false, controller: _dob),
-                  ),
-                  SizedBox(height: spacing8),
-                ],
-              ),
+            padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _entry(AppLocalizations.of(context)!.name, controller: _name),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.usernameLabel,
+                  controller: _userName,
+                  hint: AppLocalizations.of(context)!.exampleUsername,
+                ),
+                const SizedBox(height: 16),
+                _entry(AppLocalizations.of(context)!.bio, controller: _bio, maxLine: 3),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.location,
+                  controller: _location,
+                  suffixIcon: Icons.location_on_outlined,
+                ),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.birthDate,
+                  controller: _dob,
+                  readOnly: true,
+                  onTap: showCalender,
+                  suffixIcon: Icons.calendar_today_outlined,
+                ),
+              ],
             ),
           ),
           SizedBox(height: spacing16),
@@ -122,7 +126,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       height: 90,
       width: 90,
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.surface, width: 5),
+        border: Border.all(color: const Color(0xFF1A1F2E), width: 4),
         shape: BoxShape.circle,
       ),
       child: Stack(
@@ -136,17 +140,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
               height: 80,
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.scrim.withOpacity(0.5),
-            ),
-            child: Center(
-              child: IconButton(
-                onPressed: _showAvatarPicker,
-                icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onSurface),
-              ),
-            ),
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: _glassCameraButton(onTap: _showAvatarPicker),
           ),
         ],
       ),
@@ -239,13 +236,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
               color: Theme.of(context).colorScheme.scrim.withOpacity(0.5),
             ),
           ),
-          Center(
-            child: IconButton(
-              onPressed: _showBannerPicker,
-              icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onSurface),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: _glassCameraButton(onTap: _showBannerPicker),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _glassCameraButton({required VoidCallback onTap}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.35),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Icon(
+                Icons.camera_alt,
+                size: 18,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -322,35 +349,61 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _entry(String title,
       {required TextEditingController controller,
       int maxLine = 1,
-      bool isenable = true,
-      String? hint}) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          customText(title,
-              context: context,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
-          TextField(
-            enabled: isenable,
-            controller: controller,
-            maxLines: maxLine,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 16,
+      bool readOnly = false,
+      String? hint,
+      IconData? suffixIcon,
+      VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        customText(
+          title,
+          context: context,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          readOnly: readOnly,
+          onTap: onTap,
+          controller: controller,
+          maxLines: maxLine,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 16,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.05),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
             ),
-          )
-        ],
-      ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            suffixIcon: suffixIcon == null
+                ? null
+                : Icon(
+                    suffixIcon,
+                    color: Colors.white.withOpacity(0.5),
+                    size: 20,
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -476,37 +529,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const saveColor = Color(0xFF2ED573);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
-        iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        title: customTitleText(AppLocalizations.of(context)!.editProfile),
-        actions: <Widget>[
-          InkWell(
-            onTap: _isSaving ? null : _submitButton,
-            child: Center(
-              child: _isSaving
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : Text(
-                      AppLocalizations.of(context)!.save,
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          l10n.editProfile,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
           ),
-          SizedBox(width: 20),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: _isSaving ? null : _submitButton,
+            style: TextButton.styleFrom(
+              foregroundColor: saveColor,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
+            child: _isSaving
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: saveColor,
+                    ),
+                  )
+                : Text(
+                    l10n.save,
+                    style: const TextStyle(color: saveColor, fontWeight: FontWeight.bold),
+                  ),
+          ),
+          const SizedBox(width: 12),
         ],
       ),
       body: SingleChildScrollView(

@@ -377,48 +377,70 @@ class _SidebarMenuState extends State<SidebarMenu> {
     );
   }
 
-  Widget _logoutFooter() {
-    final l10n = AppLocalizations.of(context)!;
-    final neonRed = AppNeon.red;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            _logOut();
-          },
-          borderRadius: BorderRadius.circular(16),
-          splashColor: neonRed.withOpacity(0.18),
-          child: Container(
-            decoration: BoxDecoration(
-              color: neonRed.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: neonRed.withOpacity(0.45), width: 1),
-            ),
-            child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-              minVerticalPadding: 0,
-              leading: Icon(Icons.logout_rounded, size: 22, color: neonRed),
-              title: Text(
-                l10n.logout,
+  Widget _systemFooterItem(
+    String title, {
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+    bool compact = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        splashColor: color.withOpacity(0.12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+            children: [
+              Icon(icon, size: 22, color: color),
+              const SizedBox(width: 12),
+              Text(
+                title,
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: neonRed,
+                  fontWeight: FontWeight.w700,
+                  color: color,
                 ),
               ),
-              trailing: Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: neonRed.withOpacity(0.9),
-              ),
-              tileColor: Colors.transparent,
-            ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _systemFooter() {
+    final l10n = AppLocalizations.of(context)!;
+    const logoutRed = Color(0xFFFF4757);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _systemFooterItem(
+            l10n.drawerSettingsAndPrivacy,
+            icon: Icons.settings_outlined,
+            color: AppNeon.blue,
+            onTap: () => _navigateTo('SettingsAndPrivacyPage'),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _systemFooterItem(
+              l10n.logout,
+              icon: Icons.logout_rounded,
+              color: logoutRed,
+              compact: true,
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                _logOut();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -473,16 +495,6 @@ class _SidebarMenuState extends State<SidebarMenu> {
                                 icon: Icons.emoji_events_outlined,
                                 onPressed: () => _navigateTo('LeaderboardPage'),
                               ),
-                              _menuListRowButton(
-                                l10n.drawerSettingsAndPrivacy,
-                                icon: Icons.settings_outlined,
-                                onPressed: () => _navigateTo('SettingsAndPrivacyPage'),
-                              ),
-                              _menuListRowButton(
-                                l10n.profile,
-                                icon: Icons.person_outline,
-                                onPressed: () => _navigateTo('profile/${authState.userId}'),
-                              ),
                               FutureBuilder<bool>(
                                 // Force refresh: admin bayrağı sonradan verilse bile menü güncellensin.
                                 future: authState.isAdminUser(forceRefresh: true),
@@ -501,7 +513,8 @@ class _SidebarMenuState extends State<SidebarMenu> {
                         )
                       else
                         const Expanded(child: SizedBox.shrink()),
-                      if (isSignedIn) _logoutFooter(),
+                      if (isSignedIn) const SizedBox(height: 32),
+                      if (isSignedIn) _systemFooter(),
                     ],
                   ),
                 ),

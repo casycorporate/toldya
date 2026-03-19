@@ -5,9 +5,32 @@ import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/settings/widgets/settingsAppbar.dart';
 import 'package:toldya/state/authState.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class PrivacyAndSaftyPage extends StatelessWidget {
+class PrivacyAndSaftyPage extends StatefulWidget {
   const PrivacyAndSaftyPage({super.key});
+
+  @override
+  State<PrivacyAndSaftyPage> createState() => _PrivacyAndSaftyPageState();
+}
+
+class _PrivacyAndSaftyPageState extends State<PrivacyAndSaftyPage> {
+  bool _hideSensitive = false;
+
+  Future<void> _openExternalLink(String url) async {
+    final l10n = AppLocalizations.of(context)!;
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (launched) return;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF3B1C1C),
+        content: Text(l10n.errorGeneric),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,27 +49,6 @@ class PrivacyAndSaftyPage extends StatelessWidget {
         padding: const EdgeInsets.all(MockupDesign.screenPadding),
         children: <Widget>[
           _SettingsCard(
-            title: l10n.interactionAndSocialHeader,
-            children: <Widget>[
-              _DisabledDropdownRow(
-                title: l10n.commentPermissionTitle,
-                subtitle: l10n.featureComingSoon(l10n.commentPermissionTitle),
-                valueText: l10n.commentPermissionNone,
-                items: <String>[
-                  l10n.commentPermissionEveryone,
-                  l10n.commentPermissionFollowed,
-                  l10n.commentPermissionNone,
-                ],
-              ),
-              const SizedBox(height: 12),
-              _DisabledSwitchRow(
-                title: l10n.mentionPermissionTitle,
-                subtitle: l10n.featureComingSoon(l10n.mentionPermissionTitle),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SettingsCard(
             title: l10n.contentModerationHeader,
             children: <Widget>[
               _TappableRow(
@@ -57,24 +59,10 @@ class PrivacyAndSaftyPage extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 12),
-              _DisabledTappableRow(
-                title: l10n.mutedWordsTitle,
-                subtitle: l10n.featureComingSoon(l10n.mutedWordsTitle),
-              ),
-              const SizedBox(height: 12),
-              _DisabledSwitchRow(
+              _SwitchRow(
                 title: l10n.hideSensitiveContentTitle,
-                subtitle: l10n.featureComingSoon(l10n.hideSensitiveContentTitle),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            title: l10n.dataAndSystemHeader,
-            children: <Widget>[
-              _DisabledSwitchRow(
-                title: l10n.locationDataTitle,
-                subtitle: l10n.featureComingSoon(l10n.locationDataTitle),
+                value: _hideSensitive,
+                onChanged: (value) => setState(() => _hideSensitive = value),
               ),
             ],
           ),
@@ -82,14 +70,16 @@ class PrivacyAndSaftyPage extends StatelessWidget {
           _SettingsCard(
             title: l10n.legalHeader,
             children: <Widget>[
-              _DisabledTappableRow(
+              _TappableRow(
                 title: l10n.privacyPolicyRowTitle,
-                subtitle: l10n.legalUrlMissingSubtitle,
+                subtitle: null,
+                onTap: () => _openExternalLink('https://toldya.app/privacy'),
               ),
               const SizedBox(height: 12),
-              _DisabledTappableRow(
+              _TappableRow(
                 title: l10n.userAgreementRowTitle,
-                subtitle: l10n.legalUrlMissingSubtitle,
+                subtitle: null,
+                onTap: () => _openExternalLink('https://toldya.app/terms'),
               ),
             ],
           ),
@@ -311,6 +301,45 @@ class _InfoRow extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchRow({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: MockupDesign.textPrimary,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppNeon.green,
+            activeTrackColor: AppNeon.green.withOpacity(0.25),
           ),
         ],
       ),
