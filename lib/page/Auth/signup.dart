@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/model/user.dart';
 import 'package:toldya/page/Auth/signin.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
+import 'package:toldya/page/Auth/widget/appleLoginButton.dart';
 import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -86,6 +88,13 @@ class _SignupState extends State<Signup> {
                     loginCallback: widget.loginCallback,
                     loader: loader,
                   ),
+                  if (Platform.isIOS) ...[
+                    SizedBox(height: 12),
+                    AppleLoginButton(
+                      loginCallback: widget.loginCallback,
+                      loader: loader,
+                    ),
+                  ],
                   SizedBox(height: fullHeight(context) * .08),
                   _loginAccountLabel(),
                 ],

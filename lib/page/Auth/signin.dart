@@ -7,6 +7,7 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/signup.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
 import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
+import 'package:toldya/page/Auth/widget/appleLoginButton.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
@@ -85,13 +86,11 @@ class _SignInState extends State<SignIn> {
                         loader: loader,
                       ),
                       Platform.isIOS ? _divider() :SizedBox(),
-                      // Platform.isIOS ? SignInWithAppleButton(text: "Apple ile Bağlan",
-                      //   style: SignInWithAppleButtonStyle.white,
-                      //   iconAlignment: IconAlignment.center,
-                      //   onPressed: () {
-                      //     context.read<AuthState>().signInWithApple();
-                      //   },
-                      // ) : SizedBox(),
+                      if (Platform.isIOS)
+                        AppleLoginButton(
+                          loginCallback: widget.loginCallback,
+                          loader: loader,
+                        ),
                       SizedBox(height: fullHeight(context) * .055),
                       _createAccountLabel(),
                     ],

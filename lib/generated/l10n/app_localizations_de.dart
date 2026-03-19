@@ -1342,6 +1342,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get googleSignInButton => 'Mit Google fortfahren';
 
   @override
+  String get appleSignInFailed => 'Apple‑Anmeldung fehlgeschlagen.';
+
+  @override
+  String get appleSignInNotConfigured =>
+      'Apple‑Anmeldung ist nicht konfiguriert. Bitte aktiviere den Apple‑Anbieter in Firebase Console.';
+
+  @override
+  String get appleSignInButton => 'Mit Apple fortfahren';
+
+  @override
   String get adminFilterLive => 'Laufend';
 
   @override

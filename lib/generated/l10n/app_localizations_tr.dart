@@ -1336,6 +1336,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get googleSignInButton => 'Google ile Bağlan';
 
   @override
+  String get appleSignInFailed => 'Apple ile giriş yapılamadı.';
+
+  @override
+  String get appleSignInNotConfigured =>
+      'Apple girişi yapılandırılmamış. Firebase Console\'da Apple sağlayıcısını etkinleştirin.';
+
+  @override
+  String get appleSignInButton => 'Apple ile Bağlan';
+
+  @override
   String get adminFilterLive => 'Devam eden';
 
   @override

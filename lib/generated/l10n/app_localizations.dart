@@ -2548,6 +2548,24 @@ abstract class AppLocalizations {
   /// **'Google ile Bağlan'**
   String get googleSignInButton;
 
+  /// No description provided for @appleSignInFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Apple ile giriş yapılamadı.'**
+  String get appleSignInFailed;
+
+  /// No description provided for @appleSignInNotConfigured.
+  ///
+  /// In tr, this message translates to:
+  /// **'Apple girişi yapılandırılmamış. Firebase Console\'da Apple sağlayıcısını etkinleştirin.'**
+  String get appleSignInNotConfigured;
+
+  /// No description provided for @appleSignInButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Apple ile Bağlan'**
+  String get appleSignInButton;
+
   /// No description provided for @adminFilterLive.
   ///
   /// In tr, this message translates to:

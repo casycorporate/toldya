@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/network_utils.dart';
@@ -19,7 +20,6 @@ import 'package:toldya/services/notification_service.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path/path.dart' as Path;
-// import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'appState.dart';
 import 'package:firebase_database/firebase_database.dart' as dabase;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -294,6 +294,98 @@ class AuthState extends AppState {
       createUser(model, newUser: true);
     } else {
       cprint('Last login at: ${user.metadata.lastSignInTime}');
+    }
+  }
+
+  /// Create user profile from Apple sign-in.
+  Future<void> createUserFromAppleSignIn(
+    User user,
+    AuthorizationCredentialAppleID appleCredential,
+  ) async {
+    final displayName = <String?>[
+      appleCredential.givenName,
+      appleCredential.familyName,
+    ].whereType<String>().where((e) => e.trim().isNotEmpty).join(' ').trim();
+
+    final userEmail = appleCredential.email ?? user.email ?? '';
+
+    var diff = DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
+    if (diff < const Duration(seconds: 15)) {
+      // Ensure firebase profile fields are populated for later use.
+      if (displayName.isNotEmpty) {
+        await user.updateProfile(displayName: displayName);
+      }
+
+      final model = UserModel(
+        bio: 'Edit profile to update bio',
+        dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3).toString(),
+        location: 'Somewhere in universe',
+        profilePic: null,
+        displayName: displayName.isNotEmpty ? displayName : (user.displayName ?? ''),
+        email: userEmail,
+        key: user.uid,
+        userId: user.uid,
+        contact: null,
+        isVerified: false,
+        pegCount: AppIcon.pegCount,
+        stashCount: 0,
+        xp: 0,
+        rank: AppIcon.defaultRank,
+        predictorScore: 0,
+        role: Role.defaultRole,
+      );
+      createUser(model, newUser: true);
+      kAnalytics.logSignUp(signUpMethod: 'apple_sign_up');
+    } else {
+      cprint('Last login at: ${user.metadata.lastSignInTime}', event: 'apple_login');
+    }
+  }
+
+  /// Create user from `Apple sign-in`.
+  Future<User> handleAppleSignIn() async {
+    try {
+      kAnalytics.logLogin(loginMethod: 'apple_login');
+
+      final rawNonce = generateNonce();
+      final nonce = sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      if (appleCredential.identityToken == null) {
+        throw Exception('Apple identityToken is null');
+      }
+
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      user = (await _firebaseAuth.signInWithCredential(oauthCredential)).user;
+      authStatus = AuthStatus.LOGGED_IN;
+      userId = user?.uid ?? '';
+
+      if (user != null) {
+        await createUserFromAppleSignIn(user!, appleCredential);
+      }
+
+      notifyListeners();
+      return user!;
+    } on PlatformException catch (error) {
+      user = null;
+      authStatus = AuthStatus.NOT_LOGGED_IN;
+      cprint(error, errorIn: 'handleAppleSignIn');
+      rethrow;
+    } catch (error) {
+      user = null;
+      authStatus = AuthStatus.NOT_LOGGED_IN;
+      cprint(error, errorIn: 'handleAppleSignIn');
+      rethrow;
     }
   }
 
@@ -806,50 +898,4 @@ class AuthState extends AppState {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
-
-  // Future<User> signInWithApple() async {
-  //   // To prevent replay attacks with the credential returned from Apple, we
-  //   // include a nonce in the credential request. When signing in in with
-  //   // Firebase, the nonce in the id token returned by Apple, is expected to
-  //   // match the sha256 hash of `rawNonce`.
-  //   final rawNonce = generateNonce();
-  //   final nonce = sha256ofString(rawNonce);
-  //
-  //   try {
-  //     // Request credential for the currently signed in Apple account.
-  //     final appleCredential = await SignInWithApple.getAppleIDCredential(
-  //       scopes: [
-  //         AppleIDAuthorizationScopes.email,
-  //         AppleIDAuthorizationScopes.fullName,
-  //       ],
-  //       nonce: nonce,
-  //     );
-  //
-  //     print(appleCredential.authorizationCode);
-  //
-  //     // Create an `OAuthCredential` from the credential returned by Apple.
-  //     final oauthCredential = OAuthProvider("apple.com").credential(
-  //       idToken: appleCredential.identityToken,
-  //       rawNonce: rawNonce,
-  //     );
-  //
-  //     // Sign in the user with Firebase. If the nonce we generated earlier does
-  //     // not match the nonce in `appleCredential.identityToken`, sign in will fail.
-  //     final authResult =
-  //     await _firebaseAuth.signInWithCredential(oauthCredential);
-  //
-  //     final displayName =
-  //         '${appleCredential.givenName} ${appleCredential.familyName}';
-  //     final userEmail = '${appleCredential.email}';
-  //
-  //     final firebaseUser = authResult.user;
-  //     print(displayName);
-  //     await firebaseUser.updateProfile(displayName: displayName);
-  //     await firebaseUser.updateEmail(userEmail);
-  //
-  //     return firebaseUser;
-  //   } catch (exception) {
-  //     print(exception);
-  //   }
-  // }
 }
