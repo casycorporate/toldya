@@ -124,7 +124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminQuickFixDesc =>
-      'Fix records stuck in statu=1 with missing/invalid date fields. Set dates and optionally publish to move them into the normal lock → oracle → distribution lifecycle.';
+      'Fix records stuck in statu=1 with missing or invalid endDate. Set the end time and optionally publish to continue with lock and distribution.';
 
   @override
   String adminQuickFixCount(String n) {
@@ -142,14 +142,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminQuickFixEndDateLabel => 'End date';
 
   @override
-  String get adminQuickFixResolutionDateLabel => 'Resolution date';
-
-  @override
   String get adminQuickFixAutofillEndNowPlus => 'EndDate = now + 5 min';
 
   @override
-  String get adminQuickFixAutofillResolutionPlus1h =>
-      'ResolutionDate = endDate + 1h';
+  String get adminQuickFixAutofillEndPlus1h => 'EndDate = now + 1 hour';
 
   @override
   String get adminQuickFixSetOnly => 'Set only';
@@ -164,23 +160,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminQuickFixValidationEndRequired => 'EndDate is required.';
 
   @override
-  String get adminQuickFixValidationResolutionRequired =>
-      'ResolutionDate is required.';
-
-  @override
-  String get adminQuickFixValidationResolutionAfterEnd =>
-      'ResolutionDate must be after EndDate.';
-
-  @override
-  String get adminQuickFixValidationMin1h =>
-      'ResolutionDate must be at least 1 hour after EndDate.';
-
-  @override
   String get adminQuickFixSuccess => 'Record updated.';
 
   @override
   String get adminQuickFixWarningPublish =>
-      'This will publish the prediction and it will continue automatically via lock/oracle jobs.';
+      'This publishes the prediction; lock and result/distribution run at the scheduled times.';
 
   @override
   String adminQuickFixCreatedAt(String t) {
@@ -201,12 +185,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminQuickFixChipEndPassed => 'endDate: passed';
-
-  @override
-  String get adminQuickFixChipResMissing => 'resolutionDate: missing';
-
-  @override
-  String get adminQuickFixChipResInvalid => 'resolutionDate: invalid';
 
   @override
   String get adminQuickFixChipTopicMissing => 'topic: missing';
@@ -267,24 +245,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminModerationEndDateLabel => 'Close time';
 
   @override
-  String get adminModerationResolutionDateLabel => 'Resolution time';
-
-  @override
-  String get adminModerationOracleSourceOptional => 'Oracle source (optional)';
-
-  @override
-  String get adminModerationOracleApiUrlOptional => 'Oracle API URL (optional)';
-
-  @override
   String get adminModerationCollateralOptional => 'Collateral (optional)';
 
   @override
   String get adminModerationInvalidForm =>
       'Please fill in the required fields.';
-
-  @override
-  String get adminModerationDateRule =>
-      'Resolution time must be at least 1 hour after close time.';
 
   @override
   String get adminModerationConflictRetry =>
@@ -301,9 +266,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminModerationMetaTopic => 'Topic';
-
-  @override
-  String get adminModerationMetaOracleApiUrl => 'Oracle URL';
 
   @override
   String get settings => 'Settings';
@@ -407,6 +369,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get postUnderReview =>
       'Your post is under review. It will appear in the feed when approved.';
+
+  @override
+  String get composeToldyaReviewPending => 'Awaiting review.';
+
+  @override
+  String get composeToldyaShare => 'Share';
+
+  @override
+  String get composeToldyaHint => 'Write your prediction';
+
+  @override
+  String get composeToldyaPickCustomDate => 'Enter custom date';
+
+  @override
+  String get composeToldyaDateSectionTitle => 'Choose date';
 
   @override
   String get commentAdded => 'Your comment was added.';
@@ -678,13 +655,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editProfile => 'Edit profile';
 
   @override
-  String get challengeLabel => 'Challenge: ';
-
-  @override
   String get selectUser => 'Select user';
-
-  @override
-  String get challengePickTitle => 'Challenge: Select user';
 
   @override
   String get followingListEmpty =>
@@ -765,10 +736,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statuPending => 'Pending';
 
   @override
-  String get statuUnderReview => 'Under review';
+  String get statuUnderReview => 'Admin review';
 
   @override
-  String get statuRejectedByAi => 'Rejected';
+  String get statuRejectedByAdmin => 'Rejected';
 
   @override
   String gmsError(String message) {
@@ -1369,10 +1340,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminFilterCompleted => 'Completed';
 
   @override
-  String get adminFilterPendingAiReview => 'In AI review';
+  String get adminFilterPendingAdminReview => 'In admin review';
 
   @override
-  String get adminFilterRejectedByAi => 'Rejected by AI';
+  String get adminFilterRejectedByAdmin => 'Rejected by admin';
 
   @override
   String xpProgressLabel(int xp, int max) {
@@ -1549,10 +1520,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose which location appears in your Trending tab to see what\'s trending in a specific place.';
 
   @override
-  String get myStakesTab => 'My predictions';
+  String get profileTabActiveToldyas => 'My active Toldyas';
 
   @override
-  String get myVotesTab => 'My votes';
+  String get profileTabPastToldyas => 'Past Toldyas';
+
+  @override
+  String get profileTabMyCreations => 'My creations';
+
+  @override
+  String get profileTabBalance => 'Balance';
+
+  @override
+  String get emptyPastToldyasParticipation => 'No past Toldyas yet';
+
+  @override
+  String get profileBalancePrivate =>
+      'Balance is only visible on your own profile.';
 
   @override
   String get defaultUserHandle => '@user';

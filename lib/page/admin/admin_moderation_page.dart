@@ -8,7 +8,7 @@ import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
 
-enum _AdminSegment { moderation, resolve }
+enum _AdminSegment { moderation, resolve, quickFix }
 
 class AdminModerationPage extends StatefulWidget {
   const AdminModerationPage({super.key});
@@ -21,7 +21,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
   bool _busy = false;
   _AdminSegment _segment = _AdminSegment.moderation;
 
-  bool _busyPreviewOracle = false;
+  bool _busyPreviewLocked = false;
   bool _busyPreviewQuickFix = false;
 
   // Resolve (Sonuçlandır) lazy pagination
@@ -34,7 +34,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
   String? _jobInlineError;
   String? _jobInlineSuccess;
 
-  List<_JobCandidate> _oracleCandidates = const [];
+  List<_JobCandidate> _lockedCandidates = const [];
   List<_QuickFixCandidate> _quickFixCandidates = const [];
   int _quickFixShowCount = 50;
   String _quickFixSearch = '';
@@ -74,9 +74,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     String? reason,
     String? topic,
     String? endDate,
-    String? resolutionDate,
-    String? oracleSource,
-    String? oracleApiUrl,
     num? collateralAmount,
   }) async {
     if (_busy) return (ok: false, code: 'busy', message: null);
@@ -89,9 +86,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
         if (reason != null) 'reason': reason,
         if (topic != null) 'topic': topic,
         if (endDate != null) 'endDate': endDate,
-        if (resolutionDate != null) 'resolutionDate': resolutionDate,
-        if (oracleSource != null) 'oracleSource': oracleSource,
-        if (oracleApiUrl != null) 'oracleApiUrl': oracleApiUrl,
         if (collateralAmount != null) 'collateralAmount': collateralAmount,
       };
 
@@ -300,7 +294,9 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
         title: Text(
           _segment == _AdminSegment.moderation
               ? l10n.adminModeration
-              : l10n.adminJobsTitle,
+              : _segment == _AdminSegment.resolve
+                  ? l10n.adminJobsTitle
+                  : l10n.adminQuickFixTitle,
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -320,6 +316,11 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                   value: _AdminSegment.resolve,
                   label: Text(l10n.adminSegmentResolve),
                   icon: const Icon(Icons.fact_check_rounded),
+                ),
+                ButtonSegment<_AdminSegment>(
+                  value: _AdminSegment.quickFix,
+                  label: Text(l10n.adminSegmentQuickFix),
+                  icon: const Icon(Icons.build_circle_outlined),
                 ),
               ],
               selected: <_AdminSegment>{_segment},
@@ -354,6 +355,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                   child: _moderationPanel(l10n: l10n, db: db),
                 ),
                 _resolvePanel(l10n: l10n),
+                _quickFixPanel(l10n: l10n),
               ],
             ),
           ),
@@ -411,7 +413,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
             final userId = m['userId']?.toString() ?? '';
             final createdAt = m['createdAt']?.toString() ?? '';
             final topic = (m['topic']?.toString() ?? '').trim();
-            final oracleApiUrl = (m['oracleApiUrl']?.toString() ?? '').trim();
             return Container(
               decoration: BoxDecoration(
                 color: _surface,
@@ -443,7 +444,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                         if (userId.isNotEmpty) _metaChip('${l10n.adminModerationMetaUser}: $userId'),
                         if (createdAt.isNotEmpty) _metaChip('${l10n.adminModerationMetaCreatedAt}: ${_fmtShort(createdAt)}'),
                         if (topic.isNotEmpty) _metaChip('${l10n.adminModerationMetaTopic}: $topic'),
-                        if (oracleApiUrl.isNotEmpty) _metaChip('${l10n.adminModerationMetaOracleApiUrl}: $oracleApiUrl'),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -508,7 +508,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
       final did = (distributed is num) ? distributed.toInt() : int.tryParse(distributed?.toString() ?? '') ?? 0;
 
       setState(() {
-        _oracleCandidates = _oracleCandidates.where((c) => c.id != toldyaId).toList(growable: false);
+        _lockedCandidates = _lockedCandidates.where((c) => c.id != toldyaId).toList(growable: false);
         _manualResolveSelection.remove(toldyaId);
         _jobInlineSuccess = did > 0 ? l10n.adminDistributeManualSuccess : l10n.adminDistributeManualNoop;
       });
@@ -521,32 +521,31 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     }
   }
 
-  Future<void> _previewOracleCandidates(AppLocalizations l10n) async {
-    if (_busyPreviewOracle) return;
+  Future<void> _previewLockedCandidates(AppLocalizations l10n) async {
+    if (_busyPreviewLocked) return;
     if (_resolveInitialLoaded) return;
 
     setState(() {
       _jobInlineError = null;
       _jobInlineSuccess = null;
-      _oracleCandidates = const [];
+      _lockedCandidates = const [];
       _resolveLastKey = null;
       _resolveHasMore = true;
       _resolveVisibleCount = 15;
       _resolveInitialLoaded = true;
     });
 
-    await _loadMoreOracleCandidates(l10n);
+    await _loadMoreLockedCandidates(l10n);
   }
 
-  Future<void> _loadMoreOracleCandidates(AppLocalizations l10n) async {
-    if (_busyPreviewOracle) return;
+  Future<void> _loadMoreLockedCandidates(AppLocalizations l10n) async {
+    if (_busyPreviewLocked) return;
     if (!_resolveHasMore) return;
 
-    final prevLen = _oracleCandidates.length;
+    final prevLen = _lockedCandidates.length;
     setState(() {
-      _busyPreviewOracle = true;
+      _busyPreviewLocked = true;
       _jobInlineError = null;
-      // keep inline success for a short time
     });
 
     try {
@@ -571,49 +570,46 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
         final statu = v['statu'];
         if (!(statu == 5 || statu == 1 || statu == '5' || statu == '1')) continue;
 
-        // feedResult should be null/missing to be eligible
         if (v['feedResult'] != null) continue;
 
-        final resIso = (v['resolutionDate']?.toString() ?? '').trim();
-        if (resIso.isEmpty) continue;
+        final endIso = (v['endDate']?.toString() ?? '').trim();
+        if (endIso.isEmpty) continue;
 
-        DateTime resAt;
+        DateTime endAt;
         try {
-          resAt = DateTime.parse(resIso).toUtc();
+          endAt = DateTime.parse(endIso).toUtc();
         } catch (_) {
           continue;
         }
-        if (!resAt.isBefore(now)) continue;
+        if (!endAt.isBefore(now)) continue;
 
         final desc = (v['description']?.toString() ?? '').trim();
-        final oracleApiUrl = (v['oracleApiUrl']?.toString() ?? '').trim();
 
         out.add(_JobCandidate(
           id: child.key ?? '',
           description: desc,
-          resolutionDateIso: resIso,
+          endDateIso: endIso,
           statu: statu.toString(),
-          hasOracleApiUrl: oracleApiUrl.isNotEmpty,
         ));
       }
 
       if (!mounted) return;
       setState(() {
-        _oracleCandidates = [..._oracleCandidates, ...out];
-        _oracleCandidates.sort((a, b) => a.resolutionDateIso.compareTo(b.resolutionDateIso));
+        _lockedCandidates = [..._lockedCandidates, ...out];
+        _lockedCandidates.sort((a, b) => a.endDateIso.compareTo(b.endDateIso));
         _resolveLastKey = lastKey;
         if (fetchedCount < _resolveFetchChunkSize) {
           _resolveHasMore = false;
         }
         final shouldExpand = prevLen > 0 && _resolveVisibleCount >= prevLen;
         _resolveVisibleCount = shouldExpand
-            ? math.min(_resolveVisibleCount + 15, _oracleCandidates.length)
-            : _resolveVisibleCount.clamp(0, _oracleCandidates.length);
+            ? math.min(_resolveVisibleCount + 15, _lockedCandidates.length)
+            : _resolveVisibleCount.clamp(0, _lockedCandidates.length);
       });
     } catch (e) {
       setState(() => _jobInlineError = l10n.adminJobErrorWithMessage(e.toString()));
     } finally {
-      if (mounted) setState(() => _busyPreviewOracle = false);
+      if (mounted) setState(() => _busyPreviewLocked = false);
     }
   }
 
@@ -657,12 +653,10 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
           final statu = v['statu'];
           if (!(statu == 1 || statu == '1')) return;
 
-          final resIso = (v['resolutionDate']?.toString() ?? '').trim();
-          final resOk = _isValidIsoUtc(resIso);
-          if (resOk) return; // not broken
-
           final endIso = (v['endDate']?.toString() ?? '').trim();
           final endOk = _isValidIsoUtc(endIso);
+          if (endOk) return;
+
           final endPassed = endOk ? _isEndDatePassedUtc(endIso) : false;
 
           final createdAt = (v['createdAt']?.toString() ?? '').trim();
@@ -674,10 +668,8 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
             description: desc,
             createdAtIso: createdAt,
             endDateIso: endIso,
-            resolutionDateIso: resIso,
             endDateOk: endOk,
             endDatePassed: endPassed,
-            resolutionDateOk: resOk,
             topicMissing: topic.isEmpty,
           ));
         });
@@ -717,20 +709,14 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
 
   Future<void> _openQuickFixSheet({required AppLocalizations l10n, required _QuickFixCandidate c}) async {
     DateTime? endDate = _parseIso(c.endDateIso)?.toUtc();
-    DateTime? resolutionDate = _parseIso(c.resolutionDateIso)?.toUtc();
     String? inlineError;
     bool busy = false;
     bool publishConfirm = false;
 
     void setErr(StateSetter setModal, String? v) => setModal(() => inlineError = v);
 
-    String? validateDates({required bool requireEnd, required bool requireRes}) {
-      if (requireEnd && endDate == null) return l10n.adminQuickFixValidationEndRequired;
-      if (requireRes && resolutionDate == null) return l10n.adminQuickFixValidationResolutionRequired;
-      if (endDate != null && resolutionDate != null) {
-        if (!resolutionDate!.isAfter(endDate!)) return l10n.adminQuickFixValidationResolutionAfterEnd;
-        if (resolutionDate!.difference(endDate!).inMinutes < 60) return l10n.adminQuickFixValidationMin1h;
-      }
+    String? validateEndDate() {
+      if (endDate == null) return l10n.adminQuickFixValidationEndRequired;
       return null;
     }
 
@@ -742,11 +728,10 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
         return StatefulBuilder(builder: (ctx2, setModal) {
           final safeBottom = MediaQuery.of(ctx2).viewInsets.bottom;
           final endTxt = endDate == null ? '—' : _fmtShort(endDate!.toIso8601String());
-          final resTxt = resolutionDate == null ? '—' : _fmtShort(resolutionDate!.toIso8601String());
 
           Future<void> doWrite({required bool publish}) async {
             if (_busyQuickFixIds.contains(c.id) || busy) return;
-            final err = validateDates(requireEnd: publish, requireRes: true);
+            final err = validateEndDate();
             if (err != null) {
               setErr(setModal, err);
               return;
@@ -764,9 +749,11 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
             setState(() => _busyQuickFixIds.add(c.id));
             try {
               final updates = <String, dynamic>{
-                if (endDate != null) 'endDate': endDate!.toUtc().toIso8601String(),
-                'resolutionDate': resolutionDate!.toUtc().toIso8601String(),
+                'endDate': endDate!.toUtc().toIso8601String(),
                 if (publish) 'statu': 0,
+                'resolutionDate': null,
+                'oracleSource': null,
+                'oracleApiUrl': null,
               };
               await FirebaseDatabase.instance.ref('toldya/${c.id}').update(updates);
               setState(() {
@@ -832,70 +819,35 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: _border),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              ),
-                              onPressed: busy
-                                  ? null
-                                  : () async {
-                                      final picked = await _pickDateTime(initial: endDate?.toLocal(), firstDate: DateTime.now());
-                                      if (picked == null) return;
-                                      setModal(() {
-                                        endDate = picked.toUtc();
-                                        inlineError = null;
-                                        publishConfirm = false;
-                                      });
-                                    },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(l10n.adminQuickFixEndDateLabel, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w700)),
-                                  const SizedBox(height: 6),
-                                  Text(endTxt, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                                ],
-                              ),
-                            ),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: _border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: busy
+                            ? null
+                            : () async {
+                                final picked = await _pickDateTime(initial: endDate?.toLocal(), firstDate: DateTime.now());
+                                if (picked == null) return;
+                                setModal(() {
+                                  endDate = picked.toUtc();
+                                  inlineError = null;
+                                  publishConfirm = false;
+                                });
+                              },
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l10n.adminQuickFixEndDateLabel, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text(endTxt, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: _border),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              ),
-                              onPressed: busy
-                                  ? null
-                                  : () async {
-                                      final min = endDate != null ? endDate!.toLocal() : DateTime.now();
-                                      final picked = await _pickDateTime(initial: resolutionDate?.toLocal(), firstDate: min);
-                                      if (picked == null) return;
-                                      setModal(() {
-                                        resolutionDate = picked.toUtc();
-                                        inlineError = null;
-                                        publishConfirm = false;
-                                      });
-                                    },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(l10n.adminQuickFixResolutionDateLabel,
-                                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.w700)),
-                                  const SizedBox(height: 6),
-                                  Text(resTxt, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -907,7 +859,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                                   : () {
                                       final now = DateTime.now().toUtc().add(const Duration(minutes: 5));
                                       setModal(() {
-                                        endDate ??= now;
+                                        endDate = now;
                                         inlineError = null;
                                         publishConfirm = false;
                                       });
@@ -920,15 +872,13 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
                               onPressed: busy
                                   ? null
                                   : () {
-                                      final base = (endDate ?? DateTime.now().toUtc().add(const Duration(minutes: 5)));
                                       setModal(() {
-                                        endDate ??= base;
-                                        resolutionDate = base.add(const Duration(hours: 1));
+                                        endDate = DateTime.now().toUtc().add(const Duration(hours: 1));
                                         inlineError = null;
                                         publishConfirm = false;
                                       });
                                     },
-                              child: Text(l10n.adminQuickFixAutofillResolutionPlus1h),
+                              child: Text(l10n.adminQuickFixAutofillEndPlus1h),
                             ),
                           ),
                         ],
@@ -995,34 +945,34 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
   // otomatik olarak tetikleniyor. Ayrı bir dağıtım önizleme/paneli yok.
 
   Widget _resolvePanel({required AppLocalizations l10n}) {
-    if (!_resolveInitialLoaded && !_busyPreviewOracle) {
+    if (!_resolveInitialLoaded && !_busyPreviewLocked) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _previewOracleCandidates(l10n);
+        if (mounted) _previewLockedCandidates(l10n);
       });
     }
 
-    final loadedCount = _oracleCandidates.length;
-    final shown = _oracleCandidates.take(_resolveVisibleCount).toList(growable: false);
+    final loadedCount = _lockedCandidates.length;
+    final shown = _lockedCandidates.take(_resolveVisibleCount).toList(growable: false);
 
     return NotificationListener<ScrollNotification>(
       onNotification: (scroll) {
         final metrics = scroll.metrics;
         final nearBottom = metrics.pixels >= metrics.maxScrollExtent - 250;
         if (!nearBottom) return false;
-        if (_busyPreviewOracle) return false;
+        if (_busyPreviewLocked) return false;
 
-        if (!_resolveInitialLoaded && _oracleCandidates.isEmpty) {
-          _previewOracleCandidates(l10n);
+        if (!_resolveInitialLoaded && _lockedCandidates.isEmpty) {
+          _previewLockedCandidates(l10n);
           return false;
         }
 
-        if (_resolveVisibleCount < _oracleCandidates.length) {
-          setState(() => _resolveVisibleCount = (_resolveVisibleCount + 15).clamp(0, _oracleCandidates.length));
+        if (_resolveVisibleCount < _lockedCandidates.length) {
+          setState(() => _resolveVisibleCount = (_resolveVisibleCount + 15).clamp(0, _lockedCandidates.length));
           return false;
         }
 
         if (_resolveHasMore) {
-          _loadMoreOracleCandidates(l10n);
+          _loadMoreLockedCandidates(l10n);
         }
         return false;
       },
@@ -1034,7 +984,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
           if (_jobInlineError != null) _inlineBanner(_jobInlineError!, isError: true),
           if (_jobInlineSuccess != null) _inlineBanner(_jobInlineSuccess!, isError: false),
 
-          if (_busyPreviewOracle && loadedCount == 0) ...[
+          if (_busyPreviewLocked && loadedCount == 0) ...[
             const SizedBox(height: 20),
             const Center(child: CircularProgressIndicator(color: _success)),
           ],
@@ -1046,7 +996,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
             ...shown.map((c) => _resolveCandidateTile(l10n: l10n, c: c)),
           ],
 
-          if (_busyPreviewOracle && loadedCount > 0) ...[
+          if (_busyPreviewLocked && loadedCount > 0) ...[
             const SizedBox(height: 12),
             const Center(child: CircularProgressIndicator(color: _success)),
             const SizedBox(height: 10),
@@ -1058,9 +1008,7 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
 
   Widget _quickFixPanel({required AppLocalizations l10n}) {
     final total = _quickFixCandidates.length;
-    final filteredAll = _filteredQuickFixList(all: true);
     final shown = _filteredQuickFixList(all: false);
-    final canLoadMore = shown.length < filteredAll.length;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -1145,11 +1093,9 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     final endStatus = c.endDateIso.trim().isEmpty
         ? l10n.adminQuickFixChipEndMissing
         : (c.endDateOk ? (c.endDatePassed ? l10n.adminQuickFixChipEndPassed : l10n.adminQuickFixChipEndOk) : l10n.adminQuickFixChipEndInvalid);
-    final resStatus = c.resolutionDateIso.trim().isEmpty ? l10n.adminQuickFixChipResMissing : l10n.adminQuickFixChipResInvalid;
     final chips = <Widget>[
       _metaChip(l10n.adminQuickFixChipStatu1),
       _metaChip(endStatus),
-      _metaChip(resStatus),
       if (c.topicMissing) _metaChip(l10n.adminQuickFixChipTopicMissing),
     ];
 
@@ -1239,44 +1185,6 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
     );
   }
 
-  Widget _candidateTile(_JobCandidate c) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
-      ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            c.id,
-            style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 11, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            c.description.isEmpty ? '-' : c.description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (c.resolutionDateIso.isNotEmpty) _metaChip('resolution: ${_fmtShort(c.resolutionDateIso)}'),
-              _metaChip('statu: ${c.statu}'),
-              _metaChip('oracleApiUrl: ${c.hasOracleApiUrl ? '✓' : '—'}'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _resolveCandidateTile({required AppLocalizations l10n, required _JobCandidate c}) {
     final selected = _manualResolveSelection[c.id];
     final busy = _busyResolveIds.contains(c.id);
@@ -1308,9 +1216,8 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (c.resolutionDateIso.isNotEmpty) _metaChip('resolution: ${_fmtShort(c.resolutionDateIso)}'),
+              if (c.endDateIso.isNotEmpty) _metaChip('endDate: ${_fmtShort(c.endDateIso)}'),
               _metaChip('statu: ${c.statu}'),
-              _metaChip('oracleApiUrl: ${c.hasOracleApiUrl ? '✓' : '—'}'),
             ],
           ),
           const SizedBox(height: 12),
@@ -1404,16 +1311,14 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
 class _JobCandidate {
   final String id;
   final String description;
-  final String resolutionDateIso;
+  final String endDateIso;
   final String statu;
-  final bool hasOracleApiUrl;
 
   const _JobCandidate({
     required this.id,
     required this.description,
-    required this.resolutionDateIso,
+    required this.endDateIso,
     required this.statu,
-    required this.hasOracleApiUrl,
   });
 }
 
@@ -1422,10 +1327,8 @@ class _QuickFixCandidate {
   final String description;
   final String createdAtIso;
   final String endDateIso;
-  final String resolutionDateIso;
   final bool endDateOk;
   final bool endDatePassed;
-  final bool resolutionDateOk;
   final bool topicMissing;
 
   const _QuickFixCandidate({
@@ -1433,10 +1336,8 @@ class _QuickFixCandidate {
     required this.description,
     required this.createdAtIso,
     required this.endDateIso,
-    required this.resolutionDateIso,
     required this.endDateOk,
     required this.endDatePassed,
-    required this.resolutionDateOk,
     required this.topicMissing,
   });
 }

@@ -23,11 +23,11 @@ import '../customWidgets.dart';
 import 'widgets/retoldya_widget.dart';
 import 'widgets/toldya_image.dart';
 
-/// Statü etiketinin (Beklemede/İncelemede/AI reddi) kartta gösterilmesi gerekiyor mu?
+/// Statü etiketinin (Beklemede/incelemede/yönetici reddi) kartta gösterilmesi gerekiyor mu?
 bool _showStatuBadge(int? statu) {
   if (statu == null) return false;
   // NOTE: case labels must be compile-time constants; use literal statu values.
-  // 1=pending, 6=AI review, 7=AI rejected
+  // 1=pending, 6=admin review, 7=admin rejected
   return statu == 1 || statu == 6 || statu == 7;
 }
 
@@ -40,7 +40,7 @@ String _statuBadgeLabel(BuildContext context, int? statu) {
     case 6:
       return l10n.statuUnderReview;
     case 7:
-      return l10n.statuRejectedByAi;
+      return l10n.statuRejectedByAdmin;
     default:
       return '';
   }
@@ -48,7 +48,7 @@ String _statuBadgeLabel(BuildContext context, int? statu) {
 
 Color _statuAccent(int? statu) {
   if (statu == 7) return const Color(0xFFFF6B6B);
-  // Pending + AI review: warm tone; main accent is used for rejected.
+  // Pending + admin review: warm tone; main accent is used for rejected.
   return const Color(0xFFFFB74D);
 }
 
@@ -559,7 +559,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                         SizedBox(width: 2),
 
                         customText(
-                          model.statu == Statu.statusPendingAiReview
+                          model.statu == Statu.statusPendingAdminReview
                               ? AppLocalizations.of(context)!.statuUnderReview
                               : getEndTime(model.endDate ?? ''),
                           style: userNameStyle,
@@ -626,7 +626,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              model.statu == Statu.statusRejectedByAi ? Icons.block : Icons.pending_actions,
+                              model.statu == Statu.statusRejectedByAdmin ? Icons.block : Icons.pending_actions,
                               size: 14,
                               color: _statuAccent(model.statu),
                             ),
@@ -642,11 +642,11 @@ class _ToldyaDetailBody extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (model.statu == Statu.statusRejectedByAi && (model.aiModerationReason ?? '').isNotEmpty) ...[
+                      if (model.statu == Statu.statusRejectedByAdmin && (model.manualModerationReason ?? '').isNotEmpty) ...[
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            model.aiModerationReason!,
+                            model.manualModerationReason!,
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),

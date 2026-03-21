@@ -16,10 +16,8 @@ class FeedModel {
   int? commentCount;
   int? retoldyaCount;
   String? createdAt;
-  /// Kapanış zamanı: Tahmin katılımının kabul edilmeyeceği an (lock-in)
+  /// Tahmin bitişi: bu ana kadar katılım açık; sonra kilitlenir (statu 5). Sonrasında yönetici kazanan tarafı belirler.
   String? endDate;
-  /// Sonuçlanma zamanı: Olayın gerçekleşeceği ve sonucun girileceği an
-  String? resolutionDate;
   String? imagePath;
   String? topic;
   List<String>? tags;
@@ -29,20 +27,14 @@ class FeedModel {
   /// Report reasons by userId (e.g. "spam", "harassment") for moderation
   Map<String, String>? reportReasons;
   List<String>? favList;
-  /// AI moderasyon kararı için kısa açıklama/başlık
-  String? aiModerationReason;
-  /// Kanıt kaynağı (Oracle): Bahsin neye göre sonuçlanacağı
-  String? oracleSource;
-  /// API URL - otomatik sonuç için (opsiyonel)
-  String? oracleApiUrl;
+  /// Yönetici moderasyon gerekçesi (sunucu: manualModerationReason)
+  String? manualModerationReason;
   /// Tahminci teminatı (sembolik token)
   int? collateralAmount;
   /// İtiraz eden kullanıcı ID'leri
   List<String>? disputeUserIds;
   /// Dağıtım yapıldı mı (Pari-Mutuel ödeme tamamlandı mı)
   bool? distributionDone;
-  /// Meydan okuma: etiketlenen tek kullanıcı (1v1 düello)
-  String? challengeeUserId;
   /// Yorum oylama: Katılıyorum sayısı (sadece reply için)
   int? upvoteCount;
   /// Yorum oylama: Katılmıyorum sayısı (sadece reply için)
@@ -76,10 +68,7 @@ class FeedModel {
     this.statu,
     this.feedResult,
     this.childRetoldyaKey,
-    this.resolutionDate,
-    this.aiModerationReason,
-    this.oracleSource,
-    this.oracleApiUrl,
+    this.manualModerationReason,
     this.collateralAmount,
     this.disputeUserIds,
     this.distributionDone,
@@ -113,14 +102,10 @@ class FeedModel {
       "childRetoldyaKey": childRetoldyaKey,
       "statu": statu,
       "feedResult": feedResult,
-      "resolutionDate": resolutionDate,
-      "aiModerationReason": aiModerationReason,
-      "oracleSource": oracleSource,
-      "oracleApiUrl": oracleApiUrl,
+      "manualModerationReason": manualModerationReason,
       "collateralAmount": collateralAmount,
       "disputeUserIds": disputeUserIds,
       "distributionDone": distributionDone ?? false,
-      "challengeeUserId": challengeeUserId,
       "upvoteCount": upvoteCount ?? 0,
       "downvoteCount": downvoteCount ?? 0,
       "upvoteUserIds": upvoteUserIds ?? [],
@@ -153,13 +138,11 @@ class FeedModel {
     topic = map['topic'];
     statu = _parseStatuMap(map['statu']);
     feedResult = map['feedResult'];
-    resolutionDate = map['resolutionDate'];
-    aiModerationReason = map['aiModerationReason'];
-    oracleSource = map['oracleSource'];
-    oracleApiUrl = map['oracleApiUrl'];
+    // Eski RTDB kayıtları: deprecated alan adı (yalnızca okuma).
+    manualModerationReason =
+        map['manualModerationReason'] ?? map['aiModerationReason'];
     collateralAmount = map['collateralAmount'];
     distributionDone = map['distributionDone'] ?? false;
-    challengeeUserId = map['challengeeUserId']?.toString();
     upvoteCount = map['upvoteCount'] ?? 0;
     downvoteCount = map['downvoteCount'] ?? 0;
     if (map['upvoteUserIds'] != null) {

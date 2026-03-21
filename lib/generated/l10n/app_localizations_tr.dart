@@ -125,7 +125,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get adminQuickFixDesc =>
-      'statu=1 olup tarih alanları eksik/bozuk olan kayıtları düzeltir. Tarihleri ayarlayıp isterseniz yayına alarak normal kilitleme → oracle → dağıtım akışını başlatabilirsiniz.';
+      'statu=1 olup endDate eksik veya geçersiz olan kayıtları düzeltir. Bitiş tarihini ayarlayıp isterseniz yayına alarak kilitleme ve dağıtım akışına alabilirsiniz.';
 
   @override
   String adminQuickFixCount(String n) {
@@ -143,14 +143,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adminQuickFixEndDateLabel => 'End date';
 
   @override
-  String get adminQuickFixResolutionDateLabel => 'Resolution date';
-
-  @override
   String get adminQuickFixAutofillEndNowPlus => 'EndDate = şimdi + 5dk';
 
   @override
-  String get adminQuickFixAutofillResolutionPlus1h =>
-      'ResolutionDate = endDate + 1s';
+  String get adminQuickFixAutofillEndPlus1h => 'EndDate = şimdi + 1 saat';
 
   @override
   String get adminQuickFixSetOnly => 'Sadece ayarla';
@@ -165,23 +161,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adminQuickFixValidationEndRequired => 'EndDate gerekli.';
 
   @override
-  String get adminQuickFixValidationResolutionRequired =>
-      'ResolutionDate gerekli.';
-
-  @override
-  String get adminQuickFixValidationResolutionAfterEnd =>
-      'ResolutionDate, EndDate\'ten sonra olmalı.';
-
-  @override
-  String get adminQuickFixValidationMin1h =>
-      'ResolutionDate, EndDate\'ten en az 1 saat sonra olmalı.';
-
-  @override
   String get adminQuickFixSuccess => 'Kayıt güncellendi.';
 
   @override
   String get adminQuickFixWarningPublish =>
-      'Bu işlem tahmini yayına alır ve lock/oracle job\'ları ile otomatik ilerler.';
+      'Bu işlem tahmini yayına alır; ardından bitiş zamanında kilit ve sonuç/dağıtım süreçleri işler.';
 
   @override
   String adminQuickFixCreatedAt(String t) {
@@ -202,12 +186,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get adminQuickFixChipEndPassed => 'endDate: geçti';
-
-  @override
-  String get adminQuickFixChipResMissing => 'resolutionDate: eksik';
-
-  @override
-  String get adminQuickFixChipResInvalid => 'resolutionDate: geçersiz';
 
   @override
   String get adminQuickFixChipTopicMissing => 'topic: eksik';
@@ -268,25 +246,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adminModerationEndDateLabel => 'Kapanış';
 
   @override
-  String get adminModerationResolutionDateLabel => 'Sonuç zamanı';
-
-  @override
-  String get adminModerationOracleSourceOptional =>
-      'Oracle kaynağı (opsiyonel)';
-
-  @override
-  String get adminModerationOracleApiUrlOptional =>
-      'Oracle API URL (opsiyonel)';
-
-  @override
   String get adminModerationCollateralOptional => 'Teminat (opsiyonel)';
 
   @override
   String get adminModerationInvalidForm => 'Lütfen gerekli alanları doldurun.';
-
-  @override
-  String get adminModerationDateRule =>
-      'Sonuç zamanı kapanıştan en az 1 saat sonra olmalı.';
 
   @override
   String get adminModerationConflictRetry => 'Çakışma oldu, tekrar deneyin.';
@@ -302,9 +265,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get adminModerationMetaTopic => 'Konu';
-
-  @override
-  String get adminModerationMetaOracleApiUrl => 'Oracle URL';
 
   @override
   String get settings => 'Ayarlar';
@@ -408,6 +368,21 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get postUnderReview =>
       'Gönderiniz incelemeye alındı. Onaylandığında akışta görünecektir.';
+
+  @override
+  String get composeToldyaReviewPending => 'İnceleme bekleniyor.';
+
+  @override
+  String get composeToldyaShare => 'Paylaş';
+
+  @override
+  String get composeToldyaHint => 'Tahminini yaz';
+
+  @override
+  String get composeToldyaPickCustomDate => 'Özel tarih gir';
+
+  @override
+  String get composeToldyaDateSectionTitle => 'Tarih seç';
 
   @override
   String get commentAdded => 'Yorumunuz eklendi.';
@@ -679,13 +654,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get editProfile => 'Profili Düzenle';
 
   @override
-  String get challengeLabel => 'Meydan oku: ';
-
-  @override
   String get selectUser => 'Kullanıcı seç';
-
-  @override
-  String get challengePickTitle => 'Meydan oku: Kullanıcı seç';
 
   @override
   String get followingListEmpty =>
@@ -766,10 +735,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get statuPending => 'Beklemede';
 
   @override
-  String get statuUnderReview => 'İncelemede';
+  String get statuUnderReview => 'Yönetici incelemesinde';
 
   @override
-  String get statuRejectedByAi => 'Reddedildi';
+  String get statuRejectedByAdmin => 'Reddedildi';
 
   @override
   String gmsError(String message) {
@@ -1372,10 +1341,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adminFilterCompleted => 'Tamamlanan';
 
   @override
-  String get adminFilterPendingAiReview => 'AI incelemesinde';
+  String get adminFilterPendingAdminReview => 'Yönetici incelemesinde';
 
   @override
-  String get adminFilterRejectedByAi => 'AI reddi';
+  String get adminFilterRejectedByAdmin => 'Yönetici reddi';
 
   @override
   String xpProgressLabel(int xp, int max) {
@@ -1552,10 +1521,23 @@ class AppLocalizationsTr extends AppLocalizations {
       'Trendler sekmenizde hangi konumun görüneceğini seçerek belirli bir konumda nelerin trend olduğunu görebilirsiniz.';
 
   @override
-  String get myStakesTab => 'Tahminlerim';
+  String get profileTabActiveToldyas => 'Aktif Toldyalarım';
 
   @override
-  String get myVotesTab => 'Oy verdiklerim';
+  String get profileTabPastToldyas => 'Geçmiş Toldyalarım';
+
+  @override
+  String get profileTabMyCreations => 'Oluşturduklarım';
+
+  @override
+  String get profileTabBalance => 'Bakiye';
+
+  @override
+  String get emptyPastToldyasParticipation => 'Geçmiş toldya yok';
+
+  @override
+  String get profileBalancePrivate =>
+      'Bakiye yalnızca kendi profilinizde görünür.';
 
   @override
   String get defaultUserHandle => '@kullanıcı';

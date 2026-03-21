@@ -6,14 +6,117 @@ import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 /// Mockup’a uygun Puan Kazanma: Reklam izle, Günlük bonus, Puan paketleri.
-class TokenEarnPage extends StatelessWidget {
-  const TokenEarnPage({Key? key}) : super(key: key);
+/// Profil > Bakiye sekmesi ile tam sayfa [TokenEarnPage] için ortak içerik.
+class TokenEarnPageContent extends StatelessWidget {
+  const TokenEarnPageContent({
+    Key? key,
+    this.onAfterBonusClaim,
+    this.embedInProfile = false,
+  }) : super(key: key);
+
+  /// Günlük bonus başarıyla işlendikten sonra (profilde bakiyeyi yenilemek için).
+  final VoidCallback? onAfterBonusClaim;
+
+  /// Profil Bakiye sekmesinde dış [SingleChildScrollView] ile birleşik kaydırma için.
+  final bool embedInProfile;
 
   @override
   Widget build(BuildContext context) {
     final authState = Provider.of<AuthState>(context);
     final canClaimDaily = authState.canClaimDailyBonus;
 
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+          _EarnCard(
+            icon: Icons.play_circle_filled,
+            iconColor: AppNeon.orange,
+            title: AppLocalizations.of(context)!.watchAdTitle,
+            subtitle: AppLocalizations.of(context)!.tokenEarnFreeSubtitle('50'),
+            buttonLabel: AppLocalizations.of(context)!.watch,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(AppLocalizations.of(context)!.adsComingSoon)),
+              );
+            },
+          ),
+          SizedBox(height: 12),
+          _EarnCard(
+            icon: Icons.card_giftcard,
+            iconColor: AppNeon.green,
+            title: AppLocalizations.of(context)!.dailyBonusTitle,
+            subtitle: '+${AppIcon.dailyBonusAmount} ${AppLocalizations.of(context)!.tokenLabel}',
+            buttonLabel: canClaimDaily
+                ? AppLocalizations.of(context)!.claim
+                : AppLocalizations.of(context)!.tryAgainTomorrow,
+            onPressed: canClaimDaily
+                ? () async {
+                    final msg = await authState.claimDailyBonus(context);
+                    if (context.mounted) {
+                      if (msg != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(AppLocalizations.of(context)!.tokensAdded('${AppIcon.dailyBonusAmount}'))),
+                        );
+                        onAfterBonusClaim?.call();
+                      }
+                    }
+                  }
+                : null,
+          ),
+          SizedBox(height: 20),
+          Text(
+            AppLocalizations.of(context)!.tokenPacksTitle,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          SizedBox(height: 12),
+          _TokenPackCard(
+            amount: 100,
+            price: '0,99 ₺',
+            onPressed: () => _showComingSoon(context),
+          ),
+          SizedBox(height: 8),
+          _TokenPackCard(
+            amount: 500,
+            price: '3,99 ₺',
+            badge: AppLocalizations.of(context)!.mostPopular,
+            onPressed: () => _showComingSoon(context),
+          ),
+          SizedBox(height: 8),
+          _TokenPackCard(
+            amount: 2000,
+            price: '12,99 ₺',
+            badge: AppLocalizations.of(context)!.bestValue,
+            onPressed: () => _showComingSoon(context),
+          ),
+        ],
+    );
+    if (embedInProfile) {
+      return column;
+    }
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: column,
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.purchaseComingSoon)),
+    );
+  }
+}
+
+class TokenEarnPage extends StatelessWidget {
+  const TokenEarnPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -33,87 +136,7 @@ class TokenEarnPage extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Reklam İzle
-            _EarnCard(
-              icon: Icons.play_circle_filled,
-              iconColor: AppNeon.orange,
-              title: AppLocalizations.of(context)!.watchAdTitle,
-              subtitle: AppLocalizations.of(context)!.tokenEarnFreeSubtitle('50'),
-              buttonLabel: AppLocalizations.of(context)!.watch,
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context)!.adsComingSoon)),
-                );
-              },
-            ),
-            SizedBox(height: 12),
-            // Günlük Bonus
-            _EarnCard(
-              icon: Icons.card_giftcard,
-              iconColor: AppNeon.green,
-              title: AppLocalizations.of(context)!.dailyBonusTitle,
-              subtitle: '+${AppIcon.dailyBonusAmount} ${AppLocalizations.of(context)!.tokenLabel}',
-              buttonLabel: canClaimDaily
-                  ? AppLocalizations.of(context)!.claim
-                  : AppLocalizations.of(context)!.tryAgainTomorrow,
-              onPressed: canClaimDaily
-                  ? () async {
-                      final msg = await authState.claimDailyBonus(context);
-                      if (context.mounted) {
-                        if (msg != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(AppLocalizations.of(context)!.tokensAdded('${AppIcon.dailyBonusAmount}'))),
-                          );
-                        }
-                      }
-                    }
-                  : null,
-            ),
-            SizedBox(height: 20),
-            Text(
-              AppLocalizations.of(context)!.tokenPacksTitle,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: 12),
-            _TokenPackCard(
-              amount: 100,
-              price: '0,99 ₺',
-              onPressed: () => _showComingSoon(context),
-            ),
-            SizedBox(height: 8),
-            _TokenPackCard(
-              amount: 500,
-              price: '3,99 ₺',
-              badge: AppLocalizations.of(context)!.mostPopular,
-              onPressed: () => _showComingSoon(context),
-            ),
-            SizedBox(height: 8),
-            _TokenPackCard(
-              amount: 2000,
-              price: '12,99 ₺',
-              badge: AppLocalizations.of(context)!.bestValue,
-              onPressed: () => _showComingSoon(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.purchaseComingSoon)),
+      body: TokenEarnPageContent(),
     );
   }
 }

@@ -89,7 +89,7 @@ String getStatuLabel(int? statu) {
     case 4: return 'Tamamlanan';
     case 5: return 'Kilitli';
     case 6: return 'İncelemede';
-    case 7: return 'AI reddi';
+    case 7: return 'Yönetici reddi';
     default: return 'Durum $statu';
   }
 }

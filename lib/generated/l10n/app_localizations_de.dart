@@ -126,7 +126,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminQuickFixDesc =>
-      'Behebt Datensätze, die in statu=1 festhängen und fehlende/ungültige Datumsfelder haben. Setze Daten und veröffentliche optional, damit der normale Lock → Oracle → Ausschüttung Ablauf greift.';
+      'Behebt Datensätze in statu=1 mit fehlendem oder ungültigem endDate. Setze das Enddatum und veröffentliche optional für Lock und Ausschüttung.';
 
   @override
   String adminQuickFixCount(String n) {
@@ -144,14 +144,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminQuickFixEndDateLabel => 'Enddatum';
 
   @override
-  String get adminQuickFixResolutionDateLabel => 'Auswertungsdatum';
-
-  @override
   String get adminQuickFixAutofillEndNowPlus => 'EndDate = jetzt + 5 Min';
 
   @override
-  String get adminQuickFixAutofillResolutionPlus1h =>
-      'ResolutionDate = endDate + 1h';
+  String get adminQuickFixAutofillEndPlus1h => 'EndDate = jetzt + 1 Std.';
 
   @override
   String get adminQuickFixSetOnly => 'Nur setzen';
@@ -166,23 +162,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminQuickFixValidationEndRequired => 'EndDate ist erforderlich.';
 
   @override
-  String get adminQuickFixValidationResolutionRequired =>
-      'ResolutionDate ist erforderlich.';
-
-  @override
-  String get adminQuickFixValidationResolutionAfterEnd =>
-      'ResolutionDate muss nach EndDate liegen.';
-
-  @override
-  String get adminQuickFixValidationMin1h =>
-      'ResolutionDate muss mindestens 1 Stunde nach EndDate liegen.';
-
-  @override
   String get adminQuickFixSuccess => 'Datensatz aktualisiert.';
 
   @override
   String get adminQuickFixWarningPublish =>
-      'Dies veröffentlicht die Vorhersage und sie läuft automatisch über Lock/Oracle Jobs weiter.';
+      'Veröffentlicht die Vorhersage; Lock und Ergebnis/Ausschüttung laufen zu den festgelegten Zeiten.';
 
   @override
   String adminQuickFixCreatedAt(String t) {
@@ -203,12 +187,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminQuickFixChipEndPassed => 'endDate: abgelaufen';
-
-  @override
-  String get adminQuickFixChipResMissing => 'resolutionDate: fehlt';
-
-  @override
-  String get adminQuickFixChipResInvalid => 'resolutionDate: ungültig';
 
   @override
   String get adminQuickFixChipTopicMissing => 'topic: fehlt';
@@ -269,23 +247,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminModerationEndDateLabel => 'Schließzeit';
 
   @override
-  String get adminModerationResolutionDateLabel => 'Ergebniszeit';
-
-  @override
-  String get adminModerationOracleSourceOptional => 'Oracle-Quelle (optional)';
-
-  @override
-  String get adminModerationOracleApiUrlOptional => 'Oracle-API-URL (optional)';
-
-  @override
   String get adminModerationCollateralOptional => 'Sicherheit (optional)';
 
   @override
   String get adminModerationInvalidForm => 'Bitte fülle die Pflichtfelder aus.';
-
-  @override
-  String get adminModerationDateRule =>
-      'Die Ergebniszeit muss mindestens 1 Stunde nach der Schließzeit liegen.';
 
   @override
   String get adminModerationConflictRetry =>
@@ -302,9 +267,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get adminModerationMetaTopic => 'Thema';
-
-  @override
-  String get adminModerationMetaOracleApiUrl => 'Oracle-URL';
 
   @override
   String get settings => 'Einstellungen';
@@ -411,6 +373,21 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get postUnderReview =>
       'Dein Beitrag wird geprüft. Er erscheint im Feed nach Freigabe.';
+
+  @override
+  String get composeToldyaReviewPending => 'Prüfung ausstehend.';
+
+  @override
+  String get composeToldyaShare => 'Teilen';
+
+  @override
+  String get composeToldyaHint => 'Schreibe deine Vorhersage';
+
+  @override
+  String get composeToldyaPickCustomDate => 'Eigenes Datum';
+
+  @override
+  String get composeToldyaDateSectionTitle => 'Datum wählen';
 
   @override
   String get commentAdded => 'Dein Kommentar wurde hinzugefügt.';
@@ -685,13 +662,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get editProfile => 'Profil bearbeiten';
 
   @override
-  String get challengeLabel => 'Herausforderung: ';
-
-  @override
   String get selectUser => 'Nutzer auswählen';
-
-  @override
-  String get challengePickTitle => 'Herausforderung: Nutzer auswählen';
 
   @override
   String get followingListEmpty =>
@@ -772,10 +743,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statuPending => 'Ausstehend';
 
   @override
-  String get statuUnderReview => 'In Prüfung';
+  String get statuUnderReview => 'Admin-Prüfung';
 
   @override
-  String get statuRejectedByAi => 'Abgelehnt';
+  String get statuRejectedByAdmin => 'Abgelehnt';
 
   @override
   String gmsError(String message) {
@@ -1379,10 +1350,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminFilterCompleted => 'Abgeschlossen';
 
   @override
-  String get adminFilterPendingAiReview => 'In KI-Prüfung';
+  String get adminFilterPendingAdminReview => 'In Admin-Prüfung';
 
   @override
-  String get adminFilterRejectedByAi => 'Von KI abgelehnt';
+  String get adminFilterRejectedByAdmin => 'Von Admin abgelehnt';
 
   @override
   String xpProgressLabel(int xp, int max) {
@@ -1560,10 +1531,23 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle, welcher Ort in deinem Trend-Tab angezeigt wird, um zu sehen, was an einem Ort trendet.';
 
   @override
-  String get myStakesTab => 'Meine Vorhersagen';
+  String get profileTabActiveToldyas => 'Aktive Toldyas';
 
   @override
-  String get myVotesTab => 'Meine Abstimmungen';
+  String get profileTabPastToldyas => 'Vergangene Toldyas';
+
+  @override
+  String get profileTabMyCreations => 'Meine Erstellungen';
+
+  @override
+  String get profileTabBalance => 'Guthaben';
+
+  @override
+  String get emptyPastToldyasParticipation => 'Noch keine vergangenen Toldyas';
+
+  @override
+  String get profileBalancePrivate =>
+      'Das Guthaben ist nur auf deinem eigenen Profil sichtbar.';
 
   @override
   String get defaultUserHandle => '@Benutzer';

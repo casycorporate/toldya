@@ -181,10 +181,10 @@ class FeedState extends AppState {
       }
       final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
       final isMine = userModel != null && x.userId == userModel.userId;
-      final isAiReviewOrRejected = x.statu == Statu.statusPendingAiReview || x.statu == Statu.statusRejectedByAi;
+      final isAdminReviewOrRejected = x.statu == Statu.statusPendingAdminReview || x.statu == Statu.statusRejectedByAdmin;
 
-      // Feed'de netlik: Yayında filtredeyken kendi "incelemede / AI reddi" gönderilerini de göster.
-      if (statu == Statu.statusLive && (isPublished || (isMine && isAiReviewOrRejected))) {
+      // Feed'de netlik: Yayında filtredeyken kendi "incelemede / yönetici reddi" gönderilerini de göster.
+      if (statu == Statu.statusLive && (isPublished || (isMine && isAdminReviewOrRejected))) {
         if (topic_val == topic.gundem || topic_val == topic.followList) return true;
         if (userModel == null) return false;
         if (topic_val == topic.favList) {
@@ -695,7 +695,7 @@ class FeedState extends AppState {
 
       // IMPORTANT: Never overwrite the whole `toldya/{id}` node from client.
       // Root `.set(model.toJson())` can accidentally null out server-controlled fields
-      // (e.g. `statu`, `endDate`, `resolutionDate`, `manualModeration*`) and races with
+      // (e.g. `statu`, `endDate`, `manualModeration*`) and races with
       // admin/batch jobs. Use partial update instead.
       final raw = Map<String, dynamic>.from(model.toJson() as Map);
 
@@ -706,10 +706,8 @@ class FeedState extends AppState {
       raw.remove('statu');
       raw.remove('topic');
       raw.remove('endDate');
-      raw.remove('resolutionDate');
+      raw.remove('manualModerationReason');
       raw.remove('aiModerationReason');
-      raw.remove('oracleSource');
-      raw.remove('oracleApiUrl');
       raw.remove('collateralAmount');
       raw.remove('distributionDone');
       raw.remove('feedResult');

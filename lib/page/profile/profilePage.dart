@@ -24,8 +24,57 @@ import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/widgets/rank/xpProgressBarWidget.dart';
 import 'package:toldya/widgets/toldya/widgets/yes_no_stake_buttons_row.dart';
+import 'package:toldya/page/profile/token_earn_page.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+bool _profileListStatuIsActiveParticipation(int? s) {
+  if (s == null) return false;
+  return s == Statu.statusLive || s == Statu.statusLocked;
+}
+
+bool _profileListStatuIsPastParticipation(int? s) {
+  if (s == null) return false;
+  return s == Statu.statusOk ||
+      s == Statu.statusComplete ||
+      s == Statu.statusDenied ||
+      s == Statu.statusRejectedByAdmin;
+}
+
+/// Oluşturduğun veya oy verdiğin toldya’lar; tekrarlı key birleştirilir.
+List<FeedModel> _mergeProfileParticipationLists({
+  required String id,
+  required String profileUserId,
+  required List<FeedModel> myCreatedSource,
+  required List<FeedModel> votedSource,
+  required bool Function(int? statu) statusMatch,
+}) {
+  final seen = <String>{};
+  final out = <FeedModel>[];
+
+  void consider(FeedModel x) {
+    final key = x.key;
+    if (key == null || key.isEmpty) return;
+    if (seen.contains(key)) return;
+    final s = parseStatu(x.statu);
+    if (!statusMatch(s)) return;
+    seen.add(key);
+    out.add(x);
+  }
+
+  for (final x in myCreatedSource) {
+    if ((x.parentkey == null || x.childRetoldyaKey != null) && x.userId == id) {
+      consider(x);
+    }
+  }
+  for (final x in votedSource) {
+    final hasVoted = (x.likeList ?? []).any((e) => e.userId == profileUserId) ||
+        (x.unlikeList ?? []).any((e) => e.userId == profileUserId);
+    if (!hasVoted) continue;
+    consider(x);
+  }
+  return out;
+}
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({Key? key, this.profileId, this.isTabContent = false, this.parentScaffoldKey})
@@ -57,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage>
       isMyProfile =
           widget.profileId == null || widget.profileId == authstate.userId;
     });
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     super.initState();
   }
 
@@ -143,8 +192,6 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   late TabController _tabController;
-  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Tahminlerim sekmesinde)
-  int _myToldyaStatusFilter = 0;
 
   void shareProfile(BuildContext context) async {
     var authstate = context.read<AuthState>();
@@ -214,6 +261,21 @@ class _ProfilePageState extends State<ProfilePage>
             (x.unlikeList ?? []).any((e) => e.userId == profileUserId) ||
             (x.likeList ?? []).any((e) => e.userId == profileUserId))
         .toList();
+
+    final activeParticipationList = _mergeProfileParticipationLists(
+      id: id,
+      profileUserId: profileUserId,
+      myCreatedSource: listForMyToldyas,
+      votedSource: listForOyVerdiklerim,
+      statusMatch: _profileListStatuIsActiveParticipation,
+    );
+    final pastParticipationList = _mergeProfileParticipationLists(
+      id: id,
+      profileUserId: profileUserId,
+      myCreatedSource: listForMyToldyas,
+      votedSource: listForOyVerdiklerim,
+      statusMatch: _profileListStatuIsPastParticipation,
+    );
 
     return PopScope(
       canPop: false,
@@ -306,20 +368,24 @@ class _ProfilePageState extends State<ProfilePage>
               SliverToBoxAdapter(
                 child: Container(
                   color: MockupDesign.background,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: TabBar(
                     controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     indicator: UnderlineTabIndicator(
                       borderSide: BorderSide(width: 3, color: AppNeon.green),
                     ),
                     indicatorSize: TabBarIndicatorSize.label,
                     labelColor: Colors.white,
                     unselectedLabelColor: Colors.grey.shade600,
-                    labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                    unselectedLabelStyle: TextStyle(fontSize: 15),
+                    labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    unselectedLabelStyle: TextStyle(fontSize: 13),
                     tabs: <Widget>[
-                      Tab(text: AppLocalizations.of(context)!.myStakesTab),
-                      Tab(text: AppLocalizations.of(context)!.myVotesTab),
+                      Tab(text: AppLocalizations.of(context)!.profileTabActiveToldyas),
+                      Tab(text: AppLocalizations.of(context)!.profileTabPastToldyas),
+                      Tab(text: AppLocalizations.of(context)!.profileTabMyCreations),
+                      Tab(text: AppLocalizations.of(context)!.profileTabBalance),
                     ],
                   ),
                 ),
@@ -331,32 +397,30 @@ class _ProfilePageState extends State<ProfilePage>
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    /// Display all independent tweers list (tahminlerim); kendi profilinde filtre chip'leri
-                    isMyProfile
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _myToldyaStatusFilterChips(context),
-                              Expanded(
-                                child: _toldyaFeedList(
-                                  context,
-                                  authstate,
-                                  listForMyToldyas,
-                                  false,
-                                  false,
-                                  id,
-                                  statusFilter: _myToldyaStatusFilter,
-                                ),
-                              ),
-                            ],
-                          )
-                        : _toldyaFeedList(context, authstate, listForMyToldyas, false, false, id),
-
-                    /// Display all reply tweet list (oy verdiklerim)
-                    _toldyaFeedList(context, authstate, listForOyVerdiklerim, true, false, id),
-
-                    // /// Display all reply and comments tweet list
-                    // _toldyaFeedList(context, authstate, list, false, true)
+                    _toldyaFeedList(
+                      context,
+                      authstate,
+                      listForMyToldyas,
+                      false,
+                      false,
+                      id,
+                      prebuiltList: activeParticipationList,
+                      emptyTitlePrebuilt: AppLocalizations.of(context)!.emptyActivePredictions,
+                      prebuiltEmptyIcon: Icons.local_fire_department,
+                    ),
+                    _toldyaFeedList(
+                      context,
+                      authstate,
+                      listForMyToldyas,
+                      false,
+                      false,
+                      id,
+                      prebuiltList: pastParticipationList,
+                      emptyTitlePrebuilt: AppLocalizations.of(context)!.emptyPastToldyasParticipation,
+                      prebuiltEmptyIcon: Icons.history,
+                    ),
+                    _toldyaFeedList(context, authstate, listForMyToldyas, false, false, id),
+                    _buildBalanceTab(context, authstate),
                   ],
                 ),
           ),
@@ -755,53 +819,59 @@ class _ProfilePageState extends State<ProfilePage>
     return isreply ? l10n.emptyOtherNoVotes(profileUserName) : (isMedia ? l10n.emptyOtherNoMedia(profileUserName) : l10n.emptyOtherNoPosts(profileUserName));
   }
 
-  /// 3. Filtre chip'leri: seçili = yeşil metin + hafif yeşil arka plan, diğerleri gri; altında kısa yeşil pill
-  Widget _myToldyaStatusFilterChips(BuildContext context) {
+  Widget _buildBalanceTab(BuildContext context, AuthState authstate) {
     final l10n = AppLocalizations.of(context)!;
-    final labels = [l10n.filterActive, l10n.filterPending, l10n.filterCompleted, l10n.filterRejected, l10n.filterLocked];
+    if (!isMyProfile) {
+      final bottomPadding = 24.0 + MediaQuery.of(context).padding.bottom;
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: 20, left: 16, right: 16, bottom: bottomPadding),
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 240),
+            child: EmptyStateContent(
+              icon: Icons.lock_outline_rounded,
+              title: l10n.profileBalancePrivate,
+              subtitle: '',
+            ),
+          ),
+        ],
+      );
+    }
+    final user = authstate.profileUserModel;
+    if (user == null) {
+      return Container(color: MockupDesign.background);
+    }
     return Container(
       color: MockupDesign.background,
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: List.generate(5, (index) {
-            final selected = _myToldyaStatusFilter == index;
-            return GestureDetector(
-              onTap: () => setState(() => _myToldyaStatusFilter = index),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: selected ? AppNeon.green.withOpacity(0.18) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      labels[index],
-                      style: TextStyle(
-                        color: selected ? AppNeon.green : Colors.grey.shade500,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      width: selected ? 24 : 0,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: AppNeon.green,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 24 + MediaQuery.of(context).padding.bottom),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _WalletCapsule(
+              user: user,
+              isMyProfile: true,
+              canClaimDailyBonus: authstate.canClaimDailyBonus,
+              onClaimDailyBonus: () async {
+                final msg = await authstate.claimDailyBonus(context);
+                if (context.mounted) {
+                  if (msg != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                  }
+                  authstate.getProfileUser(userProfileId: widget.profileId);
+                }
+              },
+              onTokenManagement: () => Navigator.of(context).pushNamed('/TokenEarnPage'),
+            ),
+            SizedBox(height: 12),
+            TokenEarnPageContent(
+              embedInProfile: true,
+              onAfterBonusClaim: () {
+                authstate.getProfileUser(userProfileId: widget.profileId);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -809,11 +879,15 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _toldyaFeedList(BuildContext context, AuthState authstate,
       List<FeedModel>? tweetsList, bool isreply, bool isMedia, String id,
-      {int? statusFilter}) {
+      {int? statusFilter,
+      List<FeedModel>? prebuiltList,
+      String? emptyTitlePrebuilt,
+      IconData? prebuiltEmptyIcon}) {
     List<FeedModel> list;
 
-    /// If user hasn't tweeted yet
-    if (tweetsList == null) {
+    if (prebuiltList != null) {
+      list = prebuiltList;
+    } else if (tweetsList == null) {
       list = [];
     } else if (isMedia) {
       /// Display all Tweets with media file
@@ -837,12 +911,12 @@ class _ProfilePageState extends State<ProfilePage>
           switch (statusFilter) {
             case 0: // Aktif: yayında veya kilitli, tahmin katılımı açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
               return s == Statu.statusLive || s == Statu.statusLocked;
-            case 1: // Bekleyen: admin/AI incelemesi bekliyor (statu 1, 6)
-              return s == Statu.statusPending || s == Statu.statusPendingAiReview;
+            case 1: // Bekleyen: yönetici incelemesi (statu 1, 6)
+              return s == Statu.statusPending || s == Statu.statusPendingAdminReview;
             case 2: // Tamamlanan: onaylanmış / sonuçlanmış (statu 2, 4) — "bitmiş" burada
               return s == Statu.statusOk || s == Statu.statusComplete;
-            case 3: // Reddedilen: admin/AI reddi (statu 3, 7)
-              return s == Statu.statusDenied || s == Statu.statusRejectedByAi;
+            case 3: // Reddedilen: yönetici reddi (statu 3, 7)
+              return s == Statu.statusDenied || s == Statu.statusRejectedByAdmin;
             case 4: // Kilitli: katılım kapandı, sonuç bekleniyor (statu 5)
               return s == Statu.statusLocked;
             default:
@@ -921,18 +995,21 @@ class _ProfilePageState extends State<ProfilePage>
                   ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 240),
                     child: EmptyStateContent(
-                      icon: statusFilter == 1
-                          ? Icons.pending_actions
-                          : statusFilter == 3
-                              ? Icons.block
-                              : Icons.inbox_outlined,
-                      title: _emptyListTitle(
-                        isreply: isreply,
-                        isMedia: isMedia,
-                        statusFilter: statusFilter,
-                        isMyProfile: isMyProfile,
-                        profileUserName: authstate.profileUserModel?.userName ?? '',
-                      ),
+                      icon: emptyTitlePrebuilt != null
+                          ? (prebuiltEmptyIcon ?? Icons.inbox_outlined)
+                          : statusFilter == 1
+                              ? Icons.pending_actions
+                              : statusFilter == 3
+                                  ? Icons.block
+                                  : Icons.inbox_outlined,
+                      title: emptyTitlePrebuilt ??
+                          _emptyListTitle(
+                            isreply: isreply,
+                            isMedia: isMedia,
+                            statusFilter: statusFilter,
+                            isMyProfile: isMyProfile,
+                            profileUserName: authstate.profileUserModel?.userName ?? '',
+                          ),
                       subtitle: isMyProfile
                           ? AppLocalizations.of(context)!.emptyPredictionsDefaultSubtitle
                           : AppLocalizations.of(context)!.willShowHere,

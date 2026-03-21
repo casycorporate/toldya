@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Feature flags
-/// - Keep as `const` so tree-shaking / compile-time guards work.
-const bool kEnableChallenges = false;
-/// Post detail (FeedPostDetail) feature gate.
+/// Feature flags (`const` — tree-shaking / derleme zamanı koruması).
+/// Post detail (FeedPostDetail) özelliği.
 const bool kEnablePostDetail = false;
 
 /// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
@@ -209,10 +207,10 @@ class Statu{
   static final int statusComplete=4;
   /// Kapanış zamanı geçti, katılım kapandı, sonuç bekleniyor
   static final int statusLocked=5;
-  /// Yapay zeka incelemesi bekliyor (henüz yayında değil)
-  static final int statusPendingAiReview=6;
-  /// Yapay zeka tarafından reddedildi (topluluk kuralları / tutarlılık)
-  static final int statusRejectedByAi=7;
+  /// Yönetici incelemesi bekliyor (henüz yayında değil)
+  static final int statusPendingAdminReview = 6;
+  /// Yönetici incelemesinde reddedildi
+  static final int statusRejectedByAdmin = 7;
 }
 class FeedResult{
   FeedResult._();

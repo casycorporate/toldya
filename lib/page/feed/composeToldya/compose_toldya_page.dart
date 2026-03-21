@@ -18,7 +18,6 @@ import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
@@ -51,9 +50,6 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
   late TextEditingController _textEditingController;
   DateTime? _selectedEndDate;
   int? _selectedEndPresetIndex;
-  /// Meydan okuma: seçilen tek kullanıcı (1v1)
-  UserModel? _challengeeUser;
-
   @override
   void dispose() {
     scrollcontroller.dispose();
@@ -252,7 +248,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  l10n.adminModerationEndDateLabel,
+                  l10n.composeToldyaDateSectionTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: _textColor.withOpacity(0.95),
@@ -284,7 +280,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                   child: Text(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    '📅 Özel tarih seç',
+                    l10n.composeToldyaPickCustomDate,
                     style: const TextStyle(
                       color: _textColor,
                       fontWeight: FontWeight.w600,
@@ -330,7 +326,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
 
       FeedModel toldyaModel = createToldyaModel();
 
-      if (_image != null) {
+      if (!widget.isToldya && _image != null) {
         final imagePath = await state.uploadFile(_image!);
         if (imagePath != null) toldyaModel.imagePath = imagePath;
       }
@@ -346,9 +342,11 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       }
       debugPrint("[FeedDebug] Compose: post published, toldyaKey=${toldyaModel.key ?? 'unknown'}");
 
-      await Provider.of<ComposeToldyaState>(context, listen: false)
-          .sendNotification(
-              toldyaModel, Provider.of<SearchState>(context, listen: false));
+      if (!widget.isToldya) {
+        await Provider.of<ComposeToldyaState>(context, listen: false)
+            .sendNotification(
+                toldyaModel, Provider.of<SearchState>(context, listen: false));
+      }
 
       if (!mounted) return;
       kScreenloader.hideLoader();
@@ -356,7 +354,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       if (widget.isToldya) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.postUnderReview),
+            content: Text(l10n.composeToldyaReviewPending),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
@@ -387,7 +385,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     var state = Provider.of<FeedState>(context, listen: false);
     var authState = Provider.of<AuthState>(context, listen: false);
     final userModel = authState.userModel!;
-    userModel.rank = (userModel.rank ?? 0) + 2;
+    if (!widget.isToldya) {
+      userModel.rank = (userModel.rank ?? 0) + 2;
+    }
     authState.createUser(userModel);
     var myUser = userModel;
     var profilePic = myUser.profilePic ?? dummyProfilePic;
@@ -402,20 +402,13 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     final endDateIso = widget.isToldya && _selectedEndDate != null
         ? _selectedEndDate!.toIso8601String()
         : null;
-    final resolutionDateIso = endDateIso != null
-        ? (DateTime.parse(endDateIso).add(const Duration(minutes: 1))).toIso8601String()
-        : null;
-
     FeedModel reply = FeedModel(
-        statu: widget.isToldya ? Statu.statusPendingAiReview : Statu.statusLive,
+        statu: widget.isToldya ? Statu.statusPendingAdminReview : Statu.statusLive,
         topic: widget.isToldya ? null : state.toldyaRetoldyaSourceModel?.topic,
         description: _textEditingController.text,
         user: commentedUser,
         createdAt: nowUtc.toIso8601String(),
         endDate: endDateIso,
-        resolutionDate: resolutionDateIso,
-        oracleSource: null,
-        oracleApiUrl: null,
         collateralAmount: null,
         tags: tags,
         parentkey: null,
@@ -425,119 +418,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 ? model.key
                 : null,
         userId: myUser.userId);
-    if (kEnableChallenges && widget.isToldya && _challengeeUser?.userId != null) {
-      reply.challengeeUserId = _challengeeUser!.userId;
-    }
     return reply;
-  }
-
-  Widget _buildChallengeeRow() {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            AppLocalizations.of(context)!.challengeLabel,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-            ),
-          ),
-          if (_challengeeUser != null) ...[
-            Text(
-              '@${_challengeeUser!.userName ?? ''}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => setState(() => _challengeeUser = null),
-              child: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurface),
-            ),
-          ] else
-            TextButton.icon(
-              onPressed: _openChallengeePicker,
-              icon: Icon(Icons.person_add, size: 18),
-              label: Text(AppLocalizations.of(context)!.selectUser),
-            ),
-        ],
-      ),
-    );
-  }
-
-  void _openChallengeePicker() {
-    final searchState = Provider.of<SearchState>(context, listen: false);
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final myId = authState.userId;
-    if (searchState.userlist == null) {
-      searchState.getDataFromDatabase();
-    }
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      builder: (ctx) => SafeArea(
-        child: Consumer<SearchState>(
-          builder: (ctx, searchState, _) {
-            final raw = searchState.userlist ?? const <UserModel>[];
-            final list =
-                raw.where((u) => u.userId != null && u.userId != myId).toList();
-            final isLoading = searchState.isBusy && searchState.userlist == null;
-            if (isLoading) {
-              return Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    AppLocalizations.of(context)!.challengePickTitle,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                if (list.isEmpty)
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      AppLocalizations.of(context)!.noPersonResult,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  )
-                else
-                  Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: list.length,
-                      itemBuilder: (ctx, i) {
-                        final u = list[i];
-                        return ListTile(
-                          leading: customProfileImage(context, u.profilePic,
-                              userId: u.userId, height: 40),
-                          title: Text(u.displayName ?? ''),
-                          subtitle: Text('@${u.userName ?? ''}'),
-                          onTap: () {
-                            setState(() => _challengeeUser = u);
-                            if (Navigator.canPop(ctx)) Navigator.pop(ctx);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
   }
 
   @override
@@ -578,7 +459,6 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (kEnableChallenges && widget.isToldya) _buildChallengeeRow(),
                       widget.isRetoldya
                           ? _ComposeRetoldya(this)
                           : _ComposeToldya(this),
@@ -607,6 +487,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: Consumer<ComposeToldyaState>(
           builder: (context, composeState, _) {
+            final l10n = AppLocalizations.of(context)!;
             final hasText = composeState.description.isNotEmpty;
             final hasClosing = _selectedEndDate != null;
             final isTextReady = composeState.enableSubmitButton;
@@ -632,9 +513,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Tahmini Paylaş',
-                  style: TextStyle(
+                child: Text(
+                  l10n.composeToldyaShare,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -744,6 +625,7 @@ class _ComposeRetoldya
                 child: _TextField(
                   isToldya: false,
                   isRetoldya: true,
+                  enableMentions: true,
                   textEditingController: viewState._textEditingController,
                 ),
               ),
@@ -892,46 +774,64 @@ class _ComposeToldya
   @override
   Widget build(BuildContext context) {
     var authState = Provider.of<AuthState>(context, listen: false);
+    final textEditor = Container(
+      decoration: BoxDecoration(
+        color: _ComposeToldyaReplyPageState._cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.06),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: customImage(
+              context,
+              authState.user?.photoURL ?? '',
+              height: 40,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _TextField(
+              isToldya: widget.isToldya,
+              isRetoldya: widget.isRetoldya,
+              textEditingController: viewState._textEditingController,
+              enableMentions: !widget.isToldya || widget.isRetoldya,
+            ),
+          )
+        ],
+      ),
+    );
+
+    if (viewState.widget.isToldya) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const SizedBox(height: 10),
+            textEditor,
+            viewState._buildEndDateSection(context),
+          ],
+        ),
+      );
+    }
+
     return Container(
       height: fullHeight(context),
       padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          viewState.widget.isToldya ? SizedBox.shrink() : _tweerCard(context),
+          _tweerCard(context),
           const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: _ComposeToldyaReplyPageState._cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.06),
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: customImage(
-                    context,
-                    authState.user?.photoURL ?? '',
-                    height: 40,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _TextField(
-                    isToldya: widget.isToldya,
-                    textEditingController: viewState._textEditingController,
-                  ),
-                )
-              ],
-            ),
-          ),
-          if (viewState.widget.isToldya) viewState._buildEndDateSection(context),
+          textEditor,
           Flexible(
             child: Stack(
               children: <Widget>[
@@ -957,11 +857,13 @@ class _TextField extends StatelessWidget {
       {Key? key,
       required this.textEditingController,
       this.isToldya = false,
-      this.isRetoldya = false})
+      this.isRetoldya = false,
+      this.enableMentions = true})
       : super(key: key);
   final TextEditingController textEditingController;
   final bool isToldya;
   final bool isRetoldya;
+  final bool enableMentions;
 
   @override
   Widget build(BuildContext context) {
@@ -977,7 +879,8 @@ class _TextField extends StatelessWidget {
           ],
           onChanged: (text) {
             Provider.of<ComposeToldyaState>(context, listen: false)
-                .onDescriptionChanged(text, searchState);
+                .onDescriptionChanged(text, searchState,
+                    enableMentionSearch: enableMentions);
           },
           maxLines: null,
           style: TextStyle(
@@ -988,7 +891,7 @@ class _TextField extends StatelessWidget {
           decoration: InputDecoration(
               border: InputBorder.none,
               hintText: isToldya
-                  ? 'Ne olacak? (örn: Galatasaray kazanır mı?)'
+                  ? AppLocalizations.of(context)!.composeToldyaHint
                   : isRetoldya
                       ? 'Add a comment'
                       : 'Bu tahmine yorum yap',

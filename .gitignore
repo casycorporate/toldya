@@ -83,7 +83,6 @@ GoogleService-Info.plist
 functions/node_modules/
 functions/.env
 functions/.env.*
-functions/openrouter-key.txt
 android/app/google-services.json
 google-services.json
 

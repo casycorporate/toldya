@@ -58,7 +58,8 @@ class ComposeToldyaState extends ChangeNotifier {
   /// then value of `enableSubmitButton` is set to true.
   ///
   /// `enableSubmitButton` is responsible to enable/disable toldya submit button
-  void onDescriptionChanged(String text, SearchState searchState) {
+  void onDescriptionChanged(String text, SearchState searchState,
+      {bool enableMentionSearch = true}) {
     description = text;
     hideUserList = false;
     _isNearLimit = text.length >= kToldyaWarnLength && text.length < kToldyaMaxLength;
@@ -71,11 +72,14 @@ class ComposeToldyaState extends ChangeNotifier {
     }
 
     enableSubmitButton = true;
-    var last = text.length > 0 ? text.substring(text.length - 1, text.length) : '';
 
-    /// Regex to search last username available from description
-    /// Ex. `Hello @john do you know @ricky`
-    /// In above description reegex is serch for last username ie. `@ricky`.
+    if (!enableMentionSearch) {
+      hideUserList = true;
+      notifyListeners();
+      return;
+    }
+
+    var last = text.length > 0 ? text.substring(text.length - 1, text.length) : '';
 
     RegExp regExp = new RegExp(usernameRegex);
     var status = regExp.hasMatch(text);
@@ -83,12 +87,9 @@ class ComposeToldyaState extends ChangeNotifier {
       Iterable<Match> _matches = regExp.allMatches(text);
       var name = text.substring(_matches.last.start, _matches.last.end);
 
-      /// If last character is `@` then reset search user list
       if (last == "@") {
-        /// Reset user list
         searchState.filterByUsername("");
       } else {
-        /// Filter user list according to name
         searchState.filterByUsername(name);
       }
     } else {

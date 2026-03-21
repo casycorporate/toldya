@@ -298,11 +298,11 @@ class _FeedPage extends State<FeedPage> {
                                     case 'completed':
                                       statu = Statu.statusComplete;
                                       break;
-                                    case 'pendingAi':
-                                      statu = Statu.statusPendingAiReview;
+                                    case 'pendingAdmin':
+                                      statu = Statu.statusPendingAdminReview;
                                       break;
-                                    case 'rejectedAi':
-                                      statu = Statu.statusRejectedByAi;
+                                    case 'rejectedAdmin':
+                                      statu = Statu.statusRejectedByAdmin;
                                       break;
                                     case 'live':
                                     default:
@@ -589,10 +589,10 @@ class Choice {
         return l10n.adminFilterRejected;
       case 'completed':
         return l10n.adminFilterCompleted;
-      case 'pendingAi':
-        return l10n.adminFilterPendingAiReview;
-      case 'rejectedAi':
-        return l10n.adminFilterRejectedByAi;
+      case 'pendingAdmin':
+        return l10n.adminFilterPendingAdminReview;
+      case 'rejectedAdmin':
+        return l10n.adminFilterRejectedByAdmin;
       default:
         return id;
     }
@@ -605,7 +605,7 @@ const List<Choice> choices = <Choice>[
   Choice(id: 'approved', icon: Icons.directions_boat),
   Choice(id: 'rejected', icon: Icons.directions_bus),
   Choice(id: 'completed', icon: Icons.directions_railway),
-  Choice(id: 'pendingAi', icon: Icons.pending_actions),
-  Choice(id: 'rejectedAi', icon: Icons.block),
+  Choice(id: 'pendingAdmin', icon: Icons.pending_actions),
+  Choice(id: 'rejectedAdmin', icon: Icons.block),
 ];
 

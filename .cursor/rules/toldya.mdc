@@ -8,10 +8,50 @@ alwaysApply: true
 ## Proje bağlamı
 
 - **Uygulama:** Sosyal tahmin pazarı, pari-mutuel puan havuzu, tokenomics, stash drip.
-- **Stack:** Flutter (Dart), Firebase (Realtime DB, Cloud Functions, Auth, Storage), OpenRouter (gpt-4o-mini / claude-3-haiku).
+- **Stack:** Flutter (Dart), Firebase (Realtime DB, Cloud Functions, Auth, Storage).
 - **State:** Provider (AuthState, FeedState, ComposeToldyaState, SearchState).
 - **Routing:** Mevcut route'lara uy: /CreateFeedPage/toldya, /FeedPostDetail/{postId}, /profile/{id}, /toldya/{id}. Deep link: profile ve toldya için uygun şekilde.
 - **Compose türleri:** New Toldya (isToldya:true), Retoldya (isRetoldya:true), Reply (parentKey != null).
+
+### Ürün akışı (özet — tek anlatım)
+
+Ürün ve dokümantasyon dili aşağıdaki akıştır; ek dallanmalar (zamanlanmış kilit, dağıtım job’u vb.) uygulama detayıdır, kullanıcı hikâyesini bu şema ile sınırlı tut.
+
+```mermaid
+flowchart TD
+
+A[Toldya oluşturuldu] --> B[Admin incelemesi]
+
+B --> C{Onaylandı mı?}
+
+C -- Hayır --> D[Reddedildi]
+D --> E[Kullanıcıya bildirim]
+E --> F[Süreç sonu]
+
+C -- Evet --> G[Feed'de yayınlandı]
+
+G --> H[Kullanıcılar görüntüler]
+H --> I[Yes / No bahisleri yapılır]
+I --> J[Toplam peg ve oranlar oluşur]
+
+J --> K{Süre doldu mu?}
+
+K -- Hayır --> I
+
+K -- Evet --> L[Admin sonucu belirler]
+
+L --> M{Sonuç ne?}
+M --> N[Yes kazandı]
+M --> O[No kazandı]
+
+N --> P[Ödül dağıtımı]
+O --> P
+
+P --> Q[Kullanıcı bakiyeleri güncellenir]
+Q --> R[Geçmiş işlemlere eklenir]
+
+R --> S[Toldya kapanır]
+```
 
 ---
 
@@ -29,17 +69,16 @@ alwaysApply: true
 ## Firebase ve güvenlik
 
 - **Tahmin katılımı:** Client tarafında tweet node'una doğrudan yazma YOK. Tüm katılım işlemi `placeBet` Callable Cloud Function üzerinden (istemci metodu: `submitStake`).
-- **Post statu:** 6 (AI incelemesi) → 0 (Yayında) → 5 (Kilitli) → 2 (Onaylanan/Ok) → 7 (AI reddi). AI moderasyon: runAiModeration (statu 6 → 0 veya 7).
-- **Bildirimler:** Cloud Functions (onBetCreated, onPredictionResolved, onFollowerCreated) FCM ile; token profile/{uid}/fcmToken.
-- **API key:** OpenRouter için Firebase Secret Manager (OPENROUTER_API_KEY); client'ta hardcode yok.
+- **Post statu:** 6 (Yönetici incelemesi) → 0 (Yayında) → 5 (Kilitli) → 2 (Onaylanan/Ok) → 7 (Yönetici reddi). Moderasyon: `moderateToldya` callable (statu 6 → 0 veya 7).
+- **Bildirimler:** Cloud Functions (onBetCreated, onPredictionResolved, onToldyaRejectedByAdmin, …) FCM ile; token profile/{uid}/fcmToken.
 - **Veri:** Firebase referansları temiz; FeedModel, UserModel gibi modellerle parse et. HTTP/Callable hatalarını kullanıcı dostu Snackbar ile göster (örn. INSUFFICIENT_BALANCE → "Yetersiz Bakiye").
 
 ---
 
 ## Tokenomics
 
-- **Cüzdan:** pegCount (harcanabilir), stashCount (kilitli). pegCount==0 ve stashCount>0 ise 24 saatte 200 token stash drip (runStashDrip).
-- **Kazanç:** runDistributeWinnings → %70 pegCount, %30 stashCount.
+- **Cüzdan:** pegCount (harcanabilir), stashCount (kilitli). pegCount==0 ve stashCount>0 ise 24 saatte 200 token stash drip (batch içinde `runStashDripLogic` / zamanlanmış `scheduledToldyaBatchJobs`).
+- **Kazanç:** dağıtım job’u (`runDistributeWinningsLogic`, HTTP’de `runToldyaBatchJobs` içinde) → %70 pegCount, %30 stashCount.
 - **Katılım limiti:** Rütbe çarpanı (Rookie 10%, Analyst 25%, Master 50%) × toplam harcanabilir bakiye. Havuz toplamı < 1000 ise üst sınır 100 token.
 - **UI:** Bakiye ve limit güncellemelerinde her zaman güncel hesaplanan değerler (bakiye, xp, havuz) kullan; statik varsayım yapma.
 
@@ -48,7 +87,7 @@ alwaysApply: true
 ## Otomasyon notları
 
 - **Katılım UI:** üst sınır = rütbe limiti + bakiye + havuz eşiği (1000 altı havuz = 100 max).
-- **AI (Cloud Functions):** OpenRouter HTTP POST, system prompt'lar ve Secret Manager kullan.
+- **Sonuç ve dağıtım:** Ürün akışına göre sonucu yönetici belirler; ardından ödül dağıtımı ve bakiye güncellemesi. LLM/AI kullanılmaz. (Arka planda zamanlanmış kilit/dağıtım veya isteğe bağlı harici doğrulama kodda kalabilir; ürün anlatımı yukarıdaki akış şemasıdır.)
 - **Yeni ekran:** Dark theme paleti, gerekirse HomePage alt sekme yapısına entegre et.
 ---
 

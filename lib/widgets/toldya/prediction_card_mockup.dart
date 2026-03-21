@@ -196,7 +196,7 @@ class PredictionCardMockup extends StatelessWidget {
                 )
               else
                 Text(
-                  model.statu == Statu.statusPendingAiReview
+                  model.statu == Statu.statusPendingAdminReview
                       ? AppLocalizations.of(context)!.statuUnderReview
                       : AppLocalizations.of(context)!.predictionEnded,
                   style: TextStyle(

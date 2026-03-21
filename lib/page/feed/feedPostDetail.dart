@@ -110,7 +110,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
   }
 }
 
-/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, tahmin, son katılımlar.
+/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, bar+tooltip, tahmin, son katılımlar.
 class _PredictionDetailBody extends StatelessWidget {
   final FeedModel model;
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -204,7 +204,7 @@ class _PredictionDetailBody extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    model.statu == Statu.statusPendingAiReview
+                    model.statu == Statu.statusPendingAdminReview
                         ? AppLocalizations.of(context)!.statuUnderReview
                         : (kapanisText.isNotEmpty
                             ? AppLocalizations.of(context)!.closingAt(kapanisText)

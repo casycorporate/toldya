@@ -9,8 +9,8 @@ const {
   STATU_LIVE,
   STATU_LOCKED,
   STATU_OK,
-  STATU_PENDING_AI_REVIEW,
-  STATU_REJECTED_BY_AI,
+  STATU_PENDING_ADMIN_REVIEW,
+  STATU_REJECTED_BY_ADMIN,
   FEED_RESULT_LIKE,
   FEED_RESULT_UNLIKE,
   POOL_THRESHOLD,
@@ -264,22 +264,14 @@ function registerCallables(functions) {
 
     const reasonRaw = data?.reason;
     const reason = reasonRaw == null ? "" : safeString(String(reasonRaw)).trim();
-    if (decision === "reject") {
-      if (!reason) throw new functions.https.HttpsError("invalid-argument", "reject için reason zorunludur.");
-      if (reason.length < 5) throw new functions.https.HttpsError("invalid-argument", "reason en az 5 karakter olmalı.");
-    }
 
     const topicInput = data?.topic != null ? safeString(String(data.topic)).trim() : "";
     const endDateInput = data?.endDate != null ? safeString(String(data.endDate)).trim() : "";
-    const resolutionDateInput = data?.resolutionDate != null ? safeString(String(data.resolutionDate)).trim() : "";
-    const oracleSourceInput = data?.oracleSource != null ? safeString(String(data.oracleSource)).trim() : "";
-    const oracleApiUrlInput = data?.oracleApiUrl != null ? safeString(String(data.oracleApiUrl)).trim() : "";
     const collateralAmountInput = data?.collateralAmount;
     // Debug-only visibility (stageLog is debug-gated)
     stageLog("payload_flags", {
       hasTopicInput: !!topicInput,
       hasEndDateInput: !!endDateInput,
-      hasResolutionDateInput: !!resolutionDateInput,
     });
 
     function parseIsoUtc(str, fieldName) {
@@ -306,7 +298,6 @@ function registerCallables(functions) {
       hasManual: !!pre.manualModerationAt,
       hasTopic: !!pre.topic,
       hasEndDate: !!pre.endDate,
-      hasResolutionDate: !!pre.resolutionDate,
     });
     const preStatuNum = Number(pre.statu);
 
@@ -315,14 +306,10 @@ function registerCallables(functions) {
       // Topic: tüm onaylanan kayıtlar için "genel" olarak ayarlanır.
       const finalTopic = "genel";
 
-      // Tarih mantığı:
-      // - Kullanıcının tahmini için girdiği tarih (userEventDate) esas alınır.
-      // - endDate  = userEventDate - 1 dakika
-      // - resolutionDate = userEventDate
+      // Tarih: tahmin bitişi (endDate). Bu ana kadar katılım; sonra kilit (job). Sonuç adminResolveToldya.
       const userEventRaw =
-        resolutionDateInput ||
         endDateInput ||
-        safeString(String(pre.resolutionDate || pre.endDate || "")).trim();
+        safeString(String(pre.endDate || pre.resolutionDate || "")).trim();
       if (!userEventRaw) {
         throw new functions.https.HttpsError(
           "failed-precondition",
@@ -333,15 +320,8 @@ function registerCallables(functions) {
 
       const now = new Date();
       const eventD = parseIsoUtc(userEventRaw, "userEventDate");
-      const resD = eventD;
-      const endD = new Date(eventD.getTime() - 60 * 1000);
-      if (endD <= now) throw new functions.https.HttpsError("failed-precondition", "endDate gelecekte olmalı.");
-      if (resD <= now) throw new functions.https.HttpsError("failed-precondition", "resolutionDate gelecekte olmalı.");
-      if (resD <= endD) throw new functions.https.HttpsError("failed-precondition", "resolutionDate endDate'ten sonra olmalı.");
-      const minGapMs = 60 * 60 * 1000;
-      if ((resD.getTime() - endD.getTime()) < minGapMs) {
-        throw new functions.https.HttpsError("failed-precondition", "resolutionDate endDate'ten en az 1 saat sonra olmalı.");
-      }
+      const endD = eventD;
+      if (endD <= now) throw new functions.https.HttpsError("failed-precondition", "Tahmin bitişi gelecekte olmalı.");
 
       let collateralAmount = null;
       if (collateralAmountInput != null) {
@@ -355,9 +335,6 @@ function registerCallables(functions) {
       approveFinal = {
         topic: finalTopic,
         endDate: endD.toISOString(),
-        resolutionDate: resD.toISOString(),
-        oracleSource: oracleSourceInput || null,
-        oracleApiUrl: oracleApiUrlInput || null,
         collateralAmount,
       };
     }
@@ -369,7 +346,7 @@ function registerCallables(functions) {
     const maxTxAttempts = 12;
     const jitter = () => Math.floor(Math.random() * 101); // 0-100ms
 
-    const targetStatu = decision === "approve" ? STATU_LIVE : STATU_REJECTED_BY_AI;
+    const targetStatu = decision === "approve" ? STATU_LIVE : STATU_REJECTED_BY_ADMIN;
     const statuRef = getDb().ref(`toldya/${toldyaId}/statu`);
 
     let committed = false;
@@ -379,21 +356,21 @@ function registerCallables(functions) {
         lastStatuSeen = cur;
         // If child `statu` is temporarily missing but parent snapshot says it's pending,
         // treat it as pending to self-heal missing child field.
-        const n = (cur == null && preStatuNum === STATU_PENDING_AI_REVIEW) ? STATU_PENDING_AI_REVIEW : Number(cur);
-        if (n !== STATU_PENDING_AI_REVIEW) return; // abort
+        const n = (cur == null && preStatuNum === STATU_PENDING_ADMIN_REVIEW) ? STATU_PENDING_ADMIN_REVIEW : Number(cur);
+        if (n !== STATU_PENDING_ADMIN_REVIEW) return; // abort
         return targetStatu;
       }, undefined, false);
 
       if (tx?.committed) {
         committed = true;
-        stageLog("statu_tx_committed", { attempt, from: STATU_PENDING_AI_REVIEW, to: targetStatu });
+        stageLog("statu_tx_committed", { attempt, from: STATU_PENDING_ADMIN_REVIEW, to: targetStatu });
         break;
       }
 
       // If not committed and still looks pending (rare), retry with backoff.
       const n = Number(lastStatuSeen);
-      if (n !== STATU_PENDING_AI_REVIEW) {
-        stageLog("statu_tx_abort_wrong_statu", { attempt, statu: lastStatuSeen, expected: STATU_PENDING_AI_REVIEW });
+      if (n !== STATU_PENDING_ADMIN_REVIEW) {
+        stageLog("statu_tx_abort_wrong_statu", { attempt, statu: lastStatuSeen, expected: STATU_PENDING_ADMIN_REVIEW });
         break;
       }
       const backoffMs = Math.min(150 * attempt, 1200) + jitter();
@@ -416,12 +393,12 @@ function registerCallables(functions) {
         );
       }
       const statuNum = Number(cur.statu);
-      if (statuNum !== STATU_PENDING_AI_REVIEW) {
-        stageLog("wrong_statu", { statu: cur.statu, expected: STATU_PENDING_AI_REVIEW });
+      if (statuNum !== STATU_PENDING_ADMIN_REVIEW) {
+        stageLog("wrong_statu", { statu: cur.statu, expected: STATU_PENDING_ADMIN_REVIEW });
         throw new functions.https.HttpsError(
           "failed-precondition",
           "Bu kayıt bekleyen durumda değil.",
-          { statu: cur.statu, expected: STATU_PENDING_AI_REVIEW }
+          { statu: cur.statu, expected: STATU_PENDING_ADMIN_REVIEW }
         );
       }
       stageLog("statu_tx_not_committed_race", {});
@@ -442,9 +419,6 @@ function registerCallables(functions) {
     if (decision === "approve") {
       updates.topic = approveFinal.topic;
       updates.endDate = approveFinal.endDate;
-      updates.resolutionDate = approveFinal.resolutionDate;
-      if (approveFinal.oracleSource) updates.oracleSource = approveFinal.oracleSource;
-      if (approveFinal.oracleApiUrl) updates.oracleApiUrl = approveFinal.oracleApiUrl;
       if (approveFinal.collateralAmount != null) updates.collateralAmount = approveFinal.collateralAmount;
     }
     await toldyaRef.update(updates);
@@ -454,7 +428,6 @@ function registerCallables(functions) {
       statu: targetStatu,
       topic: updates.topic || "",
       endDate: updates.endDate || "",
-      resolutionDate: updates.resolutionDate || "",
     };
     stageLog("update_done", { decision: appliedDecision });
       // Append-only audit log

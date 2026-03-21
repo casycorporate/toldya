@@ -18,8 +18,8 @@ function getDb() {
 const STATU_LIVE = 0;
 const STATU_LOCKED = 5;
 const STATU_OK = 2;
-const STATU_PENDING_AI_REVIEW = 6;
-const STATU_REJECTED_BY_AI = 7;
+const STATU_PENDING_ADMIN_REVIEW = 6;
+const STATU_REJECTED_BY_ADMIN = 7;
 
 // FeedResult değerleri (lib/helper/constant.dart ile uyumlu)
 const FEED_RESULT_LIKE = 1; // Evet
@@ -90,8 +90,8 @@ module.exports = {
   STATU_LIVE,
   STATU_LOCKED,
   STATU_OK,
-  STATU_PENDING_AI_REVIEW,
-  STATU_REJECTED_BY_AI,
+  STATU_PENDING_ADMIN_REVIEW,
+  STATU_REJECTED_BY_ADMIN,
   FEED_RESULT_LIKE,
   FEED_RESULT_UNLIKE,
   POOL_THRESHOLD,

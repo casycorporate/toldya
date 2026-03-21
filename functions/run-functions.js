@@ -1,5 +1,5 @@
 /**
- * Tüm zamanlanmış fonksiyon mantığını sırayla çalıştırır.
+ * Batch mantığını sırayla çalıştırır (Cloud Function deploy'u değil; yerel Node).
  * Kullanım: cd functions && node run-functions.js
  * Not: GOOGLE_APPLICATION_CREDENTIALS veya gcloud auth ile Firebase erişimi gerekir.
  */
@@ -19,15 +19,16 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = `https://${projectId}-default-rtdb.firebaseio.com`;
 }
 
-const {
-  runLockPredictionsLogic,
-  runOracleResolutionLogic,
-  runDistributeWinningsLogic,
-  runStashDripLogic,
-} = require("./index");
+const admin = require("firebase-admin");
+if (!admin.apps.length) {
+  admin.initializeApp({ databaseURL: process.env.DATABASE_URL });
+}
+
+const { runLockPredictionsLogic } = require("./jobs_logic");
+const { runDistributeWinningsLogic, runStashDripLogic } = require("./tokenomics");
 
 async function main() {
-  console.log("=== Fonksiyonlar çalıştırılıyor ===\n");
+  console.log("=== Toldya batch (kilit → dağıtım → stash) ===\n");
 
   try {
     const lockResult = await runLockPredictionsLogic();
@@ -37,22 +38,15 @@ async function main() {
   }
 
   try {
-    const resolveResult = await runOracleResolutionLogic();
-    console.log("2. runOracleResolutionLogic:", resolveResult);
-  } catch (e) {
-    console.error("runOracleResolutionLogic hata:", e.message);
-  }
-
-  try {
     const distResult = await runDistributeWinningsLogic();
-    console.log("3. runDistributeWinningsLogic:", distResult);
+    console.log("2. runDistributeWinningsLogic:", distResult);
   } catch (e) {
     console.error("runDistributeWinningsLogic hata:", e.message);
   }
 
   try {
     const dripResult = await runStashDripLogic();
-    console.log("4. runStashDripLogic:", dripResult);
+    console.log("3. runStashDripLogic:", dripResult);
   } catch (e) {
     console.error("runStashDripLogic hata:", e.message);
   }

@@ -325,7 +325,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminQuickFixDesc.
   ///
   /// In tr, this message translates to:
-  /// **'statu=1 olup tarih alanları eksik/bozuk olan kayıtları düzeltir. Tarihleri ayarlayıp isterseniz yayına alarak normal kilitleme → oracle → dağıtım akışını başlatabilirsiniz.'**
+  /// **'statu=1 olup endDate eksik veya geçersiz olan kayıtları düzeltir. Bitiş tarihini ayarlayıp isterseniz yayına alarak kilitleme ve dağıtım akışına alabilirsiniz.'**
   String get adminQuickFixDesc;
 
   /// No description provided for @adminQuickFixCount.
@@ -352,23 +352,17 @@ abstract class AppLocalizations {
   /// **'End date'**
   String get adminQuickFixEndDateLabel;
 
-  /// No description provided for @adminQuickFixResolutionDateLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Resolution date'**
-  String get adminQuickFixResolutionDateLabel;
-
   /// No description provided for @adminQuickFixAutofillEndNowPlus.
   ///
   /// In tr, this message translates to:
   /// **'EndDate = şimdi + 5dk'**
   String get adminQuickFixAutofillEndNowPlus;
 
-  /// No description provided for @adminQuickFixAutofillResolutionPlus1h.
+  /// No description provided for @adminQuickFixAutofillEndPlus1h.
   ///
   /// In tr, this message translates to:
-  /// **'ResolutionDate = endDate + 1s'**
-  String get adminQuickFixAutofillResolutionPlus1h;
+  /// **'EndDate = şimdi + 1 saat'**
+  String get adminQuickFixAutofillEndPlus1h;
 
   /// No description provided for @adminQuickFixSetOnly.
   ///
@@ -394,24 +388,6 @@ abstract class AppLocalizations {
   /// **'EndDate gerekli.'**
   String get adminQuickFixValidationEndRequired;
 
-  /// No description provided for @adminQuickFixValidationResolutionRequired.
-  ///
-  /// In tr, this message translates to:
-  /// **'ResolutionDate gerekli.'**
-  String get adminQuickFixValidationResolutionRequired;
-
-  /// No description provided for @adminQuickFixValidationResolutionAfterEnd.
-  ///
-  /// In tr, this message translates to:
-  /// **'ResolutionDate, EndDate\'ten sonra olmalı.'**
-  String get adminQuickFixValidationResolutionAfterEnd;
-
-  /// No description provided for @adminQuickFixValidationMin1h.
-  ///
-  /// In tr, this message translates to:
-  /// **'ResolutionDate, EndDate\'ten en az 1 saat sonra olmalı.'**
-  String get adminQuickFixValidationMin1h;
-
   /// No description provided for @adminQuickFixSuccess.
   ///
   /// In tr, this message translates to:
@@ -421,7 +397,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminQuickFixWarningPublish.
   ///
   /// In tr, this message translates to:
-  /// **'Bu işlem tahmini yayına alır ve lock/oracle job\'ları ile otomatik ilerler.'**
+  /// **'Bu işlem tahmini yayına alır; ardından bitiş zamanında kilit ve sonuç/dağıtım süreçleri işler.'**
   String get adminQuickFixWarningPublish;
 
   /// No description provided for @adminQuickFixCreatedAt.
@@ -459,18 +435,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'endDate: geçti'**
   String get adminQuickFixChipEndPassed;
-
-  /// No description provided for @adminQuickFixChipResMissing.
-  ///
-  /// In tr, this message translates to:
-  /// **'resolutionDate: eksik'**
-  String get adminQuickFixChipResMissing;
-
-  /// No description provided for @adminQuickFixChipResInvalid.
-  ///
-  /// In tr, this message translates to:
-  /// **'resolutionDate: geçersiz'**
-  String get adminQuickFixChipResInvalid;
 
   /// No description provided for @adminQuickFixChipTopicMissing.
   ///
@@ -568,24 +532,6 @@ abstract class AppLocalizations {
   /// **'Kapanış'**
   String get adminModerationEndDateLabel;
 
-  /// No description provided for @adminModerationResolutionDateLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sonuç zamanı'**
-  String get adminModerationResolutionDateLabel;
-
-  /// No description provided for @adminModerationOracleSourceOptional.
-  ///
-  /// In tr, this message translates to:
-  /// **'Oracle kaynağı (opsiyonel)'**
-  String get adminModerationOracleSourceOptional;
-
-  /// No description provided for @adminModerationOracleApiUrlOptional.
-  ///
-  /// In tr, this message translates to:
-  /// **'Oracle API URL (opsiyonel)'**
-  String get adminModerationOracleApiUrlOptional;
-
   /// No description provided for @adminModerationCollateralOptional.
   ///
   /// In tr, this message translates to:
@@ -597,12 +543,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Lütfen gerekli alanları doldurun.'**
   String get adminModerationInvalidForm;
-
-  /// No description provided for @adminModerationDateRule.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sonuç zamanı kapanıştan en az 1 saat sonra olmalı.'**
-  String get adminModerationDateRule;
 
   /// No description provided for @adminModerationConflictRetry.
   ///
@@ -633,12 +573,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Konu'**
   String get adminModerationMetaTopic;
-
-  /// No description provided for @adminModerationMetaOracleApiUrl.
-  ///
-  /// In tr, this message translates to:
-  /// **'Oracle URL'**
-  String get adminModerationMetaOracleApiUrl;
 
   /// No description provided for @settings.
   ///
@@ -843,6 +777,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gönderiniz incelemeye alındı. Onaylandığında akışta görünecektir.'**
   String get postUnderReview;
+
+  /// No description provided for @composeToldyaReviewPending.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnceleme bekleniyor.'**
+  String get composeToldyaReviewPending;
+
+  /// No description provided for @composeToldyaShare.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaş'**
+  String get composeToldyaShare;
+
+  /// No description provided for @composeToldyaHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahminini yaz'**
+  String get composeToldyaHint;
+
+  /// No description provided for @composeToldyaPickCustomDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel tarih gir'**
+  String get composeToldyaPickCustomDate;
+
+  /// No description provided for @composeToldyaDateSectionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih seç'**
+  String get composeToldyaDateSectionTitle;
 
   /// No description provided for @commentAdded.
   ///
@@ -1348,23 +1312,11 @@ abstract class AppLocalizations {
   /// **'Profili Düzenle'**
   String get editProfile;
 
-  /// No description provided for @challengeLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Meydan oku: '**
-  String get challengeLabel;
-
   /// No description provided for @selectUser.
   ///
   /// In tr, this message translates to:
   /// **'Kullanıcı seç'**
   String get selectUser;
-
-  /// No description provided for @challengePickTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Meydan oku: Kullanıcı seç'**
-  String get challengePickTitle;
 
   /// No description provided for @followingListEmpty.
   ///
@@ -1501,14 +1453,14 @@ abstract class AppLocalizations {
   /// No description provided for @statuUnderReview.
   ///
   /// In tr, this message translates to:
-  /// **'İncelemede'**
+  /// **'Yönetici incelemesinde'**
   String get statuUnderReview;
 
-  /// No description provided for @statuRejectedByAi.
+  /// No description provided for @statuRejectedByAdmin.
   ///
   /// In tr, this message translates to:
   /// **'Reddedildi'**
-  String get statuRejectedByAi;
+  String get statuRejectedByAdmin;
 
   /// No description provided for @gmsError.
   ///
@@ -2614,17 +2566,17 @@ abstract class AppLocalizations {
   /// **'Tamamlanan'**
   String get adminFilterCompleted;
 
-  /// No description provided for @adminFilterPendingAiReview.
+  /// No description provided for @adminFilterPendingAdminReview.
   ///
   /// In tr, this message translates to:
-  /// **'AI incelemesinde'**
-  String get adminFilterPendingAiReview;
+  /// **'Yönetici incelemesinde'**
+  String get adminFilterPendingAdminReview;
 
-  /// No description provided for @adminFilterRejectedByAi.
+  /// No description provided for @adminFilterRejectedByAdmin.
   ///
   /// In tr, this message translates to:
-  /// **'AI reddi'**
-  String get adminFilterRejectedByAi;
+  /// **'Yönetici reddi'**
+  String get adminFilterRejectedByAdmin;
 
   /// No description provided for @xpProgressLabel.
   ///
@@ -2920,17 +2872,41 @@ abstract class AppLocalizations {
   /// **'Trendler sekmenizde hangi konumun görüneceğini seçerek belirli bir konumda nelerin trend olduğunu görebilirsiniz.'**
   String get trendsLocationHint;
 
-  /// No description provided for @myStakesTab.
+  /// No description provided for @profileTabActiveToldyas.
   ///
   /// In tr, this message translates to:
-  /// **'Tahminlerim'**
-  String get myStakesTab;
+  /// **'Aktif Toldyalarım'**
+  String get profileTabActiveToldyas;
 
-  /// No description provided for @myVotesTab.
+  /// No description provided for @profileTabPastToldyas.
   ///
   /// In tr, this message translates to:
-  /// **'Oy verdiklerim'**
-  String get myVotesTab;
+  /// **'Geçmiş Toldyalarım'**
+  String get profileTabPastToldyas;
+
+  /// No description provided for @profileTabMyCreations.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oluşturduklarım'**
+  String get profileTabMyCreations;
+
+  /// No description provided for @profileTabBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye'**
+  String get profileTabBalance;
+
+  /// No description provided for @emptyPastToldyasParticipation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçmiş toldya yok'**
+  String get emptyPastToldyasParticipation;
+
+  /// No description provided for @profileBalancePrivate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye yalnızca kendi profilinizde görünür.'**
+  String get profileBalancePrivate;
 
   /// No description provided for @defaultUserHandle.
   ///

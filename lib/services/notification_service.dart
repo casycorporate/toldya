@@ -266,7 +266,6 @@ class NotificationService {
     switch (type) {
       case 'toldya':
       case 'prediction_result':
-      case 'challenge':
         if (id.isNotEmpty) {
           if (!kEnablePostDetail) {
             return;

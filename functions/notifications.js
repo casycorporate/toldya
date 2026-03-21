@@ -14,6 +14,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
 const STATU_OK = 2;
+const STATU_REJECTED_BY_ADMIN = 7;
 
 function getDb() {
   return admin.database();
@@ -186,62 +187,48 @@ exports.onBetCreated = functions.database
   });
 
 /**
- * Yeni tahmin + meydan okuma: toldya/{toldyaId} onCreate.
- * - parentkey yok ve challengeeUserId varsa: challengee'ye bildirim + FCM.
+ * Yönetici tahmini reddetti: statu=7 ve moderasyon kaydı (manualModerationAt) yazıldığında oluşturucuya FCM.
+ * Tetikleyici: toldya/{toldyaId} onUpdate
  */
-exports.onToldyaCreated = functions.database
+exports.onToldyaRejectedByAdmin = functions.database
   .ref("toldya/{toldyaId}")
-  .onCreate(async (snap, context) => {
+  .onUpdate(async (change, context) => {
     const toldyaId = context.params.toldyaId;
-    const data = snap.val();
-    if (!data) return null;
+    const before = change.before.val();
+    const after = change.after.val();
+    if (!after || after.parentkey) return null;
+    if (Number(after.statu) !== STATU_REJECTED_BY_ADMIN) return null;
+    if (!after.manualModerationAt) return null;
+    if (before && before.manualModerationAt === after.manualModerationAt) return null;
 
-    const parentKey = data.parentkey && String(data.parentkey).trim();
-    if (parentKey) {
-      return null;
-    }
+    const ownerId = after.userId && String(after.userId).trim();
+    if (!ownerId) return null;
 
-    const challengeeUserId = data.challengeeUserId && String(data.challengeeUserId).trim();
-    if (!challengeeUserId) return null;
-    const creatorId = data.userId && String(data.userId).trim();
-    if (!creatorId || creatorId === challengeeUserId) return null;
+    const title = (after.description && String(after.description).trim()) || "Tahmin";
+    const reason = (after.manualModerationReason && String(after.manualModerationReason).trim()) || "";
+    const notifTitle = "Tahminin reddedildi";
+    const shortTitle = title.length > 45 ? title.substring(0, 45) + "…" : title;
+    const notifBody = reason
+      ? `'${shortTitle}' — ${reason.length > 120 ? reason.substring(0, 120) + "…" : reason}`
+      : `'${title.length > 50 ? title.substring(0, 50) + "…" : title}' tahminin yönetici incelemesinde reddedildi.`;
+    const dataPayload = {
+      type: "toldya",
+      id: toldyaId,
+      toldyaId: toldyaId,
+      legacyType: "toldya_rejected_by_admin",
+    };
 
     try {
-      let challengerDisplayName = "Bir kullanıcı";
-      const profileSnap = await getDb().ref("profile").child(creatorId).once("value");
-      const profile = profileSnap.val();
-      if (profile) {
-        const name = profile.displayName || profile.userName || profile.name;
-        if (name) challengerDisplayName = String(name);
-      }
-
-      const notifTitle = "Meydan okudu!";
-      const notifBody = `${challengerDisplayName} sana meydan okudu!`;
-      const updates = {};
-      updates[`notification/${challengeeUserId}/${toldyaId}`] = {
-        type: "challenge",
-        challengerUserId: creatorId,
-        challengerDisplayName: challengerDisplayName,
-        toldyaId: toldyaId,
-      data: { type: "toldya", id: toldyaId, toldyaId: toldyaId, senderId: creatorId, legacyType: "challenge" },
-        updatedAt: new Date().toISOString(),
-      };
-      await getDb().ref().update(updates);
-
-      const token = await getFcmToken(challengeeUserId);
+      const token = await getFcmToken(ownerId);
       if (token) {
-        await sendFcm(token, notifTitle, notifBody, {
-        type: "toldya",
-        id: toldyaId,
-        toldyaId: toldyaId,
-        senderId: creatorId,
-        legacyType: "challenge",
-        });
-        console.log("[onToldyaCreated] challenge sent to", challengeeUserId, "toldyaId=", toldyaId);
+        const ok = await sendFcm(token, notifTitle, notifBody, dataPayload);
+        console.log("[onToldyaRejectedByAdmin] toldyaId=" + toldyaId + ", ownerId=" + ownerId + ", ok=" + ok);
+      } else {
+        console.log("[onToldyaRejectedByAdmin] no FCM token, ownerId=" + ownerId);
       }
       return null;
     } catch (e) {
-      console.error("[onToldyaCreated] error", toldyaId, e.message || e);
+      console.error("[onToldyaRejectedByAdmin] error", toldyaId, e.message || e);
       return null;
     }
   });
