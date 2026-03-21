@@ -472,6 +472,14 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String totalStakedPointsLabel(String formatted) {
+    return '$formatted Punkte in dieser Vorhersage';
+  }
+
+  @override
+  String get stakeInvalidAmount => 'Ungültiger Vorhersage‑Punktwert.';
+
+  @override
   String get stakeOneSideOnly =>
       'Du hast bei dieser Vorhersage bereits die andere Seite gewählt. Pro Vorhersage kannst du nur eine Seite (Ja oder Nein) wählen.';
 

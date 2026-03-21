@@ -110,7 +110,7 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
   }
 }
 
-/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, bahis, son bahisler.
+/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, tahmin, son katılımlar.
 class _PredictionDetailBody extends StatelessWidget {
   final FeedModel model;
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -128,7 +128,7 @@ class _PredictionDetailBody extends StatelessWidget {
     final evetColor = AppNeon.green;
     final hayirColor = AppNeon.red;
     final balance = authState.userModel?.pegCount ?? 0;
-    final maxBet = (balance * 0.75).floor();
+    final maxStakeAmount = (balance * 0.75).floor();
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
     final authorUserId = model.userId ?? model.user?.userId ?? '';
@@ -254,7 +254,7 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)!.maxStakeTokens(maxBet.toString()),
+            AppLocalizations.of(context)!.maxStakeTokens(maxStakeAmount.toString()),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           ),
           SizedBox(height: 16),
@@ -270,7 +270,7 @@ class _PredictionDetailBody extends StatelessWidget {
                     child: InkWell(
                       onTap: () {
                         HapticFeedback.mediumImpact();
-                        _openBet(context, authState, 0);
+                        _openStakeSheet(context, authState, 0);
                       },
                       borderRadius: BorderRadius.circular(28),
                       child: Container(
@@ -299,7 +299,7 @@ class _PredictionDetailBody extends StatelessWidget {
                     child: InkWell(
                       onTap: () {
                         HapticFeedback.mediumImpact();
-                        _openBet(context, authState, 1);
+                        _openStakeSheet(context, authState, 1);
                       },
                       borderRadius: BorderRadius.circular(28),
                       child: Container(
@@ -321,13 +321,13 @@ class _PredictionDetailBody extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24),
-          // 5. Son Bahisler başlığı
+          // 5. Son katılımlar başlığı
           Text(
             AppLocalizations.of(context)!.recentStakesTitle,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           SizedBox(height: 12),
-          _RecentBetsList(
+          _RecentStakesList(
             likeList: model.likeList ?? [],
             unlikeList: model.unlikeList ?? [],
             emptyCta: closed || balance == 0 ? null : () {
@@ -345,7 +345,7 @@ class _PredictionDetailBody extends StatelessWidget {
     );
   }
 
-  void _openBet(BuildContext context, AuthState authState, int flag) {
+  void _openStakeSheet(BuildContext context, AuthState authState, int flag) {
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
     openToldyaStakeFlowWithFeedback(
       context: context,
@@ -357,18 +357,18 @@ class _PredictionDetailBody extends StatelessWidget {
   }
 }
 
-class _RecentBetsList extends StatelessWidget {
+class _RecentStakesList extends StatelessWidget {
   final List<UserPegModel> likeList;
   final List<UserPegModel> unlikeList;
   final VoidCallback? emptyCta;
 
-  const _RecentBetsList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
+  const _RecentStakesList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final combined = <_BetEntry>[
-      ...likeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
-      ...unlikeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
+    final combined = <_StakeEntry>[
+      ...likeList.map((e) => _StakeEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
+      ...unlikeList.map((e) => _StakeEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
     ];
     combined.sort((a, b) => b.pegCount.compareTo(a.pegCount));
     final top = combined.take(10).toList();
@@ -469,9 +469,9 @@ class _RecentBetsList extends StatelessWidget {
   }
 }
 
-class _BetEntry {
+class _StakeEntry {
   final String userId;
   final int pegCount;
   final bool isYes;
-  _BetEntry({required this.userId, required this.pegCount, required this.isYes});
+  _StakeEntry({required this.userId, required this.pegCount, required this.isYes});
 }

@@ -467,6 +467,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String totalStakedPointsLabel(String formatted) {
+    return '$formatted puan toplam tahminde';
+  }
+
+  @override
+  String get stakeInvalidAmount => 'Geçersiz tahmin puanı.';
+
+  @override
   String get stakeOneSideOnly =>
       'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek tarafı (Evet veya Hayır) seçebilirsiniz.';
 

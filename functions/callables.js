@@ -14,7 +14,7 @@ const {
   FEED_RESULT_LIKE,
   FEED_RESULT_UNLIKE,
   POOL_THRESHOLD,
-  MAX_BET_SMALL_POOL,
+  MAX_STAKE_SMALL_POOL,
   DAILY_BONUS_AMOUNT,
 } = require("./shared");
 const { distributeWinningsForToldyaIdLogic } = require("./tokenomics");
@@ -33,7 +33,7 @@ function registerCallables(functions) {
       const amount = typeof data?.amount === "number" ? Math.floor(data.amount) : parseInt(data?.amount, 10);
 
       if (!toldyaId || (side !== FEED_RESULT_LIKE && side !== FEED_RESULT_UNLIKE) || !Number.isInteger(amount) || amount <= 0) {
-        throw new functions.https.HttpsError("invalid-argument", "Geçersiz bahis miktarı veya parametre.");
+        throw new functions.https.HttpsError("invalid-argument", "Geçersiz tahmin puanı veya parametre.");
       }
 
       const tweetSnap = await getDb().ref(`toldya/${toldyaId}`).once("value");
@@ -42,10 +42,10 @@ function registerCallables(functions) {
         throw new functions.https.HttpsError("not-found", "Tahmin bulunamadı.");
       }
       if (tweet.statu !== STATU_LIVE) {
-        throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık bahis kapatıldı.");
+        throw new functions.https.HttpsError("failed-precondition", "Bu tahmine artık katılım kapatıldı.");
       }
 
-      // Bir tahminde kullanıcı yalnızca tek tarafa bahis yapabilir
+      // Bir tahminde kullanıcı yalnızca tek tarafa katılım gösterebilir
       const likeList = Array.isArray(tweet.likeList) ? tweet.likeList : [];
       const unlikeList = Array.isArray(tweet.unlikeList) ? tweet.unlikeList : [];
       const inLike = likeList.some((e) => (e && (e.userId || e)) === userId);
@@ -53,13 +53,13 @@ function registerCallables(functions) {
       if (side === FEED_RESULT_LIKE && inUnlike) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          "Bu tahminde zaten Hayır tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
+          "Bu tahminde zaten Hayır tarafını seçtiniz. Bir tahminde yalnızca tek tarafı seçebilirsiniz."
         );
       }
       if (side === FEED_RESULT_UNLIKE && inLike) {
         throw new functions.https.HttpsError(
           "failed-precondition",
-          "Bu tahminde zaten Evet tarafında bahis yaptınız. Bir tahminde yalnızca tek tarafa bahis yapabilirsiniz."
+          "Bu tahminde zaten Evet tarafını seçtiniz. Bir tahminde yalnızca tek tarafı seçebilirsiniz."
         );
       }
 
@@ -70,7 +70,7 @@ function registerCallables(functions) {
       }
 
       const spendableBalance = profile.pegCount || 0;
-      // TEMP: Aggressive max bet cap = 75% of spendable balance.
+      // TEMP: Aggressive max stake cap = 75% of spendable balance.
       // (Rank/pool limits are intentionally disabled for now; can be re-enabled later.)
       const maxBet = Math.floor(spendableBalance * 0.75);
       if (amount > maxBet) {
@@ -104,7 +104,7 @@ function registerCallables(functions) {
       if (listKey === "likeList") updates[`toldya/${toldyaId}/likeCount`] = likeCount;
       else updates[`toldya/${toldyaId}/unlikeCount`] = unlikeCount;
 
-      // Bildirim: sadece başkası bahis yaptığında yaz
+      // Bildirim: sadece başkası katılım gösterdiğinde yaz
       if (userId !== notifUserId) {
         updates[`notification/${notifUserId}/${toldyaId}`] = {
           type: side === FEED_RESULT_LIKE ? "NotificationType.Like" : "NotificationType.UnLike",
@@ -120,11 +120,11 @@ function registerCallables(functions) {
       await getDb().ref().update(safeUpdates);
 
       const newStashBalance = profile.stashCount || 0;
-      return { ok: true, newBalance, newStashBalance, message: "Bahis kabul edildi." };
+      return { ok: true, newBalance, newStashBalance, message: "Tahmin katılımı kabul edildi." };
     } catch (err) {
       if (err instanceof functions.https.HttpsError) throw err;
-      log.error("placeBet error", err);
-      throw new functions.https.HttpsError("internal", err.message || "Bahis işlenirken hata oluştu.");
+      log.error("submitStake (placeBet) error", err);
+      throw new functions.https.HttpsError("internal", err.message || "Tahmin katılımı işlenirken hata oluştu.");
     }
   });
 

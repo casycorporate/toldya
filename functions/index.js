@@ -484,14 +484,14 @@ exports.runOracleResolution = onRequestJob(async (req, res) => {
 
 const COMMISSION_RATE = 0.05;
 
-// --- Tokenomics: Rütbe ve bahis limitleri (lib/helper/constant.dart ile uyumlu) ---
+// --- Tokenomics: Rütbe ve tahmin katılım limitleri (lib/helper/constant.dart ile uyumlu) ---
 const XP_CAYLAK_MAX = 500;
 const XP_USTA_MIN = 2000;
 const RANK_MULTIPLIER_CAYLAK = 0.10;
 const RANK_MULTIPLIER_TAHMINCI = 0.25;
 const RANK_MULTIPLIER_USTA = 0.50;
 const POOL_THRESHOLD = 1000;
-const MAX_BET_SMALL_POOL = 100;
+const MAX_STAKE_SMALL_POOL = 100;
 const DAILY_BONUS_AMOUNT = 500;
 const STASH_PAYOUT_RATIO = 0.3;  // Kazancin %30'u stash'e
 const STREAK_MIN = 3;           // 3+ ardışık galibiyette bonus
@@ -599,7 +599,7 @@ exports.runDistributeWinnings = onRequestJob(async (req, res) => {
   }
 }, { secrets: ["JOBS_SHARED_SECRET"] });
 
-// --- Callable: placeBet – Bahis tek noktadan, limit ve bakiye kontrolü ---
+// --- Callable: placeBet – Tahmin katılımı tek noktadan, limit ve bakiye kontrolü ---
 // enforceAppCheck: false → App Check zorunluluğu kapalı (cihaz/GMS hatası geçene kadar)
 // Callable exports are registered from module (contract unchanged).
 const _callables = registerCallables(functions);
@@ -631,12 +631,12 @@ exports.adminDistributeWinningsForToldya = _callables.adminDistributeWinningsFor
 //
 // ÖRNEK SENARYO:
 // - Kullanıcı 1000 token kazandı → 700 token pegCount'a, 300 token stashCount'a gider.
-// - Kullanıcı tüm 700 token'ı bahislerde kaybetti → pegCount = 0, stashCount = 300.
+// - Kullanıcı tüm 700 token'ı tahminlerde kaybetti → pegCount = 0, stashCount = 300.
 // - 24 saat sonra runStashDrip çalıştırıldığında:
 //   → pegCount = 200 (stash'ten aktarıldı)
 //   → stashCount = 100 (kalan)
 //   → lastStashDripAt = şimdiki zaman (bir sonraki drip için zaman damgası)
-// - Kullanıcı tekrar bahis yapabilir!
+// - Kullanıcı tekrar tahmin katılımı gösterebilir!
 // - 24 saat sonra tekrar çalıştırıldığında:
 //   → pegCount = 100 (stash'te kalan son 100 token)
 //   → stashCount = 0

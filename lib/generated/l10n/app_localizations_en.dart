@@ -466,6 +466,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String totalStakedPointsLabel(String formatted) {
+    return '$formatted points in this prediction';
+  }
+
+  @override
+  String get stakeInvalidAmount => 'Invalid prediction amount.';
+
+  @override
   String get stakeOneSideOnly =>
       'You have already picked the other side of this prediction. You can only pick one side (Yes or No) per prediction.';
 

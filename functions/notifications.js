@@ -7,7 +7,7 @@
  * RTDB yapısı (mevcut):
  * - profile/{userId}           → fcmToken, displayName, ...
  * - toldya/{toldyaId}          → statu (0=Live, 5=Locked, 2=Ok), feedResult, userId (creator), description, likeList, unlikeList
- * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni bahis)
+ * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni katılım)
  */
 
 const functions = require("firebase-functions");
@@ -89,7 +89,7 @@ async function sendFcm(token, title, body, data) {
 }
 
 /**
- * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda bahis yapan herkese bildirim.
+ * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda taraf seçen herkese bildirim.
  * Tetikleyici: toldya/{toldyaId} onUpdate
  */
 exports.onPredictionResolved = functions.database
@@ -141,8 +141,8 @@ exports.onPredictionResolved = functions.database
   });
 
 /**
- * Yeni bahis: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
- * tahmin sahibine "Tahminine bahis yapıldı" bildirimi.
+ * Yeni katılım: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
+ * tahmin sahibine katılım bildirimi.
  * Tetikleyici: notification/{userId}/{toldyaId} onCreate
  */
 exports.onBetCreated = functions.database
@@ -152,8 +152,8 @@ exports.onBetCreated = functions.database
     const toldyaId = context.params.toldyaId;
     const data = snap.val();
     const type = data && data.type ? String(data.type) : "";
-    const isBet = type.includes("Like") || type.includes("UnLike");
-    if (!isBet) {
+    const isStakeNotification = type.includes("Like") || type.includes("UnLike");
+    if (!isStakeNotification) {
       console.log("[onBetCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
       return null;
     }
@@ -166,10 +166,10 @@ exports.onBetCreated = functions.database
         ? String(toldya.description).trim().substring(0, 50) + (toldya.description.length > 50 ? "…" : "")
         : "Tahmin";
 
-      const notifTitle = "Tahminine Bahis Yapıldı!";
-      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine token yatırdı.`;
-      // Bet on a prediction -> open toldya detail
-      const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "bet" };
+      const notifTitle = "Tahminine yeni katılım!";
+      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine puan ayırdı.`;
+      // Katılım -> open toldya detail
+      const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "prediction_stake" };
 
       const token = await getFcmToken(ownerId);
       if (token) {

@@ -952,6 +952,18 @@ abstract class AppLocalizations {
   /// **'Maksimum tahmin: {maxVal} puan'**
   String maxStakeTokens(String maxVal);
 
+  /// No description provided for @totalStakedPointsLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'{formatted} puan toplam tahminde'**
+  String totalStakedPointsLabel(String formatted);
+
+  /// No description provided for @stakeInvalidAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçersiz tahmin puanı.'**
+  String get stakeInvalidAmount;
+
   /// No description provided for @stakeOneSideOnly.
   ///
   /// In tr, this message translates to:

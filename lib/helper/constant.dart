@@ -207,7 +207,7 @@ class Statu{
   static final int statusOk=2;
   static final int statusDenied=3;
   static final int statusComplete=4;
-  /// Kapanış zamanı geçti, bahisler kapandı, sonuç bekleniyor
+  /// Kapanış zamanı geçti, katılım kapandı, sonuç bekleniyor
   static final int statusLocked=5;
   /// Yapay zeka incelemesi bekliyor (henüz yayında değil)
   static final int statusPendingAiReview=6;

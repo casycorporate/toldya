@@ -55,14 +55,14 @@ function sumOfVote(list) {
   return list.reduce((s, e) => s + (e.pegCount || 0), 0);
 }
 
-// --- Tokenomics: Rütbe ve bahis limitleri (lib/helper/constant.dart ile uyumlu) ---
+// --- Tokenomics: Rütbe ve tahmin katılım limitleri (lib/helper/constant.dart ile uyumlu) ---
 const XP_CAYLAK_MAX = 500;
 const XP_USTA_MIN = 2000;
 const RANK_MULTIPLIER_CAYLAK = 0.10;
 const RANK_MULTIPLIER_TAHMINCI = 0.25;
 const RANK_MULTIPLIER_USTA = 0.50;
 const POOL_THRESHOLD = 1000;
-const MAX_BET_SMALL_POOL = 100;
+const MAX_STAKE_SMALL_POOL = 100;
 const DAILY_BONUS_AMOUNT = 500;
 const STASH_PAYOUT_RATIO = 0.3;
 const STREAK_MIN = 3;
@@ -95,7 +95,7 @@ module.exports = {
   FEED_RESULT_LIKE,
   FEED_RESULT_UNLIKE,
   POOL_THRESHOLD,
-  MAX_BET_SMALL_POOL,
+  MAX_STAKE_SMALL_POOL,
   DAILY_BONUS_AMOUNT,
   DRIP_AMOUNT,
   DRIP_INTERVAL_MS,

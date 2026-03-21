@@ -232,51 +232,6 @@ class PredictionCardMockup extends StatelessWidget {
     );
   }
 
-  Widget _betButton(
-    BuildContext context, {
-    required String label,
-    required int percent,
-    required Color color,
-    required Color textColor,
-    required bool enabled,
-    required VoidCallback onPressed,
-  }) {
-    return AnimatedBounceButton(
-      enabled: enabled,
-      child: Material(
-        color: enabled ? color.withOpacity(0.18) : Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: enabled ? color.withOpacity(0.55) : Colors.white.withOpacity(0.10),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '$label · $percent%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: enabled ? textColor : Colors.white.withOpacity(0.35),
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAvatar(BuildContext context, UserModel? user) {
     final userId = user?.userId ?? model.user?.userId ?? '';
     final profilePic = user?.profilePic ?? '';

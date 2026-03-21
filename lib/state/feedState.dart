@@ -95,13 +95,13 @@ class FeedState extends AppState {
   dabase.Query? _feedQuery;
   String? _feedError;
 
-  /// Profile "Bahislerim" list: toldya posts by a specific user (loaded via loadToldyaListForUser).
+  /// Profile "Tahminlerim" list: toldya posts by a specific user (loaded via loadToldyaListForUser).
   List<FeedModel>? _profileUserToldyaList;
   String? _profileUserToldyaUserId;
   List<FeedModel>? get profileUserToldyaList => _profileUserToldyaList;
   String? get profileUserToldyaUserId => _profileUserToldyaUserId;
 
-  /// Cache profile "Bahislerim" lists per userId to avoid tab/profile swap flicker.
+  /// Cache profile "Tahminlerim" lists per userId to avoid tab/profile swap flicker.
   final Map<String, List<FeedModel>> _profileUserToldyaCache = {};
 
   List<FeedModel>? profileUserToldyaListFor(String userId) =>
@@ -485,7 +485,7 @@ class FeedState extends AppState {
     }
   }
 
-  /// Load toldya posts for a given user (profile "Bahislerim"). Requires Firebase index on toldya: ".indexOn": ["userId"].
+  /// Load toldya posts for a given user (profile "Tahminlerim"). Requires Firebase index on toldya: ".indexOn": ["userId"].
   /// Call when opening a profile; use [profileUserToldyaList] for that user's posts.
   Future<void> loadToldyaListForUser(String? userId) async {
     if (userId == null || userId.isEmpty) {
@@ -731,7 +731,7 @@ class FeedState extends AppState {
   }
 
   /// Pari-Mutuel: Kazananlara token dağıtımı
-  /// Kazanç = (Kişisel Bahis / Kazanan Tarafın Toplam Bahsi) × (Toplam Havuz × (1 - komisyon))
+  /// Kazanç = (Kişisel puan / Kazanan tarafın toplam puanı) × (Toplam havuz × (1 - komisyon))
   Future<void> distributeWinnings(FeedModel model, AuthState authState) async {
     if (model.distributionDone == true) return;
     final winningList = model.feedResult == FeedResult.feedResultlike
@@ -764,23 +764,23 @@ class FeedState extends AppState {
     await updateToldya(model);
   }
 
-  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
-  /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm bahis placeBet ile.
-  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  /// (Kullanımdışı – kural: tahmin katılımı yalnızca Cloud Function üzerinden.)
+  /// Eskiden toldya/likeList'e client'tan yazıyordu; artık tüm işlem submitStake ile.
+  @Deprecated('Use submitStake Cloud Function only. No direct client write to toldya.')
   void addLikeToToldya(FeedModel model, String userId, int count) {
-    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
+    // No-op: Tahmin katılımı yalnızca Cloud Function üzerinden yapılmalı.
   }
 
-  /// (Kullanımdışı – kural: bahis sadece placeBet Callable üzerinden.)
-  @Deprecated('Use placeBet Callable for any bet. No direct client write to toldya.')
+  /// (Kullanımdışı – kural: tahmin katılımı yalnızca Cloud Function üzerinden.)
+  @Deprecated('Use submitStake Cloud Function only. No direct client write to toldya.')
   void addunLikeToToldya(FeedModel model, String userId, int count) {
-    // No-op: Tüm bahis işlemi placeBet Cloud Function üzerinden yapılmalı.
+    // No-op: Tahmin katılımı yalnızca Cloud Function üzerinden yapılmalı.
   }
 
-  /// Bahis işlemini backend (placeBet Callable) üzerinden yapar.
+  /// Tahmin katılımını backend (HTTPS callable `placeBet`) üzerinden gönderir.
   /// Optimistic UI: önce yerel state güncellenir (bakiye + post likeList/unlikeList), sonra HTTP çağrısı yapılır.
   /// Başarısız olursa yerel state snapshot ile geri alınır ve hata fırlatılır.
-  Future<void> placeBet(
+  Future<void> submitStake(
     AuthState authState,
     FeedModel model,
     String userId,
@@ -790,7 +790,7 @@ class FeedState extends AppState {
   }) async {
     if (_feedDebug) {
       developer.log(
-        'placeBet start',
+        'submitStake start',
         name: 'FeedState',
         error: {'toldyaId': model.key, 'side': commentFlag, 'amount': amount, 'userId': userId},
       );
@@ -806,7 +806,12 @@ class FeedState extends AppState {
       );
     }
     if (amount <= 0) {
-      throw FirebaseFunctionsException(code: "invalid-argument", message: "Geçersiz bahis miktarı.");
+      throw FirebaseFunctionsException(
+        code: "invalid-argument",
+        message: context != null
+            ? AppLocalizations.of(context)!.stakeInvalidAmount
+            : "Geçersiz tahmin puanı.",
+      );
     }
     final toldyaId = model.key ?? '';
     if (toldyaId.isNotEmpty && _stakeInFlightIds.contains(toldyaId)) {
@@ -823,10 +828,10 @@ class FeedState extends AppState {
     final previousLikeList = [for (final e in model.likeList ?? []) UserPegModel(userId: e.userId, pegCount: e.pegCount)];
     final previousUnlikeList = [for (final e in model.unlikeList ?? []) UserPegModel(userId: e.userId, pegCount: e.pegCount)];
 
-    // Optimistic update: UI anında güncellenir (balance azalır, post'a bahis eklenir)
+    // Optimistic update: UI anında güncellenir (balance azalır, post'a katılım eklenir)
     authState.setBalanceOptimistic(previousPegCount - amount, previousStashCount);
-    _applyBetToFeedModel(model, userId, amount, commentFlag == 0);
-    _updateLocalFeedModelAfterBet(model.key, userId, amount, commentFlag == 0);
+    _applyStakeToFeedModel(model, userId, amount, commentFlag == 0);
+    _updateLocalFeedModelAfterStake(model.key, userId, amount, commentFlag == 0);
     _markFeedCacheDirty();
     notifyListeners();
 
@@ -873,20 +878,21 @@ class FeedState extends AppState {
       if (body.containsKey('error')) {
         final err = body['error'] as Map<String, dynamic>? ?? {};
         final code = (err['status'] as String?)?.toLowerCase().replaceAll('_', '-') ?? 'unknown';
-        final message = err['message'] as String? ?? 'Bahis kabul edilemedi.';
         final l10n = context != null ? AppLocalizations.of(context!) : null;
+        final message = err['message'] as String? ?? l10n?.stakeErrorGeneric ?? 'Tahmin gönderilemedi.';
         throw FirebaseFunctionsException(
           code: code,
-          message: l10n != null ? _mapPlaceBetError(l10n, code, message) : message,
+          message: l10n != null ? _mapStakeError(l10n, code, message) : message,
         );
       }
 
       final result = body['result'] as Map<String, dynamic>?;
       final data = result;
       if (data == null || data['ok'] != true) {
+        final l10n = context != null ? AppLocalizations.of(context!) : null;
         throw FirebaseFunctionsException(
           code: "unknown",
-          message: "Bahis kabul edilemedi.",
+          message: l10n?.stakeErrorGeneric ?? "Tahmin gönderilemedi.",
         );
       }
 
@@ -896,34 +902,34 @@ class FeedState extends AppState {
       notifyListeners();
     } on PlatformException catch (e) {
       developer.log(
-        'placeBet PlatformException',
+        'submitStake PlatformException',
         name: 'FeedState',
         error: e,
         stackTrace: StackTrace.current,
       );
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      _rollbackStake(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     } on FirebaseFunctionsException catch (e) {
       developer.log(
-        'placeBet FirebaseFunctionsException',
+        'submitStake FirebaseFunctionsException',
         name: 'FeedState',
         error: e,
         stackTrace: StackTrace.current,
       );
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      _rollbackStake(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       final l10n = context != null ? AppLocalizations.of(context!) : null;
       if (l10n == null) rethrow;
       final code = e.code;
-      final msg = _mapPlaceBetError(l10n, code, e.message);
+      final msg = _mapStakeError(l10n, code, e.message);
       throw FirebaseFunctionsException(code: code, message: msg, details: e.details);
     } catch (e, stackTrace) {
       developer.log(
-        'placeBet exception',
+        'submitStake exception',
         name: 'FeedState',
         error: e,
         stackTrace: stackTrace,
       );
-      _rollbackPlaceBet(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
+      _rollbackStake(authState, model, previousPegCount, previousStashCount, previousLikeList, previousUnlikeList);
       rethrow;
     } finally {
       if (toldyaId.isNotEmpty) {
@@ -933,7 +939,7 @@ class FeedState extends AppState {
     }
   }
 
-  String _mapPlaceBetError(AppLocalizations l10n, String codeRaw, String? fallbackMessage) {
+  String _mapStakeError(AppLocalizations l10n, String codeRaw, String? fallbackMessage) {
     final code = codeRaw.toLowerCase().replaceAll('_', '-');
     switch (code) {
       case 'unauthenticated':
@@ -953,7 +959,7 @@ class FeedState extends AppState {
   }
 
   /// Optimistic güncelleme başarısız olduğunda snapshot ile bakiye ve post listelerini eski haline getirir.
-  void _rollbackPlaceBet(
+  void _rollbackStake(
     AuthState authState,
     FeedModel model,
     int previousPegCount,
@@ -986,7 +992,7 @@ class FeedState extends AppState {
     notifyListeners();
   }
 
-  void _applyBetToFeedModel(FeedModel f, String userId, int amount, bool isLike) {
+  void _applyStakeToFeedModel(FeedModel f, String userId, int amount, bool isLike) {
     if (isLike) {
       f.likeList ??= [];
       final idx = f.likeList!.indexWhere((e) => e.userId == userId);
@@ -1007,12 +1013,12 @@ class FeedState extends AppState {
   }
 
   /// Optimistic update: aynı post _feedlist ve _toldyaDetailModelList içinde varsa hepsinde likeList/unlikeList güncellenir (feed + detail senkron).
-  void _updateLocalFeedModelAfterBet(String? toldyaKey, String userId, int amount, bool isLike) {
+  void _updateLocalFeedModelAfterStake(String? toldyaKey, String userId, int amount, bool isLike) {
     if (toldyaKey == null) return;
     if (_feedlist != null) {
       for (final f in _feedlist!) {
         if (f.key == toldyaKey) {
-          _applyBetToFeedModel(f, userId, amount, isLike);
+          _applyStakeToFeedModel(f, userId, amount, isLike);
           break;
         }
       }
@@ -1020,7 +1026,7 @@ class FeedState extends AppState {
     if (_toldyaDetailModelList != null) {
       for (final f in _toldyaDetailModelList!) {
         if (f.key == toldyaKey) {
-          _applyBetToFeedModel(f, userId, amount, isLike);
+          _applyStakeToFeedModel(f, userId, amount, isLike);
         }
       }
     }

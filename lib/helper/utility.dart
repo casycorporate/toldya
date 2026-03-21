@@ -50,7 +50,7 @@ int sumOfVote(List<UserPegModel> list){
 
 }
 
-/// Bahisler kapanış tarihinde veya statu kapalıysa true
+/// Tahmin katılımı kapanış tarihinde veya statu kapalıysa true
 bool isToldyaStakeClosed(int? statu, String? endDate) {
   if (statu != null && statu != 0) return true; // Statu.statusLive = 0
   if (endDate == null || endDate.isEmpty) return false;
@@ -61,8 +61,8 @@ bool isToldyaStakeClosed(int? statu, String? endDate) {
   }
 }
 
-/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten bahis yaptıysa true.
-/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek bahis kuralı ihlali.
+/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten katılım gösterdiyse true.
+/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek taraf kuralı ihlali.
 bool userAlreadyStakedOtherSide(FeedModel model, String? userId, int commentFlag) {
   if (userId == null || userId.isEmpty) return false;
   if (commentFlag == 0) return (model.unlikeList ?? []).any((e) => e.userId == userId);

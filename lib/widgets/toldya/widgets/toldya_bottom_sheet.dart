@@ -801,7 +801,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             _inlineError = null;
           });
           try {
-            await state.placeBet(
+            await state.submitStake(
               authState,
               widget.model,
               authState.userId ?? '',

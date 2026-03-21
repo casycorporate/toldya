@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 
@@ -165,7 +166,7 @@ class _TooltipInfo extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                '${k_m_b_generator(totalStaked)} Token bahis',
+                AppLocalizations.of(context)!.totalStakedPointsLabel(k_m_b_generator(totalStaked)),
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,

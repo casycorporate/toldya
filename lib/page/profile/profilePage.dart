@@ -143,8 +143,8 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   late TabController _tabController;
-  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Bahislerim sekmesinde)
-  int _bahislerimStatusFilter = 0;
+  /// 0=Aktif, 1=Bekleyen, 2=Tamamlanan, 3=Reddedilen (sadece kendi profilinde Tahminlerim sekmesinde)
+  int _myToldyaStatusFilter = 0;
 
   void shareProfile(BuildContext context) async {
     var authstate = context.read<AuthState>();
@@ -199,9 +199,9 @@ class _ProfilePageState extends State<ProfilePage>
       });
     }
 
-    /// Bahislerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
+    /// Tahminlerim: use dedicated profile user list from Firebase when available; else fallback to feedlist filtered by userId
     final cached = id.isNotEmpty ? state.profileUserToldyaListFor(id) : null;
-    final listForBahislerim = (cached != null)
+    final listForMyToldyas = (cached != null)
         ? cached
         : feedlist
             .where((x) =>
@@ -331,26 +331,26 @@ class _ProfilePageState extends State<ProfilePage>
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    /// Display all independent tweers list (bahislerim); kendi profilinde filtre chip'leri
+                    /// Display all independent tweers list (tahminlerim); kendi profilinde filtre chip'leri
                     isMyProfile
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _bahislerimFilterChips(context),
+                              _myToldyaStatusFilterChips(context),
                               Expanded(
                                 child: _toldyaFeedList(
                                   context,
                                   authstate,
-                                  listForBahislerim,
+                                  listForMyToldyas,
                                   false,
                                   false,
                                   id,
-                                  statusFilter: _bahislerimStatusFilter,
+                                  statusFilter: _myToldyaStatusFilter,
                                 ),
                               ),
                             ],
                           )
-                        : _toldyaFeedList(context, authstate, listForBahislerim, false, false, id),
+                        : _toldyaFeedList(context, authstate, listForMyToldyas, false, false, id),
 
                     /// Display all reply tweet list (oy verdiklerim)
                     _toldyaFeedList(context, authstate, listForOyVerdiklerim, true, false, id),
@@ -485,7 +485,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  /// Rütbe ilerlemesi, Bahisçi/Tahminci kartları, Seviye ve Liderlik CTA (profil ağacında görünsün diye burada)
+  /// Rütbe ilerlemesi, katılım/tahminci kartları, Seviye ve Liderlik CTA (profil ağacında görünsün diye burada)
   Widget _ProfileStatsSection(BuildContext context, {required UserModel user, required bool isMyProfile}) {
     final theme = Theme.of(context);
     final xp = user.xp ?? 0;
@@ -756,7 +756,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   /// 3. Filtre chip'leri: seçili = yeşil metin + hafif yeşil arka plan, diğerleri gri; altında kısa yeşil pill
-  Widget _bahislerimFilterChips(BuildContext context) {
+  Widget _myToldyaStatusFilterChips(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final labels = [l10n.filterActive, l10n.filterPending, l10n.filterCompleted, l10n.filterRejected, l10n.filterLocked];
     return Container(
@@ -766,9 +766,9 @@ class _ProfilePageState extends State<ProfilePage>
         scrollDirection: Axis.horizontal,
         child: Row(
           children: List.generate(5, (index) {
-            final selected = _bahislerimStatusFilter == index;
+            final selected = _myToldyaStatusFilter == index;
             return GestureDetector(
-              onTap: () => setState(() => _bahislerimStatusFilter = index),
+              onTap: () => setState(() => _myToldyaStatusFilter = index),
               behavior: HitTestBehavior.opaque,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -829,13 +829,13 @@ class _ProfilePageState extends State<ProfilePage>
               x.userId == id)
           .toList();
 
-      /// Bahislerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)
+      /// Tahminlerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)
       if (statusFilter != null && list.isNotEmpty) {
         list = list.where((x) {
           final s = parseStatu(x.statu);
           if (s == null) return false;
           switch (statusFilter) {
-            case 0: // Aktif: yayında veya kilitli, bahis açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
+            case 0: // Aktif: yayında veya kilitli, tahmin katılımı açık (sadece Live ve Locked; bitmiş/Tamamlanan hariç)
               return s == Statu.statusLive || s == Statu.statusLocked;
             case 1: // Bekleyen: admin/AI incelemesi bekliyor (statu 1, 6)
               return s == Statu.statusPending || s == Statu.statusPendingAiReview;
@@ -843,7 +843,7 @@ class _ProfilePageState extends State<ProfilePage>
               return s == Statu.statusOk || s == Statu.statusComplete;
             case 3: // Reddedilen: admin/AI reddi (statu 3, 7)
               return s == Statu.statusDenied || s == Statu.statusRejectedByAi;
-            case 4: // Kilitli: bahisler kapandı, sonuç bekleniyor (statu 5)
+            case 4: // Kilitli: katılım kapandı, sonuç bekleniyor (statu 5)
               return s == Statu.statusLocked;
             default:
               return false;
@@ -851,7 +851,7 @@ class _ProfilePageState extends State<ProfilePage>
         }).toList();
       }
     } else {
-      /// Display all reply Tweets (oy verdiklerim - kullanıcının bahis yaptığı tahminler)
+      /// Display all reply Tweets (oy verdiklerim - kullanıcının taraf seçtiği tahminler)
       /// Sadece ilgili statülerdeki gönderiler: Live, Ok, Locked, Complete
       final profileUserId = authstate.profileUserModel?.userId;
       list = tweetsList

@@ -120,7 +120,7 @@
   </table>
   <p><strong>Sonuç:</strong> Veri modeli ve istemci tarafı için mevcut stack uygun. Oracle’ı otomatik kullanmak ve zamana göre kilit/sonuç için sunucu tarafı (örn. Cloud Functions) eksik.</p>
 
-  <h3>2.2 Bahis Mantığı (havuz, dağıtım)</h3>
+  <h3>2.2 Tahmin havuzu mantığı (havuz, dağıtım)</h3>
   <table>
     <thead>
       <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
@@ -157,7 +157,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>“endDate’te bahisleri kapat”</td>
+        <td>“endDate’te katılımı kapat”</td>
         <td>Hayır</td>
         <td>Realtime DB ve Flutter’da zamanlanmış görev (cron) yok. Cihaz kapalıyken veya uygulama açık değilken çalışacak bir “saat X’te tüm tahminleri kilitle” mekanizması sadece sunucu tarafında (Cloud Functions + scheduler) mümkün.</td>
       </tr>
@@ -202,7 +202,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>Bahisçi skoru (rank)</td>
+        <td>Katılımcı skoru (rank)</td>
         <td>Evet</td>
         <td>user.rank + calculateRank zaten var.</td>
       </tr>
@@ -228,7 +228,7 @@
       </tr>
       <tr>
         <td><strong>Zamanlayıcı (cron)</strong></td>
-        <td>endDate’te bahis kapatma, sonuçlanma zamanında sonuç atama / API çağrısı</td>
+        <td>endDate’te katılım kapatma, sonuçlanma zamanında sonuç atama / API çağrısı</td>
                <td>Cloud Scheduler veya Cloud Functions scheduled function.</td>
       </tr>
       <tr>
