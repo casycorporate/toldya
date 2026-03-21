@@ -7,7 +7,7 @@ import 'appState.dart';
 
 class SearchState extends AppState {
   bool isBusy = false;
-  SortUser sortBy = SortUser.ByMaxFollower;
+  SortUser sortBy = SortUser.ByXp;
   List<UserModel>? _userFilterlist;
   List<UserModel>? _userlist;
   String? _searchError;
@@ -47,7 +47,7 @@ class SearchState extends AppState {
         _userFilterlist = null;
       } else {
         _userFilterlist = List.from(newList);
-        _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+        _userFilterlist!.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
       }
       isBusy = false;
       notifyListeners();
@@ -65,7 +65,7 @@ class SearchState extends AppState {
   void resetFilterList() {
     if (_userlist != null && _userFilterlist != null && _userlist!.length != _userFilterlist!.length) {
       _userFilterlist = List.from(_userlist!);
-      _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+      _userFilterlist!.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
       notifyListeners();
     }
   }
@@ -105,10 +105,10 @@ class SearchState extends AppState {
         notifyListeners();
         return "alphabeticallySort";
 
-      case SortUser.ByMaxFollower:
-        list.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+      case SortUser.ByXp:
+        list.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
         notifyListeners();
-        return "maxFollowerFirst";
+        return "sortByXpFirst";
 
       case SortUser.ByNewest:
         list.sort((x, y) =>

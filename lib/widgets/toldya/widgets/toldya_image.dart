@@ -7,12 +7,12 @@ import 'package:provider/provider.dart';
 
 class ToldyaImage extends StatelessWidget {
   const ToldyaImage(
-      {Key? key, required this.model, required this.type, this.isRetweetImage = false})
+      {Key? key, required this.model, required this.type, this.isNestedRetoldya = false})
       : super(key: key);
 
   final FeedModel model;
   final ToldyaType type;
-  final bool isRetweetImage;
+  final bool isNestedRetoldya;
 
   @override
   Widget build(BuildContext context) {
@@ -27,20 +27,19 @@ class ToldyaImage extends StatelessWidget {
               ),
               child: InkWell(
                 borderRadius: BorderRadius.all(
-                  Radius.circular(isRetweetImage ? 0 : 20),
+                  Radius.circular(isNestedRetoldya ? 0 : 20),
                 ),
                 onTap: () {
                   if(type == ToldyaType.ParentToldya){
                     return;
                   }
                   var state = Provider.of<FeedState>(context, listen: false);
-                  state.getpostDetailFromDatabase(model.key ?? '');
-                  state.setToldyaToReply = model;
+                  state.getpostDetailFromDatabase(model.key ?? '', model: model);
                   Navigator.pushNamed(context, '/ImageViewPge');
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.all(
-                    Radius.circular(isRetweetImage ? 0 : 20),
+                    Radius.circular(isNestedRetoldya ? 0 : 20),
                   ),
                   child: Container(
                     width: fullWidth(context) *

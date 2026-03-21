@@ -7,9 +7,9 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/model/user.dart';
-import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
-import 'package:toldya/page/feed/composeTweet/widget/composeTweetImage.dart';
-import 'package:toldya/page/feed/composeTweet/widget/widgetView.dart';
+import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
+import 'package:toldya/page/feed/composeToldya/widget/compose_toldya_image.dart';
+import 'package:toldya/page/feed/composeToldya/widget/widgetView.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/state/searchState.dart';
@@ -81,7 +81,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         composeState.setInitialDescription(initial);
       });
     } else {
-      model = feedState.toldyaToReplyModel ?? FeedModel();
+      model = feedState.toldyaRetoldyaSourceModel ?? FeedModel();
       _textEditingController = TextEditingController();
     }
     scrollcontroller = ScrollController();
@@ -299,7 +299,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     );
   }
 
-  /// Submit tweet to save in firebase database
+  /// Toldya gönderimini Realtime Database'e yazar.
   void _submitButton() async {
     if (_textEditingController.text.isEmpty ||
         _textEditingController.text.length > ComposeToldyaState.kToldyaMaxLength) {
@@ -361,6 +361,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
           ),
         );
       } else if (widget.isRetoldya) {
+        state.clearToldyaRetoldyaSource();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.shared)),
         );
@@ -379,10 +380,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     }
   }
 
-  /// Return Tweet model which is either a new Tweet , retweet model or comment model
-  /// If tweet is new tweet then `parentkey` and `childRetwetkey` should be null
-  /// IF tweet is a comment then it should have `parentkey`
-  /// IF tweet is a retweet then it should have `childRetwetkey`
+  /// Yeni toldya veya retoldya için [FeedModel] üretir.
+  /// Ana tahmin: `parentkey` ve `childRetoldyaKey` null.
+  /// Retoldya: `childRetoldyaKey` kaynak tahmin key'i.
   FeedModel createToldyaModel() {
     var state = Provider.of<FeedState>(context, listen: false);
     var authState = Provider.of<AuthState>(context, listen: false);
@@ -407,10 +407,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         : null;
 
     FeedModel reply = FeedModel(
-        statu: (widget.isToldya || (state.toldyaToReplyModel != null && !widget.isRetoldya))
-            ? Statu.statusPendingAiReview
-            : Statu.statusLive,
-        topic: widget.isToldya ? null : state.toldyaToReplyModel?.topic,
+        statu: widget.isToldya ? Statu.statusPendingAiReview : Statu.statusLive,
+        topic: widget.isToldya ? null : state.toldyaRetoldyaSourceModel?.topic,
         description: _textEditingController.text,
         user: commentedUser,
         createdAt: nowUtc.toIso8601String(),
@@ -420,11 +418,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         oracleApiUrl: null,
         collateralAmount: null,
         tags: tags,
-        parentkey: widget.isToldya
-            ? null
-            : widget.isRetoldya
-                ? null
-                : state.toldyaToReplyModel?.key,
+        parentkey: null,
         childRetoldyaKey: widget.isToldya
             ? null
             : widget.isRetoldya
@@ -477,15 +471,6 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     final searchState = Provider.of<SearchState>(context, listen: false);
     final authState = Provider.of<AuthState>(context, listen: false);
     final myId = authState.userId;
-    // IMPORTANT: Challenge picker must always use *current logged-in user* following list.
-    // profileUserModel can be "last visited profile", so it is not reliable here.
-    final currentUser = authState.userModel;
-    final followingIds = currentUser?.followingList ?? const <String>[];
-    final isFollowingListLoaded = currentUser != null && currentUser.followingList != null;
-    if (!isFollowingListLoaded) {
-      // Keep profile list consistent if it drifted; picker still relies on userModel.
-      authState.ensureProfileIsCurrentUser();
-    }
     if (searchState.userlist == null) {
       searchState.getDataFromDatabase();
     }
@@ -495,11 +480,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
       builder: (ctx) => SafeArea(
         child: Consumer<SearchState>(
           builder: (ctx, searchState, _) {
-            // Sadece takip edilenler: AuthState.followingList + getuserDetail
-            final list = searchState
-                .getuserDetail(followingIds)
-                .where((u) => u.userId != null && u.userId != myId)
-                .toList();
+            final raw = searchState.userlist ?? const <UserModel>[];
+            final list =
+                raw.where((u) => u.userId != null && u.userId != myId).toList();
             final isLoading = searchState.isBusy && searchState.userlist == null;
             if (isLoading) {
               return Padding(
@@ -525,11 +508,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                   Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      !isFollowingListLoaded
-                          ? AppLocalizations.of(context)!.followingListLoadingOrEmpty
-                          : (followingIds.isEmpty
-                              ? AppLocalizations.of(context)!.followingListEmpty
-                              : AppLocalizations.of(context)!.followingListLoadingOrEmpty),
+                      AppLocalizations.of(context)!.noPersonResult,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
@@ -573,7 +552,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         submitButtonText: widget.isToldya
             ? null
             : widget.isRetoldya
-                ? 'Retweet'
+                ? AppLocalizations.of(context)!.retoldyaSubmitButton
                 : null,
         isSubmitDisable:
             !Provider.of<ComposeToldyaState>(context).enableSubmitButton ||
@@ -675,7 +654,7 @@ class _ComposeRetoldya
 
   final _ComposeToldyaReplyPageState viewState;
 
-  Widget _tweet(BuildContext context, FeedModel model) {
+  Widget _embeddedParentToldya(BuildContext context, FeedModel model) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -793,7 +772,7 @@ class _ComposeRetoldya
                           border: Border.all(
                               color: AppColor.extraLightGrey, width: .5),
                           borderRadius: BorderRadius.all(Radius.circular(15))),
-                      child: _tweet(context, viewState.model),
+                      child: _embeddedParentToldya(context, viewState.model),
                     ),
                   ],
                 ),

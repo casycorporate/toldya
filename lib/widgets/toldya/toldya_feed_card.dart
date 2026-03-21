@@ -13,15 +13,15 @@ import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
-import 'package:toldya/widgets/tweet/widgets/parentTweet.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetIconsRow.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/toldya/widgets/parent_toldya.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_icons_row.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../customWidgets.dart';
-import 'widgets/retweetWidget.dart';
-import 'widgets/tweetImage.dart';
+import 'widgets/retoldya_widget.dart';
+import 'widgets/toldya_image.dart';
 
 /// Statü etiketinin (Beklemede/İncelemede/AI reddi) kartta gösterilmesi gerekiyor mu?
 bool _showStatuBadge(int? statu) {
@@ -86,7 +86,7 @@ class Toldya extends StatelessWidget {
       return;
     }
     if (type == ToldyaType.Toldya && !isDisplayOnProfile) {
-      feedstate.clearAllDetailAndReplyToldyaStack();
+      feedstate.clearAllDetailToldyaStack();
     }
     feedstate.getpostDetailFromDatabase(model.key ?? '', model: model);
     Navigator.of(context).pushNamed('/FeedPostDetail/' + (model.key ?? ''));
@@ -167,7 +167,7 @@ class Toldya extends StatelessWidget {
                       child: ToldyaIconsRow(
                         type: type,
                         model: model,
-                        isTweetDetail: type == ToldyaType.Detail,
+                        isToldyaDetail: type == ToldyaType.Detail,
                         iconColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                         iconEnableColor: ToldyaColor.ceriseRed,
                         size: 20,

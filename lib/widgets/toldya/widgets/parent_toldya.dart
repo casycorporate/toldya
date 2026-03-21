@@ -4,8 +4,8 @@ import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/feedState.dart';
-import 'package:toldya/widgets/tweet/tweet.dart';
-import 'package:toldya/widgets/tweet/widgets/unavailableTweet.dart';
+import 'package:toldya/widgets/toldya/toldya_feed_card.dart';
+import 'package:toldya/widgets/toldya/widgets/unavailable_toldya.dart';
 import 'package:provider/provider.dart';
 
 class ParentToldyaWidget extends StatelessWidget {

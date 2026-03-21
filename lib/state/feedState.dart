@@ -28,13 +28,12 @@ class FeedState extends AppState {
   static const bool _feedDebug = false;
 
   bool isBusy = false;
-  final Set<String> _betInFlightIds = <String>{};
-  bool isBetInFlight(String? toldyaId) {
+  final Set<String> _stakeInFlightIds = <String>{};
+  bool isStakeInFlight(String? toldyaId) {
     if (toldyaId == null || toldyaId.isEmpty) return false;
-    return _betInFlightIds.contains(toldyaId);
+    return _stakeInFlightIds.contains(toldyaId);
   }
-  Map<String, List<FeedModel>> toldyaReplyMap = {};
-  FeedModel? _toldyaToReplyModel;
+  FeedModel? _toldyaRetoldyaSourceModel;
   FeedModel? _toldyaToEditModel;
 
   /// Cache for feed ordering to avoid sorting on every getter call.
@@ -69,11 +68,16 @@ class FeedState extends AppState {
   bool get hasMoreFeed => _hasMoreFeed;
   bool get isLoadingMore => _isLoadingMore;
 
-  FeedModel? get toldyaToReplyModel => _toldyaToReplyModel;
+  /// Retoldya oluştururken alıntılanan kaynak tahmin (compose ekranı).
+  FeedModel? get toldyaRetoldyaSourceModel => _toldyaRetoldyaSourceModel;
   FeedModel? get toldyaToEditModel => _toldyaToEditModel;
 
-  set setToldyaToReply(FeedModel model) {
-    _toldyaToReplyModel = model;
+  set setToldyaRetoldyaSource(FeedModel model) {
+    _toldyaRetoldyaSourceModel = model;
+  }
+
+  void clearToldyaRetoldyaSource() {
+    _toldyaRetoldyaSourceModel = null;
   }
 
   set setToldyaToEdit(FeedModel model) {
@@ -85,8 +89,6 @@ class FeedState extends AppState {
     _toldyaToEditModel = null;
     notifyListeners();
   }
-
-  List<FeedModel>? _commentlist;
 
   List<FeedModel>? _feedlist;
   List<FeedModel>? _filterfeedlist;
@@ -115,42 +117,12 @@ class FeedState extends AppState {
     notifyListeners();
   }
   List<FeedModel>? _toldyaDetailModelList;
-  List<String>? _userfollowingList;
-
-  List<String>? get followingList => _userfollowingList;
-
   List<FeedModel>? get toldyaDetailModel => _toldyaDetailModelList;
 
   /// `feedlist` always [contain all tweets] fetched from firebase database
   List<FeedModel>? get feedlist {
     _rebuildFeedCacheIfNeeded();
     return _feedSortedCache;
-  }
-
-  /// contain tweet list for home page
-  List<FeedModel> getToldyaListByFollow(UserModel? userModel) {
-    if (userModel == null) {
-      return [];
-    }
-
-    if (!isBusy && feedlist != null && feedlist!.isNotEmpty) {
-      final list = feedlist!.where((x) {
-        if (x.parentkey != null &&
-            x.childRetoldyaKey == null &&
-            x.user?.userId != userModel.userId) {
-          return false;
-        }
-        final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
-        if (!isPublished) return false;
-        final fl = userModel.followingList;
-        if (fl != null && fl.contains(x.user?.userId)) {
-          return true;
-        }
-        return false;
-      }).toList();
-      return list;
-    }
-    return [];
   }
 
   /// contain tweet list for home page
@@ -213,22 +185,16 @@ class FeedState extends AppState {
 
       // Feed'de netlik: Yayında filtredeyken kendi "incelemede / AI reddi" gönderilerini de göster.
       if (statu == Statu.statusLive && (isPublished || (isMine && isAiReviewOrRejected))) {
-        if (topic_val == topic.gundem) return true;
+        if (topic_val == topic.gundem || topic_val == topic.followList) return true;
         if (userModel == null) return false;
-        if (topic_val == topic.followList) {
-          return userModel.followingList?.contains(x.user?.userId) ?? false;
-        }
         if (topic_val == topic.favList) {
           return x.favList?.contains(userModel.userId) ?? false;
         }
         return x.topic == topic_val;
       }
       if (x.statu == statu) {
-        if (topic_val == topic.gundem) return true;
+        if (topic_val == topic.gundem || topic_val == topic.followList) return true;
         if (userModel == null) return false;
-        if (topic_val == topic.followList) {
-          return userModel.followingList?.contains(x.user?.userId) ?? false;
-        }
         if (topic_val == topic.favList) {
           return x.favList?.contains(userModel.userId) ?? false;
         }
@@ -274,10 +240,7 @@ class FeedState extends AppState {
         }
         final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
         if (isPublished) {
-          if (topic_val == topic.gundem) return true;
-          if (topic_val == topic.followList) {
-            return userModel.followingList?.contains(x.user?.userId) ?? false;
-          }
+          if (topic_val == topic.gundem || topic_val == topic.followList) return true;
           return x.topic == topic_val;
         }
         return false;
@@ -315,18 +278,16 @@ class FeedState extends AppState {
       FeedModel removeToldya =
           _toldyaDetailModelList!.lastWhere((x) => x.key == toldyaKey);
       _toldyaDetailModelList!.remove(removeToldya);
-      toldyaReplyMap.removeWhere((key, value) => key == toldyaKey);
       cprint(
           "Last Tweet removed from stack. Remaining Tweet: ${_toldyaDetailModelList!.length}");
     }
   }
 
-  /// [clear all tweets] if any tweet present in tweet detail page or comment tweet
-  void clearAllDetailAndReplyToldyaStack() {
+  /// [clear all tweets] if any tweet present in toldya detail stack
+  void clearAllDetailToldyaStack() {
     if (_toldyaDetailModelList != null) {
       _toldyaDetailModelList!.clear();
     }
-    toldyaReplyMap.clear();
     cprint('Empty tweets from stack');
   }
 
@@ -607,36 +568,7 @@ class FeedState extends AppState {
       }
 
       if (_toldyaDetail != null) {
-        _commentlist = <FeedModel>[];
-        final replyList = _toldyaDetail!.replyToldyaKeyList;
-        if (replyList != null && replyList.isNotEmpty) {
-          for (final x in replyList) {
-            if (x == null) continue;
-            kDatabase
-                .child('toldya')
-                .child(x)
-                .once()
-                .then((snapshot) {
-              if (snapshot.snapshot.value != null) {
-                var commentmodel = FeedModel.fromJson(Map<String, dynamic>.from(snapshot.snapshot.value as Map));
-                var key = snapshot.snapshot.key ?? '';
-                commentmodel.key = key;
-                if (!_commentlist!.any((c) => c.key == key)) {
-                  _commentlist!.add(commentmodel);
-                }
-              }
-              if (x == replyList.last) {
-                _commentlist!.sort((a, b) => DateTime.parse(b.createdAt ?? '')
-                    .compareTo(DateTime.parse(a.createdAt ?? '')));
-                toldyaReplyMap.putIfAbsent(postID, () => _commentlist!);
-                notifyListeners();
-              }
-            });
-          }
-        } else {
-          toldyaReplyMap.putIfAbsent(postID, () => _commentlist!);
-          notifyListeners();
-        }
+        notifyListeners();
       }
     } catch (error) {
       cprint(error, errorIn: 'getpostDetailFromDatabase');
@@ -684,10 +616,10 @@ class FeedState extends AppState {
   Future<void> createReToldya(FeedModel model) async {
     try {
       await createToldya(model);
-      final reply = _toldyaToReplyModel;
-      if (reply != null) {
-        reply.retoldyaCount = (reply.retoldyaCount ?? 0) + 1;
-        await updateToldya(reply);
+      final source = _toldyaRetoldyaSourceModel;
+      if (source != null) {
+        source.retoldyaCount = (source.retoldyaCount ?? 0) + 1;
+        await updateToldya(source);
       }
     } catch (error) {
       cprint(error, errorIn: 'createReToldya');
@@ -869,7 +801,7 @@ class FeedState extends AppState {
       throw FirebaseFunctionsException(
         code: "unauthenticated",
         message: context != null
-            ? AppLocalizations.of(context)!.betErrorUnauthenticated
+            ? AppLocalizations.of(context)!.stakeErrorUnauthenticated
             : "Giriş yapmanız gerekiyor.",
       );
     }
@@ -877,11 +809,11 @@ class FeedState extends AppState {
       throw FirebaseFunctionsException(code: "invalid-argument", message: "Geçersiz bahis miktarı.");
     }
     final toldyaId = model.key ?? '';
-    if (toldyaId.isNotEmpty && _betInFlightIds.contains(toldyaId)) {
+    if (toldyaId.isNotEmpty && _stakeInFlightIds.contains(toldyaId)) {
       return;
     }
     if (toldyaId.isNotEmpty) {
-      _betInFlightIds.add(toldyaId);
+      _stakeInFlightIds.add(toldyaId);
       notifyListeners();
     }
 
@@ -931,7 +863,7 @@ class FeedState extends AppState {
               final l10n = context != null ? AppLocalizations.of(context!) : null;
               throw FirebaseFunctionsException(
                 code: "deadline-exceeded",
-                message: l10n?.betErrorDeadlineExceeded ??
+                message: l10n?.stakeErrorDeadlineExceeded ??
                     "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
               );
             },
@@ -960,7 +892,7 @@ class FeedState extends AppState {
 
       final newBalance = (data['newBalance'] as num?)?.toInt() ?? 0;
       final newStashBalance = (data['newStashBalance'] as num?)?.toInt() ?? 0;
-      authState.updateBalanceFromBet(newBalance, newStashBalance);
+      authState.updateBalanceFromStake(newBalance, newStashBalance);
       notifyListeners();
     } on PlatformException catch (e) {
       developer.log(
@@ -995,7 +927,7 @@ class FeedState extends AppState {
       rethrow;
     } finally {
       if (toldyaId.isNotEmpty) {
-        _betInFlightIds.remove(toldyaId);
+        _stakeInFlightIds.remove(toldyaId);
         notifyListeners();
       }
     }
@@ -1005,18 +937,18 @@ class FeedState extends AppState {
     final code = codeRaw.toLowerCase().replaceAll('_', '-');
     switch (code) {
       case 'unauthenticated':
-        return l10n.betErrorUnauthenticated;
+        return l10n.stakeErrorUnauthenticated;
       case 'deadline-exceeded':
-        return l10n.betErrorDeadlineExceeded;
+        return l10n.stakeErrorDeadlineExceeded;
       case 'resource-exhausted':
-        return l10n.betErrorResourceExhausted;
+        return l10n.stakeErrorResourceExhausted;
       case 'failed-precondition':
-        return l10n.betErrorFailedPrecondition;
+        return l10n.stakeErrorFailedPrecondition;
       case 'insufficient-balance':
         return l10n.tokenInsufficient;
       default:
         if (fallbackMessage != null && fallbackMessage.trim().isNotEmpty) return fallbackMessage;
-        return l10n.betErrorGeneric;
+        return l10n.stakeErrorGeneric;
     }
   }
 
@@ -1052,36 +984,6 @@ class FeedState extends AppState {
     }
     _markFeedCacheDirty();
     notifyListeners();
-  }
-
-  /// Yorum oylama (Katılıyorum / Katılmıyorum). [postId] ana tahmin key, [replyToldyaId] yorum key, [vote] 1 veya -1.
-  Future<void> voteReply(String postId, String replyToldyaId, int vote) async {
-    if (vote != 1 && vote != -1) return;
-    try {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable("voteReply")
-          .call<Map<dynamic, dynamic>>({"toldyaId": replyToldyaId, "vote": vote});
-      final data = result.data;
-      if (data == null || data["ok"] != true) return;
-      final upvoteCount = (data["upvoteCount"] as num?)?.toInt() ?? 0;
-      final downvoteCount = (data["downvoteCount"] as num?)?.toInt() ?? 0;
-      final upvoteUserIds = (data["upvoteUserIds"] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-      final downvoteUserIds = (data["downvoteUserIds"] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-      final list = toldyaReplyMap[postId];
-      if (list != null) {
-        final idx = list.indexWhere((x) => x.key == replyToldyaId);
-        if (idx >= 0) {
-          list[idx].upvoteCount = upvoteCount;
-          list[idx].downvoteCount = downvoteCount;
-          list[idx].upvoteUserIds = upvoteUserIds;
-          list[idx].downvoteUserIds = downvoteUserIds;
-          notifyListeners();
-        }
-      }
-    } catch (e) {
-      cprint(e, errorIn: 'voteReply');
-      rethrow;
-    }
   }
 
   void _applyBetToFeedModel(FeedModel f, String userId, int amount, bool isLike) {
@@ -1202,12 +1104,6 @@ class FeedState extends AppState {
     }
   }
 
-  /// (Kullanımdışı) Eski yorum ekleme API'si.
-  /// Artık client tarafında yeni yorum oluşturulmuyor; RTDB'ye yazmaz.
-  Future<void> addcommentToPost(FeedModel replyToldya) async {
-    return;
-  }
-
   /// Trigger when any tweet changes or update
   /// When any tweet changes it update it in UI
   /// No matter if Tweet is in home page or in detail page or in comment section.
@@ -1232,16 +1128,6 @@ class FeedState extends AppState {
         final idx = detailList.indexOf(oldEntry);
         if (idx >= 0) detailList[idx] = model;
       }
-      final parentKey = model.parentkey;
-      if (parentKey != null) {
-        var list = toldyaReplyMap[parentKey];
-        if (list != null && list.isNotEmpty) {
-          final idx = list.indexWhere((x) => x.key == model.key);
-          if (idx >= 0) list[idx] = model;
-        } else {
-          toldyaReplyMap[parentKey] = [model];
-        }
-      }
     }
     if (event.snapshot != null) {
       cprint('Tweet updated');
@@ -1262,7 +1148,6 @@ class FeedState extends AppState {
     toldya.key = event.snapshot.key ?? '';
     if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: parsed key=${toldya.key}, statu=${toldya.statu}, user?.userName=${toldya.user?.userName}, isValidToldya=${toldya.isValidToldya}, alreadyInList=${_feedlist?.any((x) => x.key == toldya.key) ?? false}");
 
-    _onCommentAdded(toldya);
     _feedlist ??= <FeedModel>[];
     // Sadece listede aynı key yoksa ekle (getDataFromDatabase + onChildAdded aynı kaydı iki kez eklemesin)
     final added = toldya.isValidToldya && !_feedlist!.any((x) => x.key == toldya.key);
@@ -1273,21 +1158,6 @@ class FeedState extends AppState {
     if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: added=$added, _feedlist.length now=${_feedlist?.length ?? 0}");
     isBusy = false;
     notifyListeners();
-  }
-
-  /// Trigger when comment tweet added
-  /// Check if Tweet is a comment
-  /// If Yes it will add tweet in comment list.
-  /// add [new tweet] comment to comment list
-  _onCommentAdded(FeedModel toldya) {
-    if (toldya.childRetoldyaKey != null) return;
-    final parentKey = toldya.parentkey;
-    if (parentKey != null) {
-      (toldyaReplyMap[parentKey] ??= []).add(toldya);
-      cprint('Comment Added');
-    }
-    isBusy = false;
-    // No notify here; caller already notifies (avoids duplicate rebuilds).
   }
 
   /// Trigger when Tweet `Deleted`
@@ -1332,39 +1202,21 @@ class FeedState extends AppState {
         cprint('Toldya deleted from home page list');
       }
 
-      /// [Delete toldya] if it is in nested toldya detail comment section page
       if (parentkey != null &&
           parentkey.isNotEmpty &&
-          toldyaReplyMap.isNotEmpty &&
-          toldyaReplyMap.containsKey(parentkey)) {
-        final replyList = toldyaReplyMap[parentkey];
-        if (replyList != null &&
-            replyList.isNotEmpty &&
-            replyList.any((x) => x.key == toldyaId)) {
-          deletedToldya ??=
-              replyList.firstWhere((x) => x.key == toldyaId);
-          toldyaReplyMap[parentkey]!.remove(deletedToldya);
-          if (toldyaReplyMap[parentkey]!.isEmpty) {
-            toldyaReplyMap.remove(parentkey);
-          }
-
-          if (_toldyaDetailModelList != null &&
-              _toldyaDetailModelList!.isNotEmpty &&
-              _toldyaDetailModelList!.any((x) => x.key == parentkey)) {
-            var parentModel =
-                _toldyaDetailModelList!.firstWhere((x) => x.key == parentkey);
-            (parentModel.replyToldyaKeyList ??= []).remove(deletedToldya.key);
-            parentModel.commentCount =
-                (parentModel.replyToldyaKeyList ?? []).length;
-            cprint('Parent toldya comment count updated on child toldya removal');
-            updateToldya(parentModel);
-          }
-
-          cprint('Toldya deleted from nested toldya detail comment section');
-        }
+          _toldyaDetailModelList != null &&
+          _toldyaDetailModelList!.isNotEmpty &&
+          _toldyaDetailModelList!.any((x) => x.key == parentkey)) {
+        var parentModel =
+            _toldyaDetailModelList!.firstWhere((x) => x.key == parentkey);
+        (parentModel.replyToldyaKeyList ??= []).remove(toldyaId);
+        parentModel.commentCount =
+            (parentModel.replyToldyaKeyList ?? []).length;
+        cprint('Parent toldya comment count updated on child toldya removal');
+        updateToldya(parentModel);
       }
 
-      if (deletedToldya == null) return;
+      deletedToldya ??= toldya;
 
       /// Delete toldya image from firebase storage if exist.
       if (deletedToldya.imagePath != null &&

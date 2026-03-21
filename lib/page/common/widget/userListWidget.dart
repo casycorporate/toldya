@@ -57,38 +57,8 @@ class UserTile extends StatelessWidget {
     return '';
   }
 
-  /// Check if user followerlist contain your or not
-  /// If your id exist in follower list it mean you are following him
-  bool isFollowing() {
-    if (user.followersList != null &&
-        user.followersList!.any((x) => x == myId)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    var authstate = Provider.of<AuthState>(context, listen: false);
-    bool isFollow = isFollowing();
-    isBlackList() {
-      final bl = user.blackList;
-      if (bl != null && bl.isNotEmpty) {
-        return bl.any((x) => x == myId);
-      }
-      return false;
-    }
-    //
-    // isFollower() {
-    //   if (authstate.profileUserModel.followersList != null &&
-    //       authstate.profileUserModel.followersList.isNotEmpty) {
-    //     return (authstate.profileUserModel.followersList
-    //         .any((x) => x == authstate.userModel.userId));
-    //   } else {
-    //     return false;
-    //   }
-    // }
     return Container(
       padding: EdgeInsets.symmetric(vertical: 10),
       color: ToldyaColor.white,

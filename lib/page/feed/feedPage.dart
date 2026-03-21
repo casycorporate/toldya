@@ -21,7 +21,7 @@ import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/custom_shimmer.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:toldya/widgets/newWidget/empty_state_screen.dart';
-import 'package:toldya/widgets/tweet/prediction_card_mockup.dart';
+import 'package:toldya/widgets/toldya/prediction_card_mockup.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -273,61 +273,74 @@ class _FeedPage extends State<FeedPage> {
                         );
                       },
                     ),
-                    if (authstate.userModel?.role == Role.adminRole)
-                      PopupMenuButton<Choice>(
-                        onSelected: (d) {
-                          switch (d.id) {
-                            case 'pending':
-                              statu = Statu.statusPending;
-                              break;
-                            case 'approved':
-                              statu = Statu.statusOk;
-                              break;
-                            case 'rejected':
-                              statu = Statu.statusDenied;
-                              break;
-                            case 'completed':
-                              statu = Statu.statusComplete;
-                              break;
-                            case 'pendingAi':
-                              statu = Statu.statusPendingAiReview;
-                              break;
-                            case 'rejectedAi':
-                              statu = Statu.statusRejectedByAi;
-                              break;
-                            case 'live':
-                            default:
-                              statu = Statu.statusLive;
-                              break;
-                          }
-                          setState(() {});
-                        },
-                        icon: Icon(Icons.more_vert, color: Colors.white),
-                        itemBuilder: (BuildContext context) {
-                          return choices.map((Choice choice) {
-                            return PopupMenuItem<Choice>(
-                              value: choice,
-                              child: Text(choice.label(context)),
+                    Consumer<AuthState>(
+                      builder: (context, authForAdmin, _) {
+                        return FutureBuilder<bool>(
+                          key: ValueKey<Object?>(authForAdmin.userId),
+                          future: authForAdmin.isAdminUser(),
+                          builder: (context, snap) {
+                            final isAdmin = snap.connectionState == ConnectionState.done &&
+                                snap.hasData &&
+                                snap.data == true;
+                            if (isAdmin) {
+                              return PopupMenuButton<Choice>(
+                                onSelected: (d) {
+                                  switch (d.id) {
+                                    case 'pending':
+                                      statu = Statu.statusPending;
+                                      break;
+                                    case 'approved':
+                                      statu = Statu.statusOk;
+                                      break;
+                                    case 'rejected':
+                                      statu = Statu.statusDenied;
+                                      break;
+                                    case 'completed':
+                                      statu = Statu.statusComplete;
+                                      break;
+                                    case 'pendingAi':
+                                      statu = Statu.statusPendingAiReview;
+                                      break;
+                                    case 'rejectedAi':
+                                      statu = Statu.statusRejectedByAi;
+                                      break;
+                                    case 'live':
+                                    default:
+                                      statu = Statu.statusLive;
+                                      break;
+                                  }
+                                  setState(() {});
+                                },
+                                icon: Icon(Icons.more_vert, color: Colors.white),
+                                itemBuilder: (BuildContext context) {
+                                  return choices.map((Choice choice) {
+                                    return PopupMenuItem<Choice>(
+                                      value: choice,
+                                      child: Text(choice.label(context)),
+                                    );
+                                  }).toList();
+                                },
+                              );
+                            }
+                            return IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  statu == Statu.statusLive
+                                      ? statu = Statu.statusOk
+                                      : statu = Statu.statusLive;
+                                });
+                              },
+                              icon: Icon(
+                                Icons.history,
+                                color: statu == Statu.statusLive
+                                    ? Colors.white70
+                                    : AppColor.primary,
+                              ),
                             );
-                          }).toList();
-                        },
-                      )
-                    else
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            statu == Statu.statusLive
-                                ? statu = Statu.statusOk
-                                : statu = Statu.statusLive;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.history,
-                          color: statu == Statu.statusLive
-                              ? Colors.white70
-                              : AppColor.primary,
-                        ),
-                      ),
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ],
                 ),

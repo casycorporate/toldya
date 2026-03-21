@@ -8,7 +8,6 @@
  * - profile/{userId}           → fcmToken, displayName, ...
  * - toldya/{toldyaId}          → statu (0=Live, 5=Locked, 2=Ok), feedResult, userId (creator), description, likeList, unlikeList
  * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni bahis)
- * - followers/{followedUserId}/{followerId} → takip edildiğinde 1 yazılır (isteğe bağlı; yoksa bu tetikleyici atlanır)
  */
 
 const functions = require("firebase-functions");
@@ -188,7 +187,6 @@ exports.onBetCreated = functions.database
 
 /**
  * Yeni tahmin + meydan okuma: toldya/{toldyaId} onCreate.
- * - parentkey set ise (yorum): tahmin sahibine notification + FCM.
  * - parentkey yok ve challengeeUserId varsa: challengee'ye bildirim + FCM.
  */
 exports.onToldyaCreated = functions.database
@@ -200,52 +198,6 @@ exports.onToldyaCreated = functions.database
 
     const parentKey = data.parentkey && String(data.parentkey).trim();
     if (parentKey) {
-      try {
-        const parentSnap = await getDb().ref("toldya").child(parentKey).once("value");
-        const parent = parentSnap.val();
-        const ownerId = parent && parent.userId ? String(parent.userId).trim() : null;
-        if (!ownerId) return null;
-        const commenterId = data.userId ? String(data.userId).trim() : null;
-        if (commenterId === ownerId) return null;
-
-        let commenterDisplayName = "Bir kullanıcı";
-        if (commenterId) {
-          const profileSnap = await getDb().ref("profile").child(commenterId).once("value");
-          const profile = profileSnap.val();
-          if (profile) {
-            const name = profile.displayName || profile.userName || profile.name;
-            if (name) commenterDisplayName = String(name);
-          }
-        }
-        const description = (data.description && String(data.description).trim()) || "";
-        const notifTitle = "Yeni Yorum!";
-        const notifBody = `${commenterDisplayName} tahminine yorum yaptı.`;
-        const updates = {};
-        updates[`notification/${ownerId}/${toldyaId}`] = {
-          type: "Reply",
-          toldyaId: toldyaId,
-          parentKey: parentKey,
-          commenterUserId: commenterId || "",
-          data: { type: "toldya", id: parentKey, toldyaId: parentKey, replyId: toldyaId, senderId: commenterId || "" },
-          updatedAt: new Date().toISOString(),
-        };
-        await getDb().ref().update(updates);
-
-        const token = await getFcmToken(ownerId);
-        if (token) {
-          await sendFcm(token, notifTitle, notifBody, {
-            type: "toldya",
-            id: parentKey,
-            toldyaId: parentKey,
-            replyId: toldyaId,
-            senderId: commenterId || "",
-            legacyType: "reply",
-          });
-          console.log("[onToldyaCreated] reply notification sent to", ownerId, "toldyaId=", toldyaId);
-        }
-      } catch (e) {
-        console.error("[onToldyaCreated] reply error", toldyaId, e.message || e);
-      }
       return null;
     }
 
@@ -294,53 +246,3 @@ exports.onToldyaCreated = functions.database
     }
   });
 
-/**
- * Yeni takipçi: followers/{followedUserId}/{followerId} oluşturulduğunda
- * takip edilen kullanıcıya bildirim.
- * Tetikleyici: followers/{followedUserId}/{followerId} onCreate
- * Not: Takip işleminde bu path'e yazılıyorsa bildirim gider. Yazılmıyorsa bu fonksiyonu devre dışı bırakın veya takip akışına followers path'ini ekleyin.
- */
-exports.onFollowerCreated = functions.database
-  .ref("followers/{followedUserId}/{followerId}")
-  .onCreate(async (snap, context) => {
-    const followedUserId = context.params.followedUserId;
-    const followerId = context.params.followerId;
-    console.log("[onFollowerCreated] tetiklendi: followed=" + followedUserId + ", follower=" + followerId);
-
-    try {
-      const token = await getFcmToken(followedUserId);
-      if (!token) {
-        console.log("[onFollowerCreated] takip edilen kullanıcı FCM token yok, bildirim gönderilmedi");
-        return null;
-      }
-
-      let followerDisplayName = "Bir kullanıcı";
-      const profileSnap = await getDb().ref("profile").child(followerId).once("value");
-      const profile = profileSnap.val();
-      if (profile) {
-        const name = profile.displayName || profile.userName || profile.name;
-        if (name) followerDisplayName = String(name);
-      }
-
-      const notifTitle = "Yeni Takipçi!";
-      const notifBody = `${followerDisplayName} seni takip etmeye başladı.`;
-      const dataPayload = { type: "profile", id: followerId, senderId: followerId, legacyType: "new_follower" };
-
-      const updates = {};
-      updates[`notification/${followedUserId}/${followerId}`] = {
-        type: "Follow",
-        followerId: followerId,
-        followerDisplayName: followerDisplayName,
-        data: { type: "profile", id: followerId, senderId: followerId, legacyType: "follow" },
-        updatedAt: new Date().toISOString(),
-      };
-      await getDb().ref().update(updates);
-
-      await sendFcm( token, notifTitle, notifBody, dataPayload );
-      console.log("[onFollowerCreated] sent to", followedUserId, "from", followerId);
-      return null;
-    } catch (e) {
-      console.error("[onFollowerCreated] error", e);
-      return null;
-    }
-  });

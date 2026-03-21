@@ -15,11 +15,9 @@ import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
-import 'package:toldya/widgets/tweet/tweet.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
-import 'package:toldya/widgets/reply_vote_buttons.dart';
-import 'package:toldya/helper/bet_flow.dart';
+import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -38,22 +36,6 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
   void initState() {
     postId = widget.postId ?? '';
     super.initState();
-  }
-
-  Widget _commentRow(FeedModel model) {
-    return Toldya(
-      model: model,
-      type: ToldyaType.Reply,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ReplyVoteButtons(postId: postId, model: model),
-          SizedBox(width: 4),
-          ToldyaBottomSheet().toldyaOptionIcon(context,
-              scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
-        ],
-      ),
-    );
   }
 
   @override
@@ -120,82 +102,9 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                       child: _PredictionDetailBody(model: model, scaffoldKey: scaffoldKey),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, spacing24, MockupDesign.screenPadding, spacing8),
-                      child: Text(
-                        AppLocalizations.of(context)!.comments,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildListDelegate(
-                      state.toldyaReplyMap == null ||
-                              state.toldyaReplyMap[postId] == null ||
-                              (state.toldyaReplyMap[postId] ?? []).isEmpty
-                          ? [
-                              Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Center(
-                                  child: Text(
-                                    AppLocalizations.of(context)!.noCommentsYet,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                          : (() {
-                              final list = (state.toldyaReplyMap[postId] ?? <FeedModel>[])
-                                  .cast<FeedModel>()
-                                  .toList();
-                              list.sort((a, b) {
-                                final scoreA = (a.upvoteCount ?? 0) - (a.downvoteCount ?? 0);
-                                final scoreB = (b.upvoteCount ?? 0) - (b.downvoteCount ?? 0);
-                                return scoreB.compareTo(scoreA);
-                              });
-                              return list.map<Widget>((x) => Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Theme.of(context).brightness == Brightness.dark
-                                              ? AppColor.cardDarkBorder
-                                              : Colors.black.withOpacity(0.06),
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: _commentRow(x),
-                                      ),
-                                    ),
-                                  ))
-                                  .toList();
-                            })(),
-                    ),
-                  ),
                   SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
-        floatingActionButton: model != null
-            ? FloatingActionButton(
-                onPressed: () {
-                  state.setToldyaToReply = model;
-                  Navigator.of(context).pushNamed('/ComposeToldyaPage/toldya/$postId');
-                },
-                backgroundColor: Theme.of(context).primaryColor,
-                child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-              )
-            : null,
       ),
     );
   }
@@ -215,7 +124,7 @@ class _PredictionDetailBody extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = isToldyaStakeClosed(model.statu, model.endDate);
     final evetColor = AppNeon.green;
     final hayirColor = AppNeon.red;
     final balance = authState.userModel?.pegCount ?? 0;
@@ -345,7 +254,7 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)!.maxBetTokens(maxBet.toString()),
+            AppLocalizations.of(context)!.maxStakeTokens(maxBet.toString()),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           ),
           SizedBox(height: 16),
@@ -368,7 +277,7 @@ class _PredictionDetailBody extends StatelessWidget {
                         height: 56,
                         alignment: Alignment.center,
                         child: Text(
-                          AppLocalizations.of(context)!.betYesLabel,
+                          AppLocalizations.of(context)!.toldyaYesLabel,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -397,7 +306,7 @@ class _PredictionDetailBody extends StatelessWidget {
                         height: 56,
                         alignment: Alignment.center,
                         child: Text(
-                          AppLocalizations.of(context)!.betNoLabel,
+                          AppLocalizations.of(context)!.toldyaNoLabel,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -414,7 +323,7 @@ class _PredictionDetailBody extends StatelessWidget {
           SizedBox(height: 24),
           // 5. Son Bahisler başlığı
           Text(
-            AppLocalizations.of(context)!.recentBetsTitle,
+            AppLocalizations.of(context)!.recentStakesTitle,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           SizedBox(height: 12),
@@ -438,7 +347,7 @@ class _PredictionDetailBody extends StatelessWidget {
 
   void _openBet(BuildContext context, AuthState authState, int flag) {
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
-    openBetFlowWithFeedback(
+    openToldyaStakeFlowWithFeedback(
       context: context,
       model: model,
       commentFlag: commentFlag,
@@ -475,13 +384,13 @@ class _RecentBetsList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              AppLocalizations.of(context)!.noBetsYet,
+              AppLocalizations.of(context)!.noStakesYet,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 4),
             Text(
-              AppLocalizations.of(context)!.noBetsYetHint,
+              AppLocalizations.of(context)!.noStakesYetHint,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               textAlign: TextAlign.center,
             ),

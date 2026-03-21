@@ -51,7 +51,7 @@ int sumOfVote(List<UserPegModel> list){
 }
 
 /// Bahisler kapanış tarihinde veya statu kapalıysa true
-bool isBettingClosed(int? statu, String? endDate) {
+bool isToldyaStakeClosed(int? statu, String? endDate) {
   if (statu != null && statu != 0) return true; // Statu.statusLive = 0
   if (endDate == null || endDate.isEmpty) return false;
   try {
@@ -63,7 +63,7 @@ bool isBettingClosed(int? statu, String? endDate) {
 
 /// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten bahis yaptıysa true.
 /// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek bahis kuralı ihlali.
-bool userAlreadyBetOnOtherSide(FeedModel model, String? userId, int commentFlag) {
+bool userAlreadyStakedOtherSide(FeedModel model, String? userId, int commentFlag) {
   if (userId == null || userId.isEmpty) return false;
   if (commentFlag == 0) return (model.unlikeList ?? []).any((e) => e.userId == userId);
   return (model.likeList ?? []).any((e) => e.userId == userId);
@@ -383,6 +383,8 @@ bool validateEmal(String email) {
   return status;
 }
 class Utility {
+  /// Paylaşım linkleri Firebase Dynamic Links ile üretilir.
+  /// Üretimde domain ve [AndroidParameters.packageName] değerleri Firebase / Play ile eşleşmelidir.
   static Future<void> createLinkToShare(BuildContext context, String id,
       {SocialMetaTagParameters? socialMetaTagParameters}) async {
     final DynamicLinkParameters parameters = DynamicLinkParameters(

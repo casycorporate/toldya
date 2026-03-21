@@ -43,7 +43,7 @@ class AboutPage extends StatelessWidget {
             vPadding: 0,
             showDivider: false,
             onPressed: (){
-              launchURL("https://github.com/casycorporate/toldya/issues");
+              launchURL('https://github.com/orbislas-ai/toldya/issues');
             },
           ),
           HeaderWidget(AppLocalizations.of(context)!.legal),

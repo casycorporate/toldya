@@ -83,9 +83,9 @@ class NotificationPageBody extends StatelessWidget {
   Widget _notificationRow(BuildContext context, NotificationModel model) {
     var state = Provider.of<NotificationState>(context);
     final type = model.type ?? '';
-    final isFollow = type == 'Follow' || type == 'NotificationType.Follow';
-    if (isFollow) {
-      return _FollowNotificationTile(notificationModel: model);
+    final isLegacyFollow = type == 'Follow' || type == 'NotificationType.Follow';
+    if (isLegacyFollow) {
+      return SizedBox.shrink();
     }
     // Standard payload: model.data => { type, id }. Backward compatible: toldyaKey is still present.
     final targetId = model.navId;
@@ -174,89 +174,6 @@ class NotificationPageBody extends StatelessWidget {
         child: _notificationRow(context, list[index]),
       ),
       itemCount: list.length,
-    );
-  }
-}
-
-/// Takip bildirimi: "X seni takip etmeye başladı", tıklanınca profil sayfasına gider.
-class _FollowNotificationTile extends StatelessWidget {
-  final NotificationModel notificationModel;
-
-  const _FollowNotificationTile({Key? key, required this.notificationModel}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final state = Provider.of<NotificationState>(context);
-    final followerId = notificationModel.toldyaKey ?? '';
-    if (followerId.isEmpty) return SizedBox();
-    return FutureBuilder<UserModel?>(
-      future: state.getuserDetail(followerId),
-      builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
-        if (!snapshot.hasData || snapshot.data == null) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Center(
-              child: CustomScreenLoader(height: 36, width: 36, backgroundColor: Colors.transparent),
-            ),
-          );
-        }
-        final user = snapshot.data!;
-        final l10n = AppLocalizations.of(context)!;
-        final name = user.displayName ?? user.userName ?? l10n.someone;
-        return InkWell(
-          onTap: () {
-            if (followerId.isNotEmpty) {
-              Navigator.of(context).pushNamed('/profile/$followerId');
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.06), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
-                  offset: const Offset(0, 10),
-                  blurRadius: 24,
-                  spreadRadius: -8,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade800, width: 1),
-                  ),
-                  child: customProfileImage(context, user.profilePic, userId: user.userId, height: 40),
-                ),
-                SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$name ${l10n.notificationStartedFollowingYou}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

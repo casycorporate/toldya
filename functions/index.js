@@ -605,9 +605,6 @@ exports.runDistributeWinnings = onRequestJob(async (req, res) => {
 const _callables = registerCallables(functions);
 exports.placeBet = _callables.placeBet;
 
-// --- Callable: voteReply – Yorum oylama (Katılıyorum / Katılmıyorum), sadece reply için ---
-exports.voteReply = _callables.voteReply;
-
 // --- Callable: claimDailyBonus – Günlük giriş bonusu ---
 exports.claimDailyBonus = _callables.claimDailyBonus;
 
@@ -789,4 +786,3 @@ const notifications = require("./notifications");
 exports.onPredictionResolved = notifications.onPredictionResolved;
 exports.onBetCreated = notifications.onBetCreated;
 exports.onToldyaCreated = notifications.onToldyaCreated;
-exports.onFollowerCreated = notifications.onFollowerCreated;

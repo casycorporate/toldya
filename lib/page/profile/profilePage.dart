@@ -19,12 +19,11 @@ import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:toldya/widgets/newWidget/empty_state_screen.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
-import 'package:toldya/widgets/tweet/tweet.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
-import 'package:toldya/helper/bet_flow.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
+import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:toldya/widgets/rank/rankBadgeWidget.dart';
 import 'package:toldya/widgets/rank/xpProgressBarWidget.dart';
-import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
+import 'package:toldya/widgets/toldya/widgets/yes_no_stake_buttons_row.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -46,8 +45,6 @@ class _ProfilePageState extends State<ProfilePage>
   bool isMyProfile = false;
   int pageIndex = 0;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _isFollowingAction = false;
-
   // TEMP: Profile içindeki token/rütbe/liderlik UI'larını şimdilik gizle.
   // İleride tekrar açmak için sadece bu flag'i true yap.
   static const bool _showTokenAndRankUi = false;
@@ -120,16 +117,6 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _emptyBox() {
     return SliverToBoxAdapter(child: SizedBox.shrink());
-  }
-
-  isFollower() {
-    var authstate = Provider.of<AuthState>(context, listen: false);
-    final followers = authstate.profileUserModel?.followersList;
-    final myId = authstate.userModel?.userId;
-    if (followers != null && followers.isNotEmpty && myId != null) {
-      return followers.any((x) => x == myId);
-    }
-    return false;
   }
 
   isBlackList() {
@@ -305,39 +292,12 @@ class _ProfilePageState extends State<ProfilePage>
                                   authstate.getProfileUser(userProfileId: widget.profileId);
                                 }
                               },
-                              onEditOrFollow: () async {
+                              onEditProfile: () {
                                 if (isBlackList()) return;
                                 if (isMyProfile) {
                                   Navigator.pushNamed(context, '/EditProfile');
-                                  return;
-                                }
-                                setState(() => _isFollowingAction = true);
-                                try {
-                                  authstate.followUser(removeFollower: isFollower());
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          isFollower() ? AppLocalizations.of(context)!.unfollowSuccess : AppLocalizations.of(context)!.followSuccess,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (_) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(AppLocalizations.of(context)!.errorGeneric),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) setState(() => _isFollowingAction = false);
                                 }
                               },
-                              isFollowLoading: _isFollowingAction,
-                              isFollower: isFollower(),
                               isBlackList: isBlackList(),
                               onAvatarTap: () => Navigator.pushNamed(context, '/ProfileImageView'),
                               onTokenManagement: () => Navigator.of(context).pushNamed('/TokenEarnPage'),
@@ -358,7 +318,7 @@ class _ProfilePageState extends State<ProfilePage>
                     labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                     unselectedLabelStyle: TextStyle(fontSize: 15),
                     tabs: <Widget>[
-                      Tab(text: AppLocalizations.of(context)!.myBetsTab),
+                      Tab(text: AppLocalizations.of(context)!.myStakesTab),
                       Tab(text: AppLocalizations.of(context)!.myVotesTab),
                     ],
                   ),
@@ -378,7 +338,7 @@ class _ProfilePageState extends State<ProfilePage>
                             children: [
                               _bahislerimFilterChips(context),
                               Expanded(
-                                child: _tweetList(
+                                child: _toldyaFeedList(
                                   context,
                                   authstate,
                                   listForBahislerim,
@@ -390,13 +350,13 @@ class _ProfilePageState extends State<ProfilePage>
                               ),
                             ],
                           )
-                        : _tweetList(context, authstate, listForBahislerim, false, false, id),
+                        : _toldyaFeedList(context, authstate, listForBahislerim, false, false, id),
 
                     /// Display all reply tweet list (oy verdiklerim)
-                    _tweetList(context, authstate, listForOyVerdiklerim, true, false, id),
+                    _toldyaFeedList(context, authstate, listForOyVerdiklerim, true, false, id),
 
                     // /// Display all reply and comments tweet list
-                    // _tweetList(context, authstate, list, false, true)
+                    // _toldyaFeedList(context, authstate, list, false, true)
                   ],
                 ),
           ),
@@ -411,9 +371,7 @@ class _ProfilePageState extends State<ProfilePage>
     required bool isMyProfile,
     required bool canClaimDailyBonus,
     required VoidCallback onClaimDailyBonus,
-    required VoidCallback onEditOrFollow,
-    bool isFollowLoading = false,
-    required bool isFollower,
+    required VoidCallback onEditProfile,
     required bool isBlackList,
     required VoidCallback onAvatarTap,
     required VoidCallback onTokenManagement,
@@ -481,46 +439,34 @@ class _ProfilePageState extends State<ProfilePage>
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
               SizedBox(height: 10),
-              Center(
-                child: Material(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(20),
-                  child: InkWell(
-                    onTap: isFollowLoading ? null : onEditOrFollow,
+              if (isMyProfile || isBlackList)
+                Center(
+                  child: Material(
+                    color: Colors.white.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.grey.shade600, width: 1),
-                      ),
-                      child: isFollowLoading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                        isMyProfile
-                            ? AppLocalizations.of(context)!.editProfile
-                            : isBlackList
-                                ? AppLocalizations.of(context)!.youAreBlocked
-                                : isFollower
-                                    ? AppLocalizations.of(context)!.followingLabel
-                                    : AppLocalizations.of(context)!.follow,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                    child: InkWell(
+                      onTap: isBlackList ? null : onEditProfile,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey.shade600, width: 1),
+                        ),
+                        child: Text(
+                          isMyProfile
+                              ? AppLocalizations.of(context)!.editProfile
+                              : AppLocalizations.of(context)!.youAreBlocked,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
               SizedBox(height: 14),
               if (_showTokenAndRankUi)
                 _WalletCapsule(
@@ -569,7 +515,7 @@ class _ProfilePageState extends State<ProfilePage>
                   context: context,
                   icon: Icons.emoji_events,
                   iconColor: theme.primaryColor,
-                  title: AppLocalizations.of(context)!.bettors,
+                  title: AppLocalizations.of(context)!.toldyaParticipants,
                   value: user.rank ?? 0,
                 ),
               ),
@@ -706,10 +652,6 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     ),
                   ],
-                ),
-                Text(
-                  '${user.getFollower()} ${AppLocalizations.of(context)!.follower}',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ],
             ),
@@ -865,7 +807,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _tweetList(BuildContext context, AuthState authstate,
+  Widget _toldyaFeedList(BuildContext context, AuthState authstate,
       List<FeedModel>? tweetsList, bool isreply, bool isMedia, String id,
       {int? statusFilter}) {
     List<FeedModel> list;
@@ -1044,7 +986,7 @@ class _ProfilePredictionCard extends StatelessWidget {
   }
 
   void _onVoteTap(BuildContext context, int commentFlag) {
-    openBetFlowWithFeedback(
+    openToldyaStakeFlowWithFeedback(
       context: context,
       model: model,
       commentFlag: commentFlag,
@@ -1122,7 +1064,7 @@ class _ProfilePredictionCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 10),
-              YesNoBetButtonsRow(
+              YesNoStakeButtonsRow(
                 yesPercent: yesPct,
                 noPercent: noPct,
                 height: 48,
@@ -1345,7 +1287,7 @@ class UserNameRowWidget extends StatelessWidget {
                     context: context,
                     icon: Icons.emoji_events,
                     iconColor: Theme.of(context).primaryColor,
-                    title: AppLocalizations.of(context)!.bettors,
+                    title: AppLocalizations.of(context)!.toldyaParticipants,
                     value: user.rank ?? 0,
                   ),
                 ),
@@ -1409,22 +1351,6 @@ class UserNameRowWidget extends StatelessWidget {
               ),
             ),
         ],
-        Container(
-          alignment: Alignment.center,
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: 10,
-                height: 30,
-              ),
-              _tappbleText(context, '${user.getFollower()}', ' ${AppLocalizations.of(context)!.followers}',
-                  'FollowerListPage'),
-              SizedBox(width: 40),
-              _tappbleText(context, '${user.getFollowing()}', ' ${AppLocalizations.of(context)!.followingCountLabel}',
-                  'FollowingListPage'),
-            ],
-          ),
-        ),
       ],
     );
   }

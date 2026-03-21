@@ -7,10 +7,10 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
 
-/// Shared bet flow: guards + opens bet amount sheet (no navigation to detail).
-Future<void> openBetFlow({
+/// Tahmin (token) akışı: kontroller + miktar sayfası (detay navigasyonu yok).
+Future<void> openToldyaStakeFlow({
   required BuildContext context,
   required FeedModel model,
   required int commentFlag,
@@ -20,10 +20,10 @@ Future<void> openBetFlow({
   final authState = Provider.of<AuthState>(context, listen: false);
   final feedState = Provider.of<FeedState>(context, listen: false);
 
-  if (feedState.isBetInFlight(model.key)) return;
-  if (isBettingClosed(model.statu, model.endDate)) return;
+  if (feedState.isStakeInFlight(model.key)) return;
+  if (isToldyaStakeClosed(model.statu, model.endDate)) return;
   if ((authState.userModel?.pegCount ?? 0) <= 0) return;
-  if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) return;
+  if (userAlreadyStakedOtherSide(model, authState.userId, commentFlag)) return;
 
   ToldyaBottomSheet().openRetoldyabottomSheet(
     commentFlag,
@@ -34,7 +34,7 @@ Future<void> openBetFlow({
   );
 }
 
-void _showBetHint(BuildContext context, String message) {
+void _showStakeHint(BuildContext context, String message) {
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -51,7 +51,7 @@ void _showBetHint(BuildContext context, String message) {
 }
 
 /// Her tıklamada: uygunsa sheet açar; değilse kısa SnackBar ile nedenini söyler.
-void openBetFlowWithFeedback({
+void openToldyaStakeFlowWithFeedback({
   required BuildContext context,
   required FeedModel model,
   required int commentFlag,
@@ -62,20 +62,20 @@ void openBetFlowWithFeedback({
   final authState = Provider.of<AuthState>(context, listen: false);
   final feedState = Provider.of<FeedState>(context, listen: false);
 
-  if (feedState.isBetInFlight(model.key)) {
-    _showBetHint(context, l10n.betPleaseWait);
+  if (feedState.isStakeInFlight(model.key)) {
+    _showStakeHint(context, l10n.stakePleaseWait);
     return;
   }
-  if (isBettingClosed(model.statu, model.endDate)) {
-    _showBetHint(context, l10n.closedNoSelection);
+  if (isToldyaStakeClosed(model.statu, model.endDate)) {
+    _showStakeHint(context, l10n.closedNoSelection);
     return;
   }
   if ((authState.userModel?.pegCount ?? 0) <= 0) {
-    _showBetHint(context, l10n.tokenInsufficient);
+    _showStakeHint(context, l10n.tokenInsufficient);
     return;
   }
-  if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
-    _showBetHint(context, l10n.betOnOneSideOnly);
+  if (userAlreadyStakedOtherSide(model, authState.userId, commentFlag)) {
+    _showStakeHint(context, l10n.stakeOneSideOnly);
     return;
   }
 

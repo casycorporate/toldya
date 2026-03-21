@@ -124,6 +124,12 @@ abstract class AppLocalizations {
   /// **'Tahminlerini paylaş, demiş mi dememiş mi gör.'**
   String get tagline;
 
+  /// No description provided for @retoldyaSubmitButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Retoldya'**
+  String get retoldyaSubmitButton;
+
   /// No description provided for @signInToContinue.
   ///
   /// In tr, this message translates to:
@@ -934,35 +940,35 @@ abstract class AppLocalizations {
   /// **'Engel kaldırıldı.'**
   String get userUnblocked;
 
-  /// No description provided for @pleaseSelectBetAmount.
+  /// No description provided for @pleaseSelectStakeAmount.
   ///
   /// In tr, this message translates to:
   /// **'Lütfen tahmin puanını seçin!'**
-  String get pleaseSelectBetAmount;
+  String get pleaseSelectStakeAmount;
 
-  /// No description provided for @maxBetTokens.
+  /// No description provided for @maxStakeTokens.
   ///
   /// In tr, this message translates to:
   /// **'Maksimum tahmin: {maxVal} puan'**
-  String maxBetTokens(String maxVal);
+  String maxStakeTokens(String maxVal);
 
-  /// No description provided for @betOnOneSideOnly.
+  /// No description provided for @stakeOneSideOnly.
   ///
   /// In tr, this message translates to:
   /// **'Bu tahminde zaten diğer tarafı seçtiniz. Bir tahminde yalnızca tek tarafı (Evet veya Hayır) seçebilirsiniz.'**
-  String get betOnOneSideOnly;
+  String get stakeOneSideOnly;
 
-  /// No description provided for @betPleaseWait.
+  /// No description provided for @stakePleaseWait.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin işlemi sürüyor, lütfen bekleyin.'**
-  String get betPleaseWait;
+  String get stakePleaseWait;
 
-  /// No description provided for @betLimitHint.
+  /// No description provided for @stakeLimitHint.
   ///
   /// In tr, this message translates to:
   /// **'Maksimum tahmin puanı bakiye, rütbe ve toplam tahmin sayısına göre belirlenir.'**
-  String get betLimitHint;
+  String get stakeLimitHint;
 
   /// No description provided for @availableBalanceTokens.
   ///
@@ -970,29 +976,29 @@ abstract class AppLocalizations {
   /// **'Kullanılabilir puan: {pegCount} 🪙'**
   String availableBalanceTokens(String pegCount);
 
-  /// No description provided for @betSheetSideYes.
+  /// No description provided for @stakeSheetSideYes.
   ///
   /// In tr, this message translates to:
   /// **'Evet'**
-  String get betSheetSideYes;
+  String get stakeSheetSideYes;
 
-  /// No description provided for @betSheetSideNo.
+  /// No description provided for @stakeSheetSideNo.
   ///
   /// In tr, this message translates to:
   /// **'Hayır'**
-  String get betSheetSideNo;
+  String get stakeSheetSideNo;
 
-  /// No description provided for @betSheetSubmitYes.
+  /// No description provided for @stakeSheetSubmitYes.
   ///
   /// In tr, this message translates to:
   /// **'EVETİ SEÇ'**
-  String get betSheetSubmitYes;
+  String get stakeSheetSubmitYes;
 
-  /// No description provided for @betSheetSubmitNo.
+  /// No description provided for @stakeSheetSubmitNo.
   ///
   /// In tr, this message translates to:
   /// **'HAYIRI SEÇ'**
-  String get betSheetSubmitNo;
+  String get stakeSheetSubmitNo;
 
   /// No description provided for @potentialReturnEstimate.
   ///
@@ -1012,29 +1018,29 @@ abstract class AppLocalizations {
   /// **'Yaklaşık tahmin; garanti değildir.'**
   String get potentialReturnDisclaimer;
 
-  /// No description provided for @betSheetMaxButton.
+  /// No description provided for @stakeSheetMaxButton.
   ///
   /// In tr, this message translates to:
   /// **'MAKS'**
-  String get betSheetMaxButton;
+  String get stakeSheetMaxButton;
 
-  /// No description provided for @betPlaced.
+  /// No description provided for @stakePlaced.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin gönderildi.'**
-  String get betPlaced;
+  String get stakePlaced;
 
-  /// No description provided for @confirmBet.
+  /// No description provided for @confirmStake.
   ///
   /// In tr, this message translates to:
   /// **'Tahmini onayla'**
-  String get confirmBet;
+  String get confirmStake;
 
-  /// No description provided for @confirmBetMessage.
+  /// No description provided for @confirmStakeMessage.
   ///
   /// In tr, this message translates to:
   /// **'Bu tahmine {amount} puan ayırmak istediğinize emin misiniz?'**
-  String confirmBetMessage(String amount);
+  String confirmStakeMessage(String amount);
 
   /// No description provided for @messageSent.
   ///
@@ -1282,11 +1288,11 @@ abstract class AppLocalizations {
   /// **'Tahminciler'**
   String get predictors;
 
-  /// No description provided for @bettors.
+  /// No description provided for @toldyaParticipants.
   ///
   /// In tr, this message translates to:
   /// **'Tahminciler'**
-  String get bettors;
+  String get toldyaParticipants;
 
   /// No description provided for @dataPreference.
   ///
@@ -1318,11 +1324,11 @@ abstract class AppLocalizations {
   /// **'Kapandığı için seçim yapılamaz'**
   String get closedNoSelection;
 
-  /// No description provided for @thisTweetUnavailable.
+  /// No description provided for @toldyaUnavailable.
   ///
   /// In tr, this message translates to:
   /// **'Bu gönderi kullanılamıyor'**
-  String get thisTweetUnavailable;
+  String get toldyaUnavailable;
 
   /// No description provided for @editProfile.
   ///
@@ -1444,35 +1450,35 @@ abstract class AppLocalizations {
   /// **'Puan yetersiz olduğu için seçim yapılamaz'**
   String get tokenInsufficientForVote;
 
-  /// No description provided for @betErrorGeneric.
+  /// No description provided for @stakeErrorGeneric.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin gönderilemedi.'**
-  String get betErrorGeneric;
+  String get stakeErrorGeneric;
 
-  /// No description provided for @betErrorUnauthenticated.
+  /// No description provided for @stakeErrorUnauthenticated.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin yapmak için giriş yapmanız gerekiyor.'**
-  String get betErrorUnauthenticated;
+  String get stakeErrorUnauthenticated;
 
-  /// No description provided for @betErrorDeadlineExceeded.
+  /// No description provided for @stakeErrorDeadlineExceeded.
   ///
   /// In tr, this message translates to:
   /// **'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.'**
-  String get betErrorDeadlineExceeded;
+  String get stakeErrorDeadlineExceeded;
 
-  /// No description provided for @betErrorResourceExhausted.
+  /// No description provided for @stakeErrorResourceExhausted.
   ///
   /// In tr, this message translates to:
   /// **'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin.'**
-  String get betErrorResourceExhausted;
+  String get stakeErrorResourceExhausted;
 
-  /// No description provided for @betErrorFailedPrecondition.
+  /// No description provided for @stakeErrorFailedPrecondition.
   ///
   /// In tr, this message translates to:
   /// **'Bu gönderi için şu anda tahmin yapılamıyor. Lütfen daha sonra tekrar deneyin.'**
-  String get betErrorFailedPrecondition;
+  String get stakeErrorFailedPrecondition;
 
   /// No description provided for @statuPending.
   ///
@@ -1648,11 +1654,11 @@ abstract class AppLocalizations {
   /// **'Giriş yapmanız gerekiyor.'**
   String get loginRequired;
 
-  /// No description provided for @betTimeout.
+  /// No description provided for @stakeTimeout.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin isteği zaman aşımına uğradı. Lütfen tekrar deneyin.'**
-  String get betTimeout;
+  String get stakeTimeout;
 
   /// No description provided for @gmsUpdateMessage.
   ///
@@ -1894,11 +1900,11 @@ abstract class AppLocalizations {
   /// **'Önce en eski kullanıcılar'**
   String get oldestUserFirst;
 
-  /// No description provided for @maxFollowerFirst.
+  /// No description provided for @sortByXpFirst.
   ///
   /// In tr, this message translates to:
-  /// **'En çok takipçili kullanıcılar'**
-  String get maxFollowerFirst;
+  /// **'En yüksek XP (deneyim) önce'**
+  String get sortByXpFirst;
 
   /// No description provided for @alphabeticallySort.
   ///
@@ -2494,11 +2500,11 @@ abstract class AppLocalizations {
   /// **'Henüz tahminci skoru yok'**
   String get noPredictorScoreYet;
 
-  /// No description provided for @noBettorScoreYet.
+  /// No description provided for @noParticipantScoreYet.
   ///
   /// In tr, this message translates to:
   /// **'Henüz tahmin skoru yok'**
-  String get noBettorScoreYet;
+  String get noParticipantScoreYet;
 
   /// No description provided for @followersTitle.
   ///
@@ -2668,17 +2674,17 @@ abstract class AppLocalizations {
   /// **'Seviye {level}'**
   String levelLabel(String level);
 
-  /// No description provided for @noBetsYet.
+  /// No description provided for @noStakesYet.
   ///
   /// In tr, this message translates to:
   /// **'Henüz tahmin yok.'**
-  String get noBetsYet;
+  String get noStakesYet;
 
-  /// No description provided for @noBetsYetHint.
+  /// No description provided for @noStakesYetHint.
   ///
   /// In tr, this message translates to:
   /// **'Yukarıdaki \"Evet\" veya \"Hayır\" butonuna dokunarak tahmin yapabilirsiniz.'**
-  String get noBetsYetHint;
+  String get noStakesYetHint;
 
   /// No description provided for @dailyBonusClaimed.
   ///
@@ -2902,11 +2908,11 @@ abstract class AppLocalizations {
   /// **'Trendler sekmenizde hangi konumun görüneceğini seçerek belirli bir konumda nelerin trend olduğunu görebilirsiniz.'**
   String get trendsLocationHint;
 
-  /// No description provided for @myBetsTab.
+  /// No description provided for @myStakesTab.
   ///
   /// In tr, this message translates to:
   /// **'Tahminlerim'**
-  String get myBetsTab;
+  String get myStakesTab;
 
   /// No description provided for @myVotesTab.
   ///
@@ -3196,11 +3202,11 @@ abstract class AppLocalizations {
   /// **'Takipten çık'**
   String get unfollow;
 
-  /// No description provided for @betAmountLabel.
+  /// No description provided for @stakeAmountLabel.
   ///
   /// In tr, this message translates to:
   /// **'Tahmin puanı'**
-  String get betAmountLabel;
+  String get stakeAmountLabel;
 
   /// No description provided for @amountPlayed.
   ///
@@ -3238,23 +3244,23 @@ abstract class AppLocalizations {
   /// **'Gönderi için {choice} seçildi'**
   String approvalSelectedForPost(String choice);
 
-  /// No description provided for @betYesLabel.
+  /// No description provided for @toldyaYesLabel.
   ///
   /// In tr, this message translates to:
   /// **'Evet tahmini yap'**
-  String get betYesLabel;
+  String get toldyaYesLabel;
 
-  /// No description provided for @betNoLabel.
+  /// No description provided for @toldyaNoLabel.
   ///
   /// In tr, this message translates to:
   /// **'Hayır tahmini yap'**
-  String get betNoLabel;
+  String get toldyaNoLabel;
 
-  /// No description provided for @recentBetsTitle.
+  /// No description provided for @recentStakesTitle.
   ///
   /// In tr, this message translates to:
   /// **'Son Tahminler'**
-  String get recentBetsTitle;
+  String get recentStakesTitle;
 
   /// No description provided for @conversationInformationTitle.
   ///

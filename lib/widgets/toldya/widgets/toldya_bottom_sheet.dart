@@ -1,5 +1,5 @@
 import 'package:toldya/model/userPegModel.dart';
-import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
+import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -264,7 +264,7 @@ class ToldyaBottomSheet {
                 ),
               ),
               SizedBox(height: 16),
-              Expanded(child: _retweet(context, model, type, commentFlag)),
+              Expanded(child: _retoldyaQuoteRow(context, model, type, commentFlag)),
             ],
           ),
         );
@@ -272,7 +272,7 @@ class ToldyaBottomSheet {
     );
   }
 
-  Widget _retweet(BuildContext context, FeedModel model, ToldyaType type,
+  Widget _retoldyaQuoteRow(BuildContext context, FeedModel model, ToldyaType type,
       int commentFlag) {
     final totalLike = sumOfVote(model.likeList ?? []);
     final totalUnlike = sumOfVote(model.unlikeList ?? []);
@@ -329,7 +329,6 @@ class _ToldyaActionSheetContent extends StatefulWidget {
 }
 
 class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
-  bool _isFollowLoading = false;
   bool _isMuteLoading = false;
 
   Future<void> _handleShare() async {
@@ -373,32 +372,6 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
   void _handleGoToProfile() {
     if (Navigator.canPop(context)) Navigator.pop(context);
     Navigator.pushNamed(context, '/ProfilePage/${widget.model.userId}');
-  }
-
-  Future<void> _handleFollowUnfollow() async {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
-    final targetUserId = widget.model.userId ?? '';
-    if (targetUserId.isEmpty) return;
-    setState(() => _isFollowLoading = true);
-    try {
-      await authState.followUserByUserId(targetUserId, removeFollower: isFollowing);
-      if (!mounted) return;
-      if (Navigator.canPop(context)) Navigator.pop(context);
-      final l10n = AppLocalizations.of(widget.parentContext)!;
-      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-        SnackBar(content: Text(isFollowing ? l10n.unfollowSuccess : l10n.followSuccess)),
-      );
-    } catch (_) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.errorGeneric), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isFollowLoading = false);
-    }
   }
 
   Future<void> _handleMuteToggle() async {
@@ -604,7 +577,6 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
     final isMyPost = authState.userId == widget.model.userId;
     final l10n = AppLocalizations.of(context)!;
     final isMuted = authState.isPostMuted(widget.model.key ?? '');
-    final isFollowing = authState.userModel?.followingList?.contains(widget.model.userId ?? '') ?? false;
     final isInBlackList = authState.userModel?.blackList?.contains(widget.model.userId ?? '') ?? false;
 
     return Column(
@@ -632,21 +604,13 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
           isDestructive: false,
           onTap: _handleCopyLink,
         ),
-        if (!isMyPost) ...[
+        if (!isMyPost)
           _buildRow(
             icon: Icons.person_outline,
             label: l10n.goToProfile,
             isDestructive: false,
             onTap: _handleGoToProfile,
           ),
-          _buildRow(
-            icon: isFollowing ? Icons.person_remove_outlined : Icons.person_add_outlined,
-            label: isFollowing ? l10n.unfollow : l10n.follow,
-            isDestructive: false,
-            onTap: _handleFollowUnfollow,
-            isBusy: _isFollowLoading,
-          ),
-        ],
         _buildRow(
           icon: isMuted ? Icons.notifications_outlined : Icons.notifications_off_outlined,
           label: isMuted ? l10n.unmuteNotificationsForPost : l10n.muteNotificationsForPost,
@@ -693,7 +657,7 @@ class _ToldyaActionSheetContentState extends State<_ToldyaActionSheetContent> {
   }
 }
 
-enum _BetSide { yes, no }
+enum _StakeSide { yes, no }
 
 class SliderInNavigationBar extends StatefulWidget {
   final FeedModel model;
@@ -720,8 +684,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
   static const Color _neonNo = Color(0xFFFF4757);
 
   late TextEditingController _amountController;
-  late _BetSide _side;
-  bool _isPlacingBet = false;
+  late _StakeSide _side;
+  bool _isPlacingStake = false;
   bool _showSuccess = false;
   String? _inlineError;
 
@@ -730,8 +694,8 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
     super.initState();
     _amountController = TextEditingController(text: '0');
     _side = widget.commentFlag == AppIcon.hayirCommentFlag
-        ? _BetSide.no
-        : _BetSide.yes;
+        ? _StakeSide.no
+        : _StakeSide.yes;
   }
 
   @override
@@ -740,12 +704,12 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
     super.dispose();
   }
 
-  int _commentFlagForSide(_BetSide s) =>
-      s == _BetSide.yes ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
+  int _commentFlagForSide(_StakeSide s) =>
+      s == _StakeSide.yes ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
 
   int _maxVal(int balance, int xp, int totalPool) {
     if (balance <= 0) return 0;
-    // TEMP: Aggressive max bet cap = 75% of spendable balance.
+    // TEMP: Aggressive max stake cap = 75% of spendable balance.
     // (Rank/pool limits are intentionally disabled for now; can be re-enabled later.)
     return (balance * 0.75).floor();
   }
@@ -764,13 +728,13 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
   }
 
   /// Rough pari-mutuel estimate if selected side wins (after fee).
-  double? _estimateReturn(int stake, _BetSide side, FeedModel m) {
+  double? _estimateReturn(int stake, _StakeSide side, FeedModel m) {
     if (stake <= 0) return null;
     final totalYes = sumOfVote(m.likeList ?? []);
     final totalNo = sumOfVote(m.unlikeList ?? []);
     if (totalYes + totalNo <= 0) return null;
     final fee = AppIcon.commissionRate;
-    if (side == _BetSide.yes) {
+    if (side == _StakeSide.yes) {
       final newYes = totalYes + stake;
       if (newYes <= 0) return null;
       return stake + (stake / newYes) * totalNo * (1 - fee);
@@ -792,48 +756,48 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
       builder: (context, bal, __) {
         final authState = Provider.of<AuthState>(context, listen: false);
         final state = Provider.of<FeedState>(context, listen: false);
-        final betInFlight = context.select<FeedState, bool>(
-          (s) => s.isBetInFlight(widget.model.key),
+        final stakeInFlight = context.select<FeedState, bool>(
+          (s) => s.isStakeInFlight(widget.model.key),
         );
         final userId = authState.userId;
         final totalPool = sumOfVote(widget.model.likeList ?? []) +
             sumOfVote(widget.model.unlikeList ?? []);
         final maxVal = _maxVal(bal.peg, bal.xp, totalPool);
         final canYes = userId == null ||
-            !userAlreadyBetOnOtherSide(
+            !userAlreadyStakedOtherSide(
                 widget.model, userId, AppIcon.evetCommentFlag);
         final canNo = userId == null ||
-            !userAlreadyBetOnOtherSide(
+            !userAlreadyStakedOtherSide(
                 widget.model, userId, AppIcon.hayirCommentFlag);
 
-        if (!canYes && _side == _BetSide.yes && canNo) {
+        if (!canYes && _side == _StakeSide.yes && canNo) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() => _side = _BetSide.no);
+            if (mounted) setState(() => _side = _StakeSide.no);
           });
-        } else if (!canNo && _side == _BetSide.no && canYes) {
+        } else if (!canNo && _side == _StakeSide.no && canYes) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() => _side = _BetSide.yes);
+            if (mounted) setState(() => _side = _StakeSide.yes);
           });
         }
 
         Future<void> send() async {
           final amount = _parseAmount();
           if (amount <= 0) {
-            setState(() => _inlineError = l10n.pleaseSelectBetAmount);
+            setState(() => _inlineError = l10n.pleaseSelectStakeAmount);
             return;
           }
           if (amount > maxVal) {
-            setState(() => _inlineError = l10n.maxBetTokens('$maxVal'));
+            setState(() => _inlineError = l10n.maxStakeTokens('$maxVal'));
             return;
           }
           final flag = _commentFlagForSide(_side);
-          if (userAlreadyBetOnOtherSide(widget.model, userId, flag)) {
-            setState(() => _inlineError = l10n.betOnOneSideOnly);
+          if (userAlreadyStakedOtherSide(widget.model, userId, flag)) {
+            setState(() => _inlineError = l10n.stakeOneSideOnly);
             return;
           }
           if (!mounted) return;
           setState(() {
-            _isPlacingBet = true;
+            _isPlacingStake = true;
             _inlineError = null;
           });
           try {
@@ -845,7 +809,6 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
               flag,
               context: context,
             );
-            state.setToldyaToReply = widget.model;
             authState.getuserDetail(widget.model.userId ?? '').then((user) {
               final ownUser = authState.userModel;
               if (user != null && ownUser != null && context.mounted) {
@@ -865,14 +828,14 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
           } on PlatformException catch (e) {
             if (mounted) {
               setState(() {
-                _isPlacingBet = false;
+                _isPlacingStake = false;
                 _inlineError = l10n.gmsError(
                     e.message ?? e.code ?? l10n.unknownError);
               });
             }
           } on FirebaseFunctionsException catch (e) {
             if (context.mounted) {
-              String errorMessage = l10n.betErrorGeneric;
+              String errorMessage = l10n.stakeErrorGeneric;
               if (e.code.toLowerCase() == 'internal') {
                 errorMessage = l10n.gmsUpdateMessage;
               } else if (e.message != null && e.message!.isNotEmpty) {
@@ -881,7 +844,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                 errorMessage = l10n.errorWithMessage(e.code);
               }
               setState(() {
-                _isPlacingBet = false;
+                _isPlacingStake = false;
                 _inlineError = errorMessage;
               });
             }
@@ -891,7 +854,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                   ? '${e.toString().substring(0, 120)}...'
                   : e.toString();
               setState(() {
-                _isPlacingBet = false;
+                _isPlacingStake = false;
                 _inlineError = l10n.errorWithMessage(msg);
               });
             }
@@ -902,7 +865,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         final est = _estimateReturn(stake, _side, widget.model);
         final estRounded =
             est != null ? est.round().clamp(0, 999999999).toString() : null;
-        final busy = _isPlacingBet || betInFlight;
+        final busy = _isPlacingStake || stakeInFlight;
         final textSecondary = AppColor.textSecondaryDark;
         final surfaceColor = MockupDesign.card;
         const presetAmounts = [10, 25, 50, 100];
@@ -926,13 +889,13 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
               decoration: BoxDecoration(
                 color: busy
                     ? Colors.grey.shade700
-                    : (_side == _BetSide.yes ? _neonYes : _neonNo),
+                    : (_side == _StakeSide.yes ? _neonYes : _neonNo),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: busy
                     ? null
                     : [
                         BoxShadow(
-                          color: (_side == _BetSide.yes ? _neonYes : _neonNo)
+                          color: (_side == _StakeSide.yes ? _neonYes : _neonNo)
                               .withOpacity(0.45),
                           blurRadius: 16,
                           spreadRadius: 0,
@@ -948,9 +911,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                           strokeWidth: 2.5, color: Colors.white),
                     )
                   : Text(
-                      _side == _BetSide.yes
-                          ? l10n.betSheetSubmitYes
-                          : l10n.betSheetSubmitNo,
+                      _side == _StakeSide.yes
+                          ? l10n.stakeSheetSubmitYes
+                          : l10n.stakeSheetSubmitNo,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -986,9 +949,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
               children: [
                 Expanded(
                   child: _sideChip(
-                    label: l10n.betSheetSideYes,
+                    label: l10n.stakeSheetSideYes,
                     percent: widget.yesPercent,
-                    active: _side == _BetSide.yes,
+                    active: _side == _StakeSide.yes,
                     enabled: canYes,
                     neon: _neonYes,
                     onTap: busy
@@ -996,7 +959,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                         : () {
                             if (!canYes) return;
                             setState(() {
-                              _side = _BetSide.yes;
+                              _side = _StakeSide.yes;
                               _inlineError = null;
                               _setAmountClamped(_parseAmount(), maxVal);
                             });
@@ -1006,9 +969,9 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _sideChip(
-                    label: l10n.betSheetSideNo,
+                    label: l10n.stakeSheetSideNo,
                     percent: widget.noPercent,
-                    active: _side == _BetSide.no,
+                    active: _side == _StakeSide.no,
                     enabled: canNo,
                     neon: _neonNo,
                     onTap: busy
@@ -1016,7 +979,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                         : () {
                             if (!canNo) return;
                             setState(() {
-                              _side = _BetSide.no;
+                              _side = _StakeSide.no;
                               _inlineError = null;
                               _setAmountClamped(_parseAmount(), maxVal);
                             });
@@ -1036,7 +999,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             ),
             const SizedBox(height: 6),
             Text(
-              l10n.maxBetTokens('$maxVal'),
+              l10n.maxStakeTokens('$maxVal'),
               style: TextStyle(
                 fontSize: 12,
                 color: textSecondary,
@@ -1047,7 +1010,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
             const SizedBox(height: 2),
             const SizedBox(height: 8),
             Text(
-              l10n.betAmountLabel,
+              l10n.stakeAmountLabel,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -1173,7 +1136,7 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
                         ),
                       ),
                       child: Text(
-                        l10n.betSheetMaxButton,
+                        l10n.stakeSheetMaxButton,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,

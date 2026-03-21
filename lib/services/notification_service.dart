@@ -275,7 +275,6 @@ class NotificationService {
         }
         break;
       case 'profile':
-      case 'new_follower':
         if (id.isNotEmpty) {
           navigator.pushNamed('/profile/$id');
         }

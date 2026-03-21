@@ -12,15 +12,15 @@ import 'package:toldya/helper/theme.dart';
 import 'package:toldya/helper/utility.dart';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/page/common/usersListPage.dart';
-import 'package:toldya/helper/bet_flow.dart';
+import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
+import 'package:toldya/widgets/toldya/widgets/yes_no_stake_buttons_row.dart';
 
 import '../../../model/user.dart';
 
@@ -29,7 +29,7 @@ class ToldyaIconsRow extends StatelessWidget {
   final Color iconColor;
   final Color iconEnableColor;
   final double size;
-  final bool isTweetDetail;
+  final bool isToldyaDetail;
   final ToldyaType type;
   final GlobalKey<ScaffoldState> scaffoldKey;
 
@@ -39,7 +39,7 @@ class ToldyaIconsRow extends StatelessWidget {
       required this.iconColor,
       required this.iconEnableColor,
       required this.size,
-      this.isTweetDetail = false,
+      this.isToldyaDetail = false,
       required this.type,
       required this.scaffoldKey})
       : super(key: key);
@@ -55,17 +55,17 @@ class ToldyaIconsRow extends StatelessWidget {
     return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          YesNoBetButtonsRow(
+          YesNoStakeButtonsRow(
             yesPercent: (getPercent() * 100).round(),
             noPercent: (100 - (getPercent() * 100).round()).clamp(0, 100),
-            onYesTap: () => openBetFlowWithFeedback(
+            onYesTap: () => openToldyaStakeFlowWithFeedback(
               context: context,
               model: model,
               commentFlag: AppIcon.evetCommentFlag,
               type: type,
               scaffoldKey: scaffoldKey,
             ),
-            onNoTap: () => openBetFlowWithFeedback(
+            onNoTap: () => openToldyaStakeFlowWithFeedback(
               context: context,
               model: model,
               commentFlag: AppIcon.hayirCommentFlag,
@@ -93,7 +93,7 @@ class ToldyaIconsRow extends StatelessWidget {
 
   Widget _buildFooterTime(BuildContext context) {
     final countdownLong = getCountdownLong(model.endDate);
-    final isLive = !isBettingClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
+    final isLive = !isToldyaStakeClosed(model.statu, model.endDate) && (model.statu == Statu.statusLive);
     if (isLive && countdownLong.isNotEmpty) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -282,10 +282,10 @@ class ToldyaIconsRow extends StatelessWidget {
     return Container(
         child: Column(
       children: <Widget>[
-        isTweetDetail ? _timeWidget(context) : SizedBox(),
-        isTweetDetail ? _likeCommentsIcons(context, model):SizedBox(),
-        isTweetDetail ? _likeCommentWidget(context) : SizedBox(),
-        isTweetDetail ? sizedBox() : _likeCommentsIcons(context, model)
+        isToldyaDetail ? _timeWidget(context) : SizedBox(),
+        isToldyaDetail ? _likeCommentsIcons(context, model):SizedBox(),
+        isToldyaDetail ? _likeCommentWidget(context) : SizedBox(),
+        isToldyaDetail ? sizedBox() : _likeCommentsIcons(context, model)
       ],
     ));
   }

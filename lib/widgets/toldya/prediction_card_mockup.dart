@@ -15,13 +15,13 @@ import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
-import 'package:toldya/widgets/tweet/prediction_shared_ui.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetBottomSheet.dart';
-import 'package:toldya/helper/bet_flow.dart';
+import 'package:toldya/widgets/toldya/prediction_shared_ui.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
+import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:toldya/widgets/tweet/widgets/yes_no_bet_buttons_row.dart';
+import 'package:toldya/widgets/toldya/widgets/yes_no_stake_buttons_row.dart';
 
 /// Mockup’a uygun tahmin kartı: soru üstte, countdown belirgin, progress + Evet/Hayır.
 class PredictionCardMockup extends StatelessWidget {
@@ -40,7 +40,7 @@ class PredictionCardMockup extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = isToldyaStakeClosed(model.statu, model.endDate);
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
 
     final isLive = !closed && (model.statu == Statu.statusLive);
@@ -145,17 +145,17 @@ class PredictionCardMockup extends StatelessWidget {
           ],
           // Zone 3 — Action: progress-style Evet/Hayır buttons
           SizedBox(height: 12),
-          YesNoBetButtonsRow(
+          YesNoStakeButtonsRow(
             yesPercent: yesPct,
             noPercent: noPct,
-            onYesTap: () => openBetFlowWithFeedback(
+            onYesTap: () => openToldyaStakeFlowWithFeedback(
               context: context,
               model: model,
               commentFlag: AppIcon.evetCommentFlag,
               type: ToldyaType.Toldya,
               scaffoldKey: scaffoldKey,
             ),
-            onNoTap: () => openBetFlowWithFeedback(
+            onNoTap: () => openToldyaStakeFlowWithFeedback(
               context: context,
               model: model,
               commentFlag: AppIcon.hayirCommentFlag,
@@ -387,8 +387,8 @@ class PredictionCardMockup extends StatelessWidget {
     );
   }
 
-  void _openBetSheet(BuildContext context, AuthState authState, int commentFlag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
+  void _openToldyaStakeSheet(BuildContext context, AuthState authState, int commentFlag) {
+    final closed = isToldyaStakeClosed(model.statu, model.endDate);
     if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -401,11 +401,11 @@ class PredictionCardMockup extends StatelessWidget {
       ));
       return;
     }
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
+    if (userAlreadyStakedOtherSide(model, authState.userId, commentFlag)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
+          AppLocalizations.of(context)!.stakeOneSideOnly,
           style: TextStyle(color: Colors.white),
         ),
         duration: Duration(seconds: 4),

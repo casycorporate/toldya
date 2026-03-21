@@ -126,28 +126,6 @@ class _SidebarMenuState extends State<SidebarMenu> {
                           compact: true,
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: <Widget>[
-                          Flexible(
-                            child: _tappbleText(
-                              context,
-                              '${state.userModel?.getFollower() ?? 0}',
-                              l10n.followersTitle,
-                              'FollowerListPage',
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Flexible(
-                            child: _tappbleText(
-                              context,
-                              '${state.userModel?.getFollowing() ?? 0}',
-                              l10n.followingCountLabel,
-                              'FollowingListPage',
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -160,53 +138,6 @@ class _SidebarMenuState extends State<SidebarMenu> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _tappbleText(
-    BuildContext context,
-    String count,
-    String text,
-    String navigateTo,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Provider.of<AuthState>(context, listen: false).getProfileUser();
-          _navigateTo(navigateTo);
-        },
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                count,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

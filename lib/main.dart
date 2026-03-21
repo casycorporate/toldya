@@ -1,4 +1,4 @@
-import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
+import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
 import 'package:toldya/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';

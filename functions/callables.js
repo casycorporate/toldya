@@ -128,50 +128,6 @@ function registerCallables(functions) {
     }
   });
 
-  const voteReply = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
-    }
-    const userId = safeString(context.auth.uid).trim() || context.auth.uid;
-    const rawToldyaId = data?.toldyaId;
-    const toldyaId = safeString(String(rawToldyaId || "")).trim() || rawToldyaId;
-    const vote = data?.vote;
-    if (!toldyaId || (vote !== 1 && vote !== -1)) {
-      throw new functions.https.HttpsError("invalid-argument", "Geçersiz toldyaId veya vote (1 veya -1).");
-    }
-
-    const snap = await getDb().ref(`toldya/${toldyaId}`).once("value");
-    const tweet = snap.val();
-    if (!tweet || !tweet.parentkey) {
-      throw new functions.https.HttpsError("failed-precondition", "Bu yalnızca yorum (reply) için kullanılır.");
-    }
-
-    const upvoteUserIds = Array.isArray(tweet.upvoteUserIds) ? [...tweet.upvoteUserIds] : [];
-    const downvoteUserIds = Array.isArray(tweet.downvoteUserIds) ? [...tweet.downvoteUserIds] : [];
-    let upvoteCount = typeof tweet.upvoteCount === "number" ? tweet.upvoteCount : 0;
-    let downvoteCount = typeof tweet.downvoteCount === "number" ? tweet.downvoteCount : 0;
-
-    if (upvoteUserIds.includes(userId)) {
-      upvoteUserIds.splice(upvoteUserIds.indexOf(userId), 1);
-      upvoteCount = Math.max(0, upvoteCount - 1);
-    }
-    if (downvoteUserIds.includes(userId)) {
-      downvoteUserIds.splice(downvoteUserIds.indexOf(userId), 1);
-      downvoteCount = Math.max(0, downvoteCount - 1);
-    }
-
-    if (vote === 1) {
-      upvoteUserIds.push(userId);
-      upvoteCount += 1;
-    } else {
-      downvoteUserIds.push(userId);
-      downvoteCount += 1;
-    }
-
-    await getDb().ref(`toldya/${toldyaId}`).update({ upvoteCount, downvoteCount, upvoteUserIds, downvoteUserIds });
-    return { ok: true, upvoteCount, downvoteCount, upvoteUserIds, downvoteUserIds };
-  });
-
   const claimDailyBonus = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
@@ -590,7 +546,7 @@ function registerCallables(functions) {
     return { ok: true, toldyaId, ...deepSanitize(result) };
   });
 
-  return { placeBet, voteReply, claimDailyBonus, deleteAccount, moderateToldya, adminResolveToldya, adminDistributeWinningsForToldya };
+  return { placeBet, claimDailyBonus, deleteAccount, moderateToldya, adminResolveToldya, adminDistributeWinningsForToldya };
 }
 
 module.exports = { registerCallables };

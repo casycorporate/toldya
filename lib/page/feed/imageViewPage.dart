@@ -9,7 +9,7 @@ import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetIconsRow.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_icons_row.dart';
 import 'package:provider/provider.dart';
 
 class ImageViewPge extends StatefulWidget {
@@ -31,9 +31,8 @@ class _ImageViewPgeState extends State<ImageViewPge> {
 
   Widget _body() {
     var state = Provider.of<FeedState>(context);
-    final FeedModel? detailModel = state.toldyaDetailModel?.isNotEmpty == true
-        ? state.toldyaDetailModel!.last
-        : state.toldyaToReplyModel;
+    final FeedModel? detailModel =
+        state.toldyaDetailModel?.isNotEmpty == true ? state.toldyaDetailModel!.last : null;
     final String imagePath = detailModel?.imagePath ?? '';
 
     return Stack(

@@ -28,9 +28,9 @@ List<String> dummyProfilePicList = [
 ];
 
 /// Toldya logosu – yeni mavi baykuş (light/dark varyantlar).
-/// Evet / Hayır bahis butonları (sabit renkler)
-class BetButtonPalette {
-  BetButtonPalette._();
+/// Evet / Hayır tahmin (token) seçim butonları (sabit renkler)
+class ToldyaStakeButtonPalette {
+  ToldyaStakeButtonPalette._();
   static const Color yes = Color(0xFF2ED573);
   static const Color no = Color(0xFFFF4757);
 }
@@ -65,7 +65,7 @@ class AppIcon{
   static const IconData settings = IconData(0xf059, fontFamily: _kFontFam);
   static const IconData adTheRate = IconData(0xf064, fontFamily: _kFontFam);
   static const IconData reply = IconData(0xf151, fontFamily: _kFontFam);
-  static const IconData retweet = IconData(0xf152, fontFamily: _kFontFam);
+  static const IconData retoldya = IconData(0xf152, fontFamily: _kFontFam);
   static const IconData image = IconData(0xf109, fontFamily: _kFontFam);
   static const IconData camera = IconData(0xf110, fontFamily: _kFontFam);
   static const IconData arrowDown = IconData(0xf196, fontFamily: _kFontFam);
@@ -110,7 +110,7 @@ class AppIcon{
   static const double rankMultiplierTahminci = 0.25;
   static const double rankMultiplierUsta = 0.50;
   static const int poolThreshold = 1000;
-  static const int maxBetSmallPool = 100;
+  static const int maxStakeSmallPool = 100;
   static const int dailyBonusAmount = 500;
 
   /// Cloud Functions base URL (doğrudan HTTP ile çağrı – GMS broker hatası bypass)
@@ -124,22 +124,24 @@ class Tokenomics {
     if (xp < AppIcon.xpUstaMin) return AppIcon.rankMultiplierTahminci;
     return AppIcon.rankMultiplierUsta;
   }
-  static int maxBetByRank(int balance, int xp) =>
+  static int maxStakeByRank(int balance, int xp) =>
       (balance * rankMultiplierForXp(xp)).floor();
-  static int maxBetByPool(int totalPool) {
+  static int maxStakeByPool(int totalPool) {
     if (totalPool < AppIcon.poolThreshold) {
       final scaled = (totalPool * 0.5).floor();
-      return scaled > AppIcon.maxBetSmallPool ? scaled : AppIcon.maxBetSmallPool;
+      return scaled > AppIcon.maxStakeSmallPool ? scaled : AppIcon.maxStakeSmallPool;
     }
     return 0x7FFFFFFF;
   }
 }
 
-class Role{
+/// Uygulama profili türü admin için `profile/{uid}/isAdmin` kullanılır; bu alan sadece uyumluluk içindir.
+class Role {
   Role._();
 
-  static final int defaultRole=1;
-  static final int adminRole=0;
+  static final int defaultRole = 1;
+  @Deprecated('Admin kullanıcılar RTDB profile/{uid}/isAdmin ile belirlenir.')
+  static final int adminRole = 0;
 }
 
 /// Uygulama temasına uyumlu varsayılan kapak görselleri (profil banner).

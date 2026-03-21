@@ -37,7 +37,7 @@ class UnavailableToldya extends StatelessWidget {
                 backgroundColor: Colors.transparent,
               ),
             )
-          : Text(AppLocalizations.of(context)!.thisTweetUnavailable, style: userNameStyle),
+          : Text(AppLocalizations.of(context)!.toldyaUnavailable, style: userNameStyle),
     );
   }
 }

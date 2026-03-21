@@ -81,7 +81,7 @@ class ChatState extends AppState {
   ///  {
   ///    "key": "FCM server key here"
   ///  } ```
-  /// For more detail visit:- https://github.com/casycorporate/toldya
+  /// For more detail visit:- https://github.com/orbislas-ai/toldya
   /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
   void getFCMServerKey() async {
     final remoteConfig = FirebaseRemoteConfig.instance;

@@ -21,6 +21,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tagline => 'Teile deine Vorhersagen, sieh wer recht hatte.';
 
   @override
+  String get retoldyaSubmitButton => 'Retoldya';
+
+  @override
   String get signInToContinue => 'Anmelden, um fortzufahren';
 
   @override
@@ -460,22 +463,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get userUnblocked => 'Nutzer entblockiert.';
 
   @override
-  String get pleaseSelectBetAmount => 'Bitte wähle einen Vorhersage‑Punktwert!';
+  String get pleaseSelectStakeAmount =>
+      'Bitte wähle einen Vorhersage‑Punktwert!';
 
   @override
-  String maxBetTokens(String maxVal) {
+  String maxStakeTokens(String maxVal) {
     return 'Maximale Vorhersage: $maxVal Punkte';
   }
 
   @override
-  String get betOnOneSideOnly =>
+  String get stakeOneSideOnly =>
       'Du hast bei dieser Vorhersage bereits die andere Seite gewählt. Pro Vorhersage kannst du nur eine Seite (Ja oder Nein) wählen.';
 
   @override
-  String get betPleaseWait => 'Vorhersage wird gesendet, bitte warten.';
+  String get stakePleaseWait => 'Vorhersage wird gesendet, bitte warten.';
 
   @override
-  String get betLimitHint =>
+  String get stakeLimitHint =>
       'Dein maximaler Vorhersage‑Punktwert hängt von Guthaben, Rang und Gesamtanzahl der Vorhersagen ab.';
 
   @override
@@ -484,16 +488,16 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get betSheetSideYes => 'Ja';
+  String get stakeSheetSideYes => 'Ja';
 
   @override
-  String get betSheetSideNo => 'Nein';
+  String get stakeSheetSideNo => 'Nein';
 
   @override
-  String get betSheetSubmitYes => 'JA VORHERSAGEN';
+  String get stakeSheetSubmitYes => 'JA VORHERSAGEN';
 
   @override
-  String get betSheetSubmitNo => 'NEIN VORHERSAGEN';
+  String get stakeSheetSubmitNo => 'NEIN VORHERSAGEN';
 
   @override
   String potentialReturnEstimate(String amount) {
@@ -507,16 +511,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get potentialReturnDisclaimer => 'Nur Schätzung; keine Garantie.';
 
   @override
-  String get betSheetMaxButton => 'MAX';
+  String get stakeSheetMaxButton => 'MAX';
 
   @override
-  String get betPlaced => 'Vorhersage gesendet.';
+  String get stakePlaced => 'Vorhersage gesendet.';
 
   @override
-  String get confirmBet => 'Vorhersage bestätigen';
+  String get confirmStake => 'Vorhersage bestätigen';
 
   @override
-  String confirmBetMessage(String amount) {
+  String confirmStakeMessage(String amount) {
     return 'Möchtest du wirklich $amount Punkte für diese Vorhersage einsetzen?';
   }
 
@@ -649,7 +653,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get predictors => 'Vorhersager';
 
   @override
-  String get bettors => 'Vorhersager';
+  String get toldyaParticipants => 'Vorhersager';
 
   @override
   String get dataPreference => 'Dateneinstellung';
@@ -667,7 +671,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get closedNoSelection => 'Auswahl nicht möglich (geschlossen)';
 
   @override
-  String get thisTweetUnavailable => 'Dieser Beitrag ist nicht verfügbar';
+  String get toldyaUnavailable => 'Dieser Beitrag ist nicht verfügbar';
 
   @override
   String get editProfile => 'Profil bearbeiten';
@@ -738,22 +742,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Abstimmung nicht möglich wegen unzureichender Punkte';
 
   @override
-  String get betErrorGeneric => 'Vorhersage konnte nicht gesendet werden.';
+  String get stakeErrorGeneric => 'Vorhersage konnte nicht gesendet werden.';
 
   @override
-  String get betErrorUnauthenticated =>
+  String get stakeErrorUnauthenticated =>
       'Bitte melde dich an, um eine Vorhersage zu machen.';
 
   @override
-  String get betErrorDeadlineExceeded =>
+  String get stakeErrorDeadlineExceeded =>
       'Zeitüberschreitung. Bitte erneut versuchen.';
 
   @override
-  String get betErrorResourceExhausted =>
+  String get stakeErrorResourceExhausted =>
       'Zu viele Anfragen. Bitte versuche es in Kürze erneut.';
 
   @override
-  String get betErrorFailedPrecondition =>
+  String get stakeErrorFailedPrecondition =>
       'Du kannst derzeit keine Vorhersage zu diesem Beitrag machen. Bitte versuche es später erneut.';
 
   @override
@@ -851,7 +855,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loginRequired => 'Bitte melde dich an.';
 
   @override
-  String get betTimeout =>
+  String get stakeTimeout =>
       'Zeitüberschreitung bei der Vorhersage. Bitte erneut versuchen.';
 
   @override
@@ -988,7 +992,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get oldestUserFirst => 'Älteste Nutzer zuerst';
 
   @override
-  String get maxFollowerFirst => 'Meiste Follower zuerst';
+  String get sortByXpFirst => 'Höchste XP zuerst';
 
   @override
   String get alphabeticallySort => 'Alphabetisch';
@@ -1311,7 +1315,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noPredictorScoreYet => 'Noch kein Vorhersage‑Score';
 
   @override
-  String get noBettorScoreYet => 'Noch kein Vorhersage‑Score';
+  String get noParticipantScoreYet => 'Noch kein Vorhersage‑Score';
 
   @override
   String get followersTitle => 'Follower';
@@ -1413,10 +1417,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get noBetsYet => 'Noch keine Vorhersagen.';
+  String get noStakesYet => 'Noch keine Vorhersagen.';
 
   @override
-  String get noBetsYetHint =>
+  String get noStakesYetHint =>
       'Triff eine Vorhersage über die Schaltflächen „Ja vorhersagen“ oder „Nein vorhersagen“ oben.';
 
   @override
@@ -1548,7 +1552,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle, welcher Ort in deinem Trend-Tab angezeigt wird, um zu sehen, was an einem Ort trendet.';
 
   @override
-  String get myBetsTab => 'Meine Vorhersagen';
+  String get myStakesTab => 'Meine Vorhersagen';
 
   @override
   String get myVotesTab => 'Meine Abstimmungen';
@@ -1716,7 +1720,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get unfollow => 'Entfolgen';
 
   @override
-  String get betAmountLabel => 'Vorhersage‑Punktwert';
+  String get stakeAmountLabel => 'Vorhersage‑Punktwert';
 
   @override
   String amountPlayed(String amount) {
@@ -1741,13 +1745,13 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get betYesLabel => 'Ja vorhersagen';
+  String get toldyaYesLabel => 'Ja vorhersagen';
 
   @override
-  String get betNoLabel => 'Nein vorhersagen';
+  String get toldyaNoLabel => 'Nein vorhersagen';
 
   @override
-  String get recentBetsTitle => 'Letzte Vorhersagen';
+  String get recentStakesTitle => 'Letzte Vorhersagen';
 
   @override
   String get conversationInformationTitle => 'Unterhaltungsinformationen';

@@ -26,7 +26,7 @@ class UserModel {
   String? tier;
   /// Son günlük bonus alım zamanı (ISO string)
   String? lastDailyClaimAt;
-  /// Bahisçi skoru: Ne kadar isabetli tahminlere oynadı
+  /// Tahmin katılım skoru: Ne kadar isabetli tahminlere katıldı
   int? rank;
   /// Tahminci skoru: Ne kadar tahmini başarıyla sonuçlandırdı
   int? predictorScore;
@@ -89,8 +89,6 @@ class UserModel {
     location = map['location'];
     contact = map['contact'];
     createdAt = map['createdAt'];
-    followers = map['followers'];
-    following = map['following'];
     userName = map['userName'];
     userName = map['userName'];
     pegCount = map["pegCount"];
@@ -105,20 +103,10 @@ class UserModel {
     webSite = map['webSite'];
     fcmToken = map['fcmToken'];
     isVerified = map['isVerified'] ?? false;
-    if (map['followerList'] != null) {
-      followersList = <String>[];
-      for (final value in map['followerList'] as Iterable) {
-        followersList!.add(value.toString());
-      }
-    }
-    followers = followersList?.length;
-    if (map['followingList'] != null) {
-      followingList = <String>[];
-      for (final value in map['followingList'] as Iterable) {
-        followingList!.add(value.toString());
-      }
-    }
-    following = followingList?.length;
+    followersList = [];
+    followingList = [];
+    followers = 0;
+    following = 0;
 
     if (map['blackList'] != null) {
       blackList = <String>[];
@@ -144,14 +132,10 @@ class UserModel {
       'bio': bio,
       'location': location,
       'createdAt': createdAt,
-      'followers': followersList != null ? followersList!.length : null,
-      'following': followingList != null ? followingList!.length : null,
       'userName': userName,
       'webSite': webSite,
       'isVerified': isVerified ?? false,
       'fcmToken': fcmToken,
-      'followerList': followersList,
-      'followingList': followingList,
       'blackList':blackList,
       'pegCount': pegCount,
       'stashCount': stashCount,

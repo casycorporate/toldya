@@ -52,12 +52,12 @@ class ComposeToldyaState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// This method will trigger every time when user writes tweet description.
+  /// This method will trigger every time when user writes toldya description.
   /// `hideUserList` is set to false to reset user list show flag.
   /// If description is not empty and its lenth is lesser then 280 characters
   /// then value of `enableSubmitButton` is set to true.
   ///
-  /// `enableSubmitButton` is responsible to enable/disable tweet submit button
+  /// `enableSubmitButton` is responsible to enable/disable toldya submit button
   void onDescriptionChanged(String text, SearchState searchState) {
     description = text;
     hideUserList = false;
@@ -127,7 +127,7 @@ class ComposeToldyaState extends ChangeNotifier {
   ///  {
   ///    "key": "FCM server key here"
   ///  } ```
-  /// For more detail visit:- https://github.com/casycorporate/toldya
+  /// For more detail visit:- https://github.com/orbislas-ai/toldya
   /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
   Future<Null> getFCMServerKey() async {
     /// If FCM server key is already fetched then no need to fetch it again.

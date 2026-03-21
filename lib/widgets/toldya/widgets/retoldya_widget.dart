@@ -12,8 +12,8 @@ import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/rippleButton.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
-import 'package:toldya/widgets/tweet/widgets/tweetImage.dart';
-import 'package:toldya/widgets/tweet/widgets/unavailableTweet.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_image.dart';
+import 'package:toldya/widgets/toldya/widgets/unavailable_toldya.dart';
 import 'package:provider/provider.dart';
 
 class RetoldyaWidget extends StatelessWidget {
@@ -25,7 +25,7 @@ class RetoldyaWidget extends StatelessWidget {
   final bool isImageAvailable;
   final ToldyaType type;
 
-  Widget _tweet(BuildContext context, FeedModel model) {
+  Widget _embeddedQuotedToldya(BuildContext context, FeedModel model) {
     final authState = Provider.of<AuthState>(context, listen: false);
     final authorUserId = model.user?.userId ?? model.userId ?? '';
     return Column(
@@ -103,7 +103,7 @@ class RetoldyaWidget extends StatelessWidget {
                 ),
               ),
         SizedBox(height: model.imagePath == null ? 8 : 0),
-        ToldyaImage(model: model, type: type, isRetweetImage: true),
+        ToldyaImage(model: model, type: type, isNestedRetoldya: true),
       ],
     );
   }
@@ -140,7 +140,7 @@ class RetoldyaWidget extends StatelessWidget {
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(15)),
-                child: _tweet(context, snapshot.data!),
+                child: _embeddedQuotedToldya(context, snapshot.data!),
               ),
             ),
           );

@@ -82,7 +82,7 @@ class EmptyStateContent extends StatelessWidget {
   }
 }
 
-/// Modern, minimalist empty state for Toldya social betting app.
+/// Modern, minimalist empty state for the Toldya prediction app.
 /// Dark mode, readable, with FAB and BottomAppBar.
 class EmptyStateScreen extends StatelessWidget {
   const EmptyStateScreen({

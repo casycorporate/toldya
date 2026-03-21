@@ -5,13 +5,11 @@ import 'package:toldya/page/Auth/selectAuthMethod.dart';
 import 'package:toldya/page/Auth/verifyEmail.dart';
 import 'package:toldya/page/common/splash.dart';
 import 'package:toldya/page/admin/admin_moderation_page.dart';
-import 'package:toldya/page/feed/composeTweet/composeTweet.dart';
-import 'package:toldya/page/feed/composeTweet/state/composeTweetState.dart';
+import 'package:toldya/page/feed/composeToldya/compose_toldya_page.dart';
+import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
 import 'package:toldya/page/feed/feedPage.dart';
 import 'package:toldya/page/message/conversationInformation/conversationInformation.dart';
 import 'package:toldya/page/message/newMessagePage.dart';
-import 'package:toldya/page/profile/follow/followerListPage.dart';
-import 'package:toldya/page/profile/follow/followingListPage.dart';
 import 'package:toldya/page/profile/profileImageView.dart';
 import 'package:toldya/page/search/SearchPage.dart';
 import 'package:toldya/page/settings/accountSettings/about/aboutTwitter.dart';
@@ -204,10 +202,6 @@ class Routes{
          return CustomRoute<bool>(builder: (BuildContext context) => const LanguagePage());
        case "ConversationInformation":
          return CustomRoute<bool>(builder: (BuildContext context) => ConversationInformation());
-       case "FollowingListPage":
-         return CustomRoute<bool>(builder: (BuildContext context) => FollowingListPage());
-       case "FollowerListPage":
-         return CustomRoute<bool>(builder: (BuildContext context) => FollowerListPage());
        case "LeaderboardPage":
          return CustomRoute<bool>(builder: (BuildContext context) => LeaderboardPage());
        case "TokenEarnPage":

@@ -12,7 +12,7 @@ import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/state/searchState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:toldya/widgets/tweet/prediction_card_mockup.dart';
+import 'package:toldya/widgets/toldya/prediction_card_mockup.dart';
 import 'package:provider/provider.dart';
 
 class SearchPage extends StatefulWidget {
@@ -543,15 +543,10 @@ class _ResultsPeopleTab extends StatefulWidget {
 }
 
 class _ResultsPeopleTabState extends State<_ResultsPeopleTab> {
-  final Set<String> _loadingUserIds = {};
-
   @override
   Widget build(BuildContext context) {
     final searchState = Provider.of<SearchState>(context);
-    final authState = Provider.of<AuthState>(context, listen: false);
     final userList = searchState.userlist ?? [];
-    final myId = authState.userModel?.userId;
-    final isMe = (String? uid) => uid != null && uid == myId;
 
     if (userList.isEmpty) {
       return Center(
@@ -567,8 +562,6 @@ class _ResultsPeopleTabState extends State<_ResultsPeopleTab> {
       itemCount: userList.length,
       itemBuilder: (context, i) {
         final user = userList[i];
-        final following = (user.followersList ?? []).contains(myId);
-        final isLoading = user.userId != null && _loadingUserIds.contains(user.userId);
         return Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Container(
@@ -622,55 +615,6 @@ class _ResultsPeopleTabState extends State<_ResultsPeopleTab> {
                     ),
                   ),
                 ),
-                if (!isMe(user.userId))
-                  OutlinedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            final uid = user.userId ?? '';
-                            setState(() => _loadingUserIds.add(uid));
-                            try {
-                              authState.followUser(removeFollower: following);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      following ? AppLocalizations.of(context)!.unfollowSuccess : AppLocalizations.of(context)!.followSuccess,
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (_) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(AppLocalizations.of(context)!.errorGeneric),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            } finally {
-                              if (mounted) setState(() => _loadingUserIds.remove(uid));
-                            }
-                          },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: following ? Colors.grey : AppNeon.green,
-                      side: BorderSide(
-                          color: following ? Colors.grey.shade600 : AppNeon.green),
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: Size(0, 36),
-                    ),
-                    child: isLoading
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            following ? AppLocalizations.of(context)!.followingLabel : AppLocalizations.of(context)!.follow,
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                  ),
               ],
             ),
           ),

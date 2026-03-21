@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -35,6 +36,8 @@ class AuthState extends AppState {
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
   dabase.Query? _profileQuery;
   dabase.DatabaseReference? _mutedPostIdsRef;
+  StreamSubscription<DatabaseEvent>? _profileOnValueSub;
+  StreamSubscription<DatabaseEvent>? _mutedPostIdsOnValueSub;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
   bool? _isAdminCached;
@@ -52,9 +55,8 @@ class AuthState extends AppState {
 
   UserModel? get userModel => _userModel;
 
-  /// Admin check (UI only).
-  /// Source of truth (temporary): RTDB `profile/{uid}/isAdmin == true`.
-  /// Fallback: userModel.role == Role.adminRole (legacy).
+  /// Yönetici mi? Tek kaynak: RTDB `profile/{uid}/isAdmin` (true | 1 | "true").
+  /// Normal kullanıcı / admin ayrımı rütbe (XP) ile karıştırılmaz; rütbe ayrı alan.
   Future<bool> isAdminUser({bool forceRefresh = false}) async {
     if (!forceRefresh && _isAdminCached != null) return _isAdminCached!;
     final current = FirebaseAuth.instance.currentUser;
@@ -70,9 +72,8 @@ class AuthState extends AppState {
       _isAdminCached = isAdmin;
       return isAdmin;
     } catch (_) {
-      final fallback = (_userModel?.role == Role.adminRole);
-      _isAdminCached = fallback;
-      return fallback;
+      _isAdminCached = false;
+      return false;
     }
   }
 
@@ -136,6 +137,7 @@ class AuthState extends AppState {
 
   /// Logout from device
   void logoutCallback() {
+    unawaited(_cancelProfileDatabaseListeners());
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
@@ -156,29 +158,62 @@ class AuthState extends AppState {
     notifyListeners();
   }
 
-  databaseInit() {
+  /// RTDB profil + mutedPostIds dinleyicileri. Abonelikler saklanır; hot restart / çıkışta iptal edilir.
+  void databaseInit() {
+    unawaited(_databaseInitAsync());
+  }
+
+  Future<void> _cancelProfileDatabaseListeners() async {
+    Future<void> safeCancel(StreamSubscription<DatabaseEvent>? sub) async {
+      if (sub == null) return;
+      try {
+        await sub.cancel();
+      } on MissingPluginException catch (_) {
+        // Hot restart veya plugin yeniden bağlanırken platform kanalı yok olabilir.
+      } catch (_) {}
+    }
+
+    await safeCancel(_profileOnValueSub);
+    await safeCancel(_mutedPostIdsOnValueSub);
+    _profileOnValueSub = null;
+    _mutedPostIdsOnValueSub = null;
+    _profileQuery = null;
+    _mutedPostIdsRef = null;
+  }
+
+  Future<void> _databaseInitAsync() async {
     try {
-      if (_profileQuery == null && user != null) {
-        _profileQuery = kDatabase.child("profile").child(user!.uid);
-        _profileQuery!.onValue.listen(_onProfileChanged);
-        _mutedPostIdsRef = kDatabase.child("profile").child(user!.uid).child("mutedPostIds");
-        _mutedPostIdsRef!.onValue.listen((event) {
-          if (event.snapshot.value != null) {
-            final list = event.snapshot.value;
-            if (list is List) {
-              _mutedPostIds = list.map((e) => e.toString()).toList();
-            } else {
-              _mutedPostIds = [];
-            }
+      final uid = user?.uid;
+      if (uid == null || uid.isEmpty) return;
+
+      await _cancelProfileDatabaseListeners();
+      if (user == null || user!.uid != uid) return;
+
+      _profileQuery = kDatabase.child("profile").child(uid);
+      _profileOnValueSub = _profileQuery!.onValue.listen(_onProfileChanged);
+      _mutedPostIdsRef = kDatabase.child("profile").child(uid).child("mutedPostIds");
+      _mutedPostIdsOnValueSub = _mutedPostIdsRef!.onValue.listen((event) {
+        if (event.snapshot.value != null) {
+          final list = event.snapshot.value;
+          if (list is List) {
+            _mutedPostIds = list.map((e) => e.toString()).toList();
           } else {
             _mutedPostIds = [];
           }
-          notifyListeners();
-        });
-      }
+        } else {
+          _mutedPostIds = [];
+        }
+        notifyListeners();
+      });
     } catch (error) {
       cprint(error, errorIn: 'databaseInit');
     }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_cancelProfileDatabaseListeners());
+    super.dispose();
   }
 
   bool isPostMuted(String postId) {
@@ -418,7 +453,7 @@ class AuthState extends AppState {
   }
 
   /// Bahis sonrası sadece bakiye alanlarını günceller (backend zaten DB'yi güncelledi).
-  void updateBalanceFromBet(int newPegCount, int newStashBalance) {
+  void updateBalanceFromStake(int newPegCount, int newStashBalance) {
     if (_userModel != null) {
       _userModel!.pegCount = newPegCount;
       _userModel!.stashCount = newStashBalance;
@@ -747,96 +782,6 @@ class AuthState extends AppState {
     NotificationService.instance.getTokenAndPersist();
   }
 
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
-  followUser({bool removeFollower = false}) {
-    /// `userModel` is user who is looged-in app.
-    /// `profileUserModel` is user whoose profile is open in app.
-    final profileUser = profileUserModel;
-    final currentUser = userModel;
-    if (profileUser == null || currentUser == null) return;
-    try {
-      if (removeFollower) {
-        /// If logged-in user `alredy follow `profile user then
-        /// 1.Remove logged-in user from profile user's `follower` list
-        /// 2.Remove profile user from logged-in user's `following` list
-        profileUser.followersList?.remove(currentUser.userId);
-
-        /// Remove profile user from logged-in user's following list
-        currentUser.followingList?.remove(profileUser.userId);
-        cprint('user removed from following list', event: 'remove_follow');
-      } else {
-        /// if logged in user is `not following` profile user then
-        /// 1.Add logged in user to profile user's `follower` list
-        /// 2. Add profile user to logged in user's `following` list
-        profileUser.followersList ??= [];
-        profileUser.followersList!.add(currentUser.userId ?? '');
-        currentUser.followingList ??= [];
-        currentUser.followingList!.add(profileUser.userId ?? '');
-      }
-      profileUser.followers = profileUser.followersList?.length ?? 0;
-      currentUser.following = currentUser.followingList?.length ?? 0;
-      kDatabase
-          .child('profile')
-          .child(profileUser.userId ?? '')
-          .child('followerList')
-          .set(profileUser.followersList);
-      kDatabase
-          .child('profile')
-          .child(currentUser.userId ?? '')
-          .child('followingList')
-          .set(currentUser.followingList);
-      cprint(removeFollower ? 'user removed from following list' : 'user added to following list', event: removeFollower ? 'remove_follow' : 'add_follow');
-      notifyListeners();
-    } catch (error) {
-      cprint(error, errorIn: 'followUser');
-    }
-  }
-
-
-  /// Follow or unfollow a user by userId (e.g. from bottom sheet). Does not use profileUserModel.
-  Future<void> followUserByUserId(String targetUserId, {bool removeFollower = false}) async {
-    final currentUser = userModel;
-    if (currentUser == null || targetUserId.isEmpty) return;
-    final targetUser = await getuserDetail(targetUserId);
-    if (targetUser == null) return;
-    try {
-      if (removeFollower) {
-        targetUser.followersList?.remove(currentUser.userId);
-        currentUser.followingList?.remove(targetUserId);
-      } else {
-        targetUser.followersList ??= [];
-        targetUser.followersList!.add(currentUser.userId ?? '');
-        currentUser.followingList ??= [];
-        currentUser.followingList!.add(targetUserId);
-      }
-      targetUser.followers = targetUser.followersList?.length ?? 0;
-      currentUser.following = currentUser.followingList?.length ?? 0;
-      await kDatabase
-          .child('profile')
-          .child(targetUserId)
-          .child('followerList')
-          .set(targetUser.followersList);
-      await kDatabase
-          .child('profile')
-          .child(currentUser.userId ?? '')
-          .child('followingList')
-          .set(currentUser.followingList);
-      notifyListeners();
-    } catch (error) {
-      cprint(error, errorIn: 'followUserByUserId');
-      rethrow;
-    }
-  }
-
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
   addBlackList(String userId) {
     final currentUser = userModel;
     if (currentUser == null) return;
@@ -874,7 +819,7 @@ class AuthState extends AppState {
       final updatedUser = UserModel.fromJson(Map<String, dynamic>.from(event.snapshot.value as Map));
       if (updatedUser.userId == user!.uid) {
         _userModel = updatedUser;
-        // Clear cached admin flag so future checks re-read latest profile/isAdmin or role.
+        // Clear cached admin flag so future checks re-read profile/isAdmin.
         _isAdminCached = null;
       }
       cprint('UserModel Updated');

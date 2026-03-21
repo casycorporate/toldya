@@ -21,7 +21,7 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
  bool reachToWarning = false;
  bool reachToOver = false;
  late Color wordCountColor;
- String tweet = '';
+ String _draftText = '';
  
  @override
  void initState() { 
@@ -31,7 +31,7 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
  }
  void updateUI(){
    setState(() {
-     tweet = widget.textEditingController.text;
+     _draftText = widget.textEditingController.text;
      if (widget.textEditingController.text != null &&
           widget.textEditingController.text.isNotEmpty) {
             if (widget.textEditingController.text.length > 259 &&
@@ -76,12 +76,11 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
             alignment: Alignment.centerRight,
             child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                child: tweet != null &&
-                        tweet.length > 289
+                child: _draftText.length > 289
                     ? Padding(
                         padding: EdgeInsets.only(right: 10),
                         child: customText(
-                            '${280 - tweet.length}',
+                            '${280 - _draftText.length}',
                             style:
                                 TextStyle(color: Theme.of(context).colorScheme.error)),
                       )
@@ -89,14 +88,14 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
                         alignment: Alignment.center,
                         children: <Widget>[
                           CircularProgressIndicator(
-                            value: getTweetLimit(),
+                            value: getToldyaCharLimit(),
                             backgroundColor: Colors.grey,
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(wordCountColor),
                           ),
-                          tweet.length > 259
+                          _draftText.length > 259
                               ? customText(
-                                  '${280 - tweet.length}',
+                                  '${280 - _draftText.length}',
                                   style: TextStyle(color: wordCountColor))
                               : customText('',
                                   style: TextStyle(color: wordCountColor))
@@ -116,15 +115,14 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
       });
     }
   }
-  double getTweetLimit() {
-    if (tweet == null ||
-        tweet.isEmpty) {
+  double getToldyaCharLimit() {
+    if (_draftText.isEmpty) {
       return 0.0;
     }
-    if (tweet.length > 280) {
+    if (_draftText.length > 280) {
       return 1.0;
     }
-    var length = tweet.length;
+    var length = _draftText.length;
     var val = length * 100 / 28000.0;
     return val;
   }
