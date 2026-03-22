@@ -243,11 +243,13 @@ class AuthState extends AppState {
       var result = await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
       user = result.user;
+      authStatus = AuthStatus.LOGGED_IN;
       // if(userModel.role==null){
       //   userModel.role=AppIcon.defaultRole;
       //   createUser(userModel);
       // }
       userId = user?.uid ?? '';
+      loading = false;
       return user?.uid;
     } catch (error) {
       loading = false;

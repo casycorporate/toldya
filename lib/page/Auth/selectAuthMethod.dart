@@ -3,6 +3,7 @@ import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/enum.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/page/Auth/signup.dart';
+import 'package:toldya/page/Auth/verifyEmail.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -293,11 +294,11 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var state = Provider.of<AuthState>(context, listen: false);
+    final state = Provider.of<AuthState>(context);
     if (state.authStatus == AuthStatus.NOT_LOGGED_IN ||
         state.authStatus == AuthStatus.NOT_DETERMINED) {
       return _body();
     }
-    return HomePage();
+    return (state.user?.emailVerified ?? false) ? HomePage() : VerifyEmailPage();
   }
 }
