@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bendemistim/helper/utility.dart';
+import 'package:toldya/helper/utility.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:rxdart/rxdart.dart';
 

@@ -1,38 +1,51 @@
-import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class EditProfilePage extends StatefulWidget {
   EditProfilePage({Key? key}) : super(key: key);
   _EditProfilePageState createState() => _EditProfilePageState();
 }
 
+/// Kullanıcı adı: sadece harf, rakam, alt çizgi; 3–20 karakter; @ opsiyonel (kayıtta eklenir).
+const int _usernameMinLength = 3;
+const int _usernameMaxLength = 20;
+final RegExp _usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+
 class _EditProfilePageState extends State<EditProfilePage> {
   late String _image;
   late String _banner;
   late TextEditingController _name;
+  late TextEditingController _userName;
   late TextEditingController _bio;
   late TextEditingController _location;
   late TextEditingController _dob;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late String dob;
+  bool _isSaving = false;
   @override
   void initState() {
     super.initState();
     _image = '';
     _banner = '';
     _name = TextEditingController();
+    _userName = TextEditingController();
     _bio = TextEditingController();
     _location = TextEditingController();
     _dob = TextEditingController();
     dob = '';
     var state = Provider.of<AuthState>(context, listen: false);
+    _image = state.userModel?.profilePic ?? '';
     _name.text = state.userModel?.displayName ?? '';
+    final raw = state.userModel?.userName ?? '';
+    _userName.text = raw.startsWith('@') ? raw.substring(1) : raw;
     _bio.text = state.userModel?.bio ?? '';
     _location.text = state.userModel?.location ?? '';
     _dob.text = getdob(state.userModel?.dob ?? '');
@@ -41,6 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void dispose() {
     _name.dispose();
+    _userName.dispose();
     _bio.dispose();
     _location.dispose();
     _dob.dispose();
@@ -49,67 +63,153 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _body() {
     var authstate = Provider.of<AuthState>(context, listen: false);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Container(
-          height: 180,
-          child: Stack(
-            children: <Widget>[
-              _bannerImage(authstate),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: _userImage(authstate),
-              ),
-            ],
+    return Container(
+      color: MockupDesign.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            height: 200,
+            child: Stack(
+              children: <Widget>[
+                _bannerImage(authstate),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: _userImage(authstate),
+                ),
+              ],
+            ),
           ),
-        ),
-        _entry('Name', controller: _name),
-        _entry('Bio', controller: _bio, maxLine: 3),
-        _entry('Location', controller: _location),
-        InkWell(
-          onTap: showCalender,
-          child: _entry('Date of birth', isenable: false, controller: _dob),
-        )
-      ],
+          SizedBox(height: spacing16),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _entry(AppLocalizations.of(context)!.name, controller: _name),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.usernameLabel,
+                  controller: _userName,
+                  hint: AppLocalizations.of(context)!.exampleUsername,
+                ),
+                const SizedBox(height: 16),
+                _entry(AppLocalizations.of(context)!.bio, controller: _bio, maxLine: 3),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.location,
+                  controller: _location,
+                  suffixIcon: Icons.location_on_outlined,
+                ),
+                const SizedBox(height: 16),
+                _entry(
+                  AppLocalizations.of(context)!.birthDate,
+                  controller: _dob,
+                  readOnly: true,
+                  onTap: showCalender,
+                  suffixIcon: Icons.calendar_today_outlined,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: spacing16),
+        ],
+      ),
     );
   }
 
   Widget _userImage(AuthState authstate) {
+    final effectiveProfilePic =
+        _image.isNotEmpty ? _image : authstate.userModel?.profilePic;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 0),
       height: 90,
       width: 90,
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.surface, width: 5),
+        border: Border.all(color: const Color(0xFF1A1F2E), width: 4),
         shape: BoxShape.circle,
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
           ClipOval(
-            child: _image.isNotEmpty
-                ? Image.file(File(_image), fit: BoxFit.cover, width: 80, height: 80)
-                : customProfileImage(
-                    context,
-                    authstate.userModel?.profilePic,
-                    userId: authstate.userModel?.userId,
-                    height: 80,
-                  ),
+            child: customProfileImage(
+              context,
+              effectiveProfilePic,
+              userId: authstate.userModel?.userId,
+              height: 80,
+            ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.scrim.withOpacity(0.5),
-            ),
-            child: Center(
-              child: IconButton(
-                onPressed: uploadImage,
-                icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onSurface),
-              ),
-            ),
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: _glassCameraButton(onTap: _showAvatarPicker),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAvatarPicker() {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.selectProfilePhoto,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                AppLocalizations.of(context)!.appAvatars,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: DefaultProfilePics.assets.map((asset) {
+                  final isSelected = _image == asset;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _image = asset);
+                      if (Navigator.canPop(context)) Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? AppNeon.cyan : Colors.transparent,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        backgroundImage: AssetImage(asset),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -136,13 +236,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
               color: Theme.of(context).colorScheme.scrim.withOpacity(0.5),
             ),
           ),
-          Center(
-            child: IconButton(
-              onPressed: _showBannerPicker,
-              icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.onSurface),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: _glassCameraButton(onTap: _showBannerPicker),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _glassCameraButton({required VoidCallback onTap}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.35),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Icon(
+                Icons.camera_alt,
+                size: 18,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -161,7 +291,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Kapak fotoğrafı seç',
+                AppLocalizations.of(context)!.selectCoverPhoto,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
@@ -169,7 +299,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Uygulama kapakları',
+                AppLocalizations.of(context)!.appCovers,
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -185,7 +315,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: InkWell(
                         onTap: () {
                           setState(() => _banner = key);
-                          Navigator.pop(context);
+                          if (Navigator.canPop(context)) Navigator.pop(context);
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Stack(
@@ -209,18 +339,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  uploadBanner();
-                },
-                icon: Icon(Icons.photo_library_outlined, size: 20),
-                label: Text('Galeri / hazır görseller'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.primary,
-                ),
-              ),
             ],
           ),
         ),
@@ -231,33 +349,61 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _entry(String title,
       {required TextEditingController controller,
       int maxLine = 1,
-      bool isenable = true}) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          customText(title,
-              context: context,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
-          TextField(
-            enabled: isenable,
-            controller: controller,
-            maxLines: maxLine,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 16,
+      bool readOnly = false,
+      String? hint,
+      IconData? suffixIcon,
+      VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        customText(
+          title,
+          context: context,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          readOnly: readOnly,
+          onTap: onTap,
+          controller: controller,
+          maxLines: maxLine,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
+            fontSize: 16,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.05),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
+            border: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
             ),
-          )
-        ],
-      ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            suffixIcon: suffixIcon == null
+                ? null
+                : Icon(
+                    suffixIcon,
+                    color: Colors.white.withOpacity(0.5),
+                    size: 20,
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -276,17 +422,74 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  void _submitButton() {
+  /// Kullanıcı adını normalize eder: baştaki @ kaldırılır, sadece [a-zA-Z0-9_] kalır. Uygun değilse null. Dönen değer @ içermez.
+  String? _normalizeUsername(String raw) {
+    final s = raw.trim().replaceFirst(RegExp(r'^@+'), '').trim();
+    if (s.length < _usernameMinLength || s.length > _usernameMaxLength) return null;
+    if (!_usernameRegex.hasMatch(s)) return null;
+    return s;
+  }
+
+  /// Firebase profile listesinde bu userName başka bir kullanıcıda var mı?
+  /// Hem eski (@sinan) hem yeni (sinan) formatla uyumlu: her iki taraf @'sız normalize edilip karşılaştırılır.
+  Future<bool> _isUsernameTaken(String normalizedUserName, String currentUserId) async {
+    final snapshot = await kDatabase.child('profile').get();
+    if (snapshot.value == null) return false;
+    final map = Map<dynamic, dynamic>.from(snapshot.value as Map);
+    final lower = normalizedUserName.toLowerCase();
+    for (final entry in map.entries) {
+      final uid = entry.key.toString();
+      if (uid == currentUserId) continue;
+      final data = entry.value;
+      if (data is! Map) continue;
+      final existing = data['userName'];
+      final existingNorm = (existing?.toString().trim() ?? '').replaceFirst(RegExp(r'^@+'), '').trim().toLowerCase();
+      if (existingNorm.isNotEmpty && existingNorm == lower) return true;
+    }
+    return false;
+  }
+
+  Future<void> _submitButton() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_name.text.length > 27) {
-      customSnackBar(_scaffoldKey, 'İsim uzunluğu 27 karakteri aşamaz');
+      customSnackBar(_scaffoldKey, l10n.nameTooLongProfile);
+      return;
+    }
+    final rawUserName = _userName.text.trim();
+    if (rawUserName.isEmpty) {
+      customSnackBar(_scaffoldKey, l10n.usernameRequired);
+      return;
+    }
+    final normalizedUserName = _normalizeUsername(rawUserName);
+    if (normalizedUserName == null) {
+      customSnackBar(
+        _scaffoldKey,
+        l10n.usernameRules(_usernameMinLength, _usernameMaxLength),
+      );
       return;
     }
     var state = Provider.of<AuthState>(context, listen: false);
     final um = state.userModel;
     if (um == null) return;
+    if (!mounted) return;
+    setState(() => _isSaving = true);
+    try {
+      final taken = await _isUsernameTaken(normalizedUserName, um.userId ?? '');
+      if (!mounted) return;
+      if (taken) {
+        setState(() => _isSaving = false);
+        customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.usernameTaken);
+        return;
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+      customSnackBar(_scaffoldKey, AppLocalizations.of(context)!.errorCheckFailed);
+      return;
+    }
     var model = um.copyWith(
       key: um.userId,
       displayName: um.displayName,
+      userName: um.userName,
       bio: um.bio,
       contact: um.contact,
       dob: um.dob,
@@ -298,65 +501,73 @@ class _EditProfilePageState extends State<EditProfilePage> {
       pegCount: um.pegCount,
       role: um.role,
       rank: um.rank,
-
     );
-    if (_name.text != null && _name.text.isNotEmpty) {
-      model.displayName = _name.text;
+    if (_name.text.trim().isNotEmpty) {
+      model.displayName = _name.text.trim();
     }
-    if (_bio.text != null && _bio.text.isNotEmpty) {
+    model.userName = normalizedUserName;
+    if (_bio.text.trim().isNotEmpty) {
       model.bio = _bio.text;
     }
-    if (_location.text != null && _location.text.isNotEmpty) {
+    if (_location.text.trim().isNotEmpty) {
       model.location = _location.text;
     }
-    if (dob != null) {
+    if (dob.isNotEmpty) {
       model.dob = dob;
     }
-    state.updateUserProfile(model,_scaffoldKey, image: _image, bannerImage: _banner);
-    Navigator.of(context).pop();
-  }
-
-  void uploadImage() {
-    openImagePicker(context, (file) {
-      setState(() {
-        _image = file;
-      });
-    },0);
-  }
-
-  void uploadBanner() {
-    openImagePicker(context, (file) {
-      setState(() {
-        _banner = file;
-      });
-    },1);
+    final imageParam = _image.isNotEmpty ? _image : null;
+    final bannerParam = _banner.isNotEmpty ? _banner : null;
+    try {
+      await state.updateUserProfile(model, _scaffoldKey, image: imageParam, bannerImage: bannerParam, successMessage: AppLocalizations.of(context)!.changesSaved);
+      if (mounted && Navigator.canPop(context)) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+      customSnackBar(_scaffoldKey, l10n.errorSaveFailed);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const saveColor = Color(0xFF2ED573);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
-        iconTheme: IconThemeData(color: theme.colorScheme.primary),
-        title: customTitleText('Profile Edit'),
-        actions: <Widget>[
-          InkWell(
-            onTap: _submitButton,
-            child: Center(
-              child: Text(
-                'Kaydet',
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          l10n.editProfile,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
           ),
-          SizedBox(width: 20),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: _isSaving ? null : _submitButton,
+            style: TextButton.styleFrom(
+              foregroundColor: saveColor,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
+            child: _isSaving
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: saveColor,
+                    ),
+                  )
+                : Text(
+                    l10n.save,
+                    style: const TextStyle(color: saveColor, fontWeight: FontWeight.bold),
+                  ),
+          ),
+          const SizedBox(width: 12),
         ],
       ),
       body: SingleChildScrollView(

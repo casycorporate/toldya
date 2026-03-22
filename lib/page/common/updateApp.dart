@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/common/splash.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/common/splash.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 
 class UpdateApp extends StatefulWidget {
   const UpdateApp({Key? key}) : super(key: key);
@@ -42,15 +45,18 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Image.asset("assets/images/casy.png"),
+            ToldyaLogo(
+              height: 80,
+              fit: BoxFit.contain,
+            ),
             TitleText(
-              "Yeni Güncelleme mevcut",
+              AppLocalizations.of(context)!.newUpdateAvailable,
               fontSize: 25,
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
             TitleText(
-              "Uygulamanın mevcut sürümü artık desteklenmiyor. Vermiş olabileceğimiz her türlü rahatsızlıktan dolayı özür dileriz",
+              AppLocalizations.of(context)!.unsupportedVersionMessage,
               fontSize: 14,
               color: AppColor.darkGrey,
               textAlign: TextAlign.center,
@@ -70,7 +76,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
                   launchURL(
                       "https://play.google.com/store/apps/details?id=com.casycorporate.casy");
                 },
-                child: TitleText('Şimdi Güncelle', color: Colors.white),
+                child: TitleText(AppLocalizations.of(context)!.updateNow, color: Colors.white),
               ),
             )
           ],

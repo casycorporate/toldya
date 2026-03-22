@@ -1,0 +1,62 @@
+import 'package:flutter/material.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:provider/provider.dart';
+
+class ToldyaImage extends StatelessWidget {
+  const ToldyaImage(
+      {Key? key, required this.model, required this.type, this.isNestedRetoldya = false})
+      : super(key: key);
+
+  final FeedModel model;
+  final ToldyaType type;
+  final bool isNestedRetoldya;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 500),
+      alignment: Alignment.centerRight,
+      child: model.imagePath == null
+          ? SizedBox.shrink()
+          : Padding(
+              padding: EdgeInsets.only(
+                top: 8,
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(isNestedRetoldya ? 0 : 20),
+                ),
+                onTap: () {
+                  if(type == ToldyaType.ParentToldya){
+                    return;
+                  }
+                  var state = Provider.of<FeedState>(context, listen: false);
+                  state.getpostDetailFromDatabase(model.key ?? '', model: model);
+                  Navigator.pushNamed(context, '/ImageViewPge');
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(isNestedRetoldya ? 0 : 20),
+                  ),
+                  child: Container(
+                    width: fullWidth(context) *
+                            (type == ToldyaType.Detail ? .95 : .8) -
+                        8,
+                    decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: customNetworkImage(model.imagePath ?? '',
+                          fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}

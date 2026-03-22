@@ -1,15 +1,19 @@
 import 'dart:math';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/page/Auth/signin.dart';
-import 'package:bendemistim/page/Auth/widget/bezierContainer.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/page/Auth/signin.dart';
+import 'package:toldya/page/Auth/widget/bezierContainer.dart';
+import 'package:toldya/page/Auth/widget/appleLoginButton.dart';
+import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -69,16 +73,29 @@ class _SignupState extends State<Signup> {
                   SizedBox(height: fullHeight(context) * .2),
                   _title(),
                   SizedBox(height: 50),
-                  _entryFeild('İsim', controller: _nameController),
-                  _entryFeild('E-mail giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.name, controller: _nameController),
+                  _entryFeild(AppLocalizations.of(context)!.enterEmail,
                       controller: _emailController, isEmail: true),
-                  _entryFeild('Şifre giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.enterPassword,
                       controller: _passwordController, isPassword: true),
-                  _entryFeild('Tekrar şifre giriniz',
+                  _entryFeild(AppLocalizations.of(context)!.enterPasswordAgain,
                       controller: _confirmController, isPassword: true),
                   SizedBox(height: 20),
                   _submitButton(context),
-                  SizedBox(height: fullHeight(context) * .14),
+                  SizedBox(height: 12),
+                  _divider(),
+                  GoogleLoginButton(
+                    loginCallback: widget.loginCallback,
+                    loader: loader,
+                  ),
+                  if (Platform.isIOS) ...[
+                    SizedBox(height: 12),
+                    AppleLoginButton(
+                      loginCallback: widget.loginCallback,
+                      loader: loader,
+                    ),
+                  ],
+                  SizedBox(height: fullHeight(context) * .08),
                   _loginAccountLabel(),
                 ],
               ),
@@ -139,7 +156,7 @@ class _SignupState extends State<Signup> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'Zaten bir hesabın var mı?',
+              AppLocalizations.of(context)!.alreadyHaveAccount,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -148,7 +165,7 @@ class _SignupState extends State<Signup> {
             ),
             SizedBox(width: 10),
             Text(
-              'Giriş Yap',
+              AppLocalizations.of(context)!.signIn,
               style: GoogleFonts.sawarabiMincho(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
@@ -157,6 +174,44 @@ class _SignupState extends State<Signup> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    final theme = Theme.of(context);
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: <Widget>[
+          SizedBox(width: 20),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Divider(
+                thickness: 1,
+                color: theme.dividerColor,
+              ),
+            ),
+          ),
+          Text(
+            'veya',
+            style: GoogleFonts.sawarabiMincho(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Divider(
+                thickness: 1,
+                color: theme.dividerColor,
+              ),
+            ),
+          ),
+          SizedBox(width: 20),
+        ],
       ),
     );
   }
@@ -185,7 +240,7 @@ class _SignupState extends State<Signup> {
   Widget _backButton() {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Navigator.pop(context),
+      onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
@@ -198,7 +253,7 @@ class _SignupState extends State<Signup> {
               ),
             ),
             Text(
-              'Geri',
+              AppLocalizations.of(context)!.back,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -275,7 +330,7 @@ class _SignupState extends State<Signup> {
             ],
           ),
           child: Text(
-            'Hemen Kaydol',
+            AppLocalizations.of(context)!.signUpNow,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -307,22 +362,22 @@ class _SignupState extends State<Signup> {
   // }
 
   void _submitForm() {
+    final l10n = AppLocalizations.of(context)!;
     if (_nameController.text.isEmpty) {
-      customSnackBar(_scaffoldKey, 'Lütfen isim giriniz');
+      customSnackBar(_scaffoldKey, l10n.pleaseEnterName);
       return;
     }
     if (_nameController.text.length > 27) {
-      customSnackBar(_scaffoldKey, 'İsim uzunluğu 27 karakteri geçemez');
+      customSnackBar(_scaffoldKey, l10n.nameTooLong);
       return;
     }
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmController.text.isEmpty) {
-      customSnackBar(_scaffoldKey, 'Lütfen formu dikkatlice doldurunuz');
+      customSnackBar(_scaffoldKey, l10n.pleaseFillForm);
       return;
     } else if (_passwordController.text != _confirmController.text) {
-      customSnackBar(
-          _scaffoldKey, 'Parola ve doğrulama parolası eşleşmedi');
+      customSnackBar(_scaffoldKey, l10n.passwordMismatch);
       return;
     }
 
@@ -361,7 +416,7 @@ class _SignupState extends State<Signup> {
       () {
         loader.hideLoader();
         if (state.authStatus == AuthStatus.LOGGED_IN) {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           widget.loginCallback?.call();
         }
       },

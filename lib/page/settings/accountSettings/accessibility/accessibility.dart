@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 
 class AccessibilityPage extends StatelessWidget {
   const AccessibilityPage({Key? key}) : super(key: key);
@@ -21,10 +22,10 @@ class AccessibilityPage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
+            color: MockupDesign.card,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
           ),
           child: child,
@@ -50,14 +51,14 @@ class AccessibilityPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 15),
-            child: TitleText('Data preference'),
+            child: TitleText(AppLocalizations.of(context)!.dataPreference),
           ),
           Divider(height: 0),
-          _row("Mobile data & Wi-Fi"),
+          _row(AppLocalizations.of(context)!.mobileDataWifi),
           Divider(height: 0),
-          _row("Wi-Fi only"),
+          _row(AppLocalizations.of(context)!.wifiOnly),
           Divider(height: 0),
-          _row("Never"),
+          _row(AppLocalizations.of(context)!.never),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class AccessibilityPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -106,55 +107,45 @@ class AccessibilityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Accessibility',
+          l10n.accessibilityTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Screen Reader'),
+          HeaderWidget(l10n.screenReaderHeader),
           SettingRowWidget(
-            "Pronounce # as \"hashtag\"",
-            showCheckBox: true,
+            l10n.pronounceHashtagTitle,
+            subtitle: l10n.featureComingSoon(l10n.pronounceHashtagTitle),
           ),
           Divider(height: 0),
-          HeaderWidget('Vision'),
+          HeaderWidget(l10n.visionHeader),
           SettingRowWidget(
-            "Compose image descriptions",
-            subtitle:
-                'Adds the ability to describe images for the visually impaired.',
+            l10n.composeImageDescriptionsTitle,
+            subtitle: l10n.featureComingSoon(l10n.composeImageDescriptionsTitle),
             vPadding: 15,
             showCheckBox: false,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
             showDivider: false,
           ),
           HeaderWidget(
-            'Motion',
+            l10n.motionHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Reduce Motion",
-            subtitle:
-                'Limit the amount of in-app animations, including live engagement counts.',
+            l10n.reduceMotionTitle,
+            subtitle: l10n.featureComingSoon(l10n.reduceMotionTitle),
             vPadding: 15,
             showCheckBox: false,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
           SettingRowWidget(
-            "Video autoplay",
-            subtitle: 'Wi-Fi only ',
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
+            l10n.videoAutoplayTitle,
+            subtitle: l10n.featureComingSoon(l10n.videoAutoplayTitle),
           ),
         ],
       ),

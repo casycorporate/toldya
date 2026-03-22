@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/chatModel.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/chats/chatState.dart';
-import 'package:bendemistim/state/searchState.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/emptyList.dart';
-import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/chatModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/chats/chatState.dart';
+import 'package:toldya/state/searchState.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/emptyList.dart';
+import 'package:toldya/widgets/newWidget/rippleButton.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:provider/provider.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -37,6 +38,16 @@ class _ChatListPageState extends State<ChatListPage> {
     final state = Provider.of<ChatState>(context);
     final searchState = Provider.of<SearchState>(context, listen: false);
     if (state.chatUserList == null) {
+      return Center(
+        child: CustomScreenLoader(
+          height: 80,
+          width: 80,
+          backgroundColor: Colors.transparent,
+        ),
+      );
+    }
+    final chatList = state.chatUserList ?? [];
+    if (chatList.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
         child: EmptyList(
@@ -45,13 +56,12 @@ class _ChatListPageState extends State<ChatListPage> {
               'When someone sends you message,UserModel list\'ll show up here \n  To send message tap message button.',
         ),
       );
-    } else {
-      final userlist = searchState.userlist;
-      if (userlist == null || userlist.isEmpty) {
-        searchState.resetFilterList();
-      }
-      final chatList = state.chatUserList ?? [];
-      return ListView.separated(
+    }
+    final userlist = searchState.userlist;
+    if (userlist == null || userlist.isEmpty) {
+      searchState.resetFilterList();
+    }
+    return ListView.separated(
         physics: BouncingScrollPhysics(),
         padding: EdgeInsets.symmetric(vertical: spacing8),
         itemCount: chatList.length,
@@ -69,7 +79,6 @@ class _ChatListPageState extends State<ChatListPage> {
           );
         },
       );
-    }
   }
 
   Widget _userCard(UserModel model, ChatMessage lastMessage) {

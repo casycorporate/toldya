@@ -1,19 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/topicMap.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/userPegModel.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
-import 'package:bendemistim/widgets/tweet/tweet.dart';
-import 'package:bendemistim/widgets/tweet/widgets/tweetBottomSheet.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/widgets/animated_bounce_button.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/topicMap.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/model/userPegModel.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/toldya_stake_flow.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -34,24 +38,17 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
     super.initState();
   }
 
-  Widget _commentRow(FeedModel model) {
-    return Toldya(
-      model: model,
-      type: ToldyaType.Reply,
-      trailing: ToldyaBottomSheet().toldyaOptionIcon(context,
-          scaffoldKey: scaffoldKey, model: model, type: ToldyaType.Reply),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     var state = Provider.of<FeedState>(context);
     final model = (state.toldyaDetailModel?.length ?? 0) > 0 ? state.toldyaDetailModel!.last : null;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
         Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
-        return true;
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
       },
       child: Scaffold(
         key: scaffoldKey,
@@ -61,10 +58,13 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back_rounded),
             color: Colors.white,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              Provider.of<FeedState>(context, listen: false).removeLastToldyaDetail(postId);
+              if (Navigator.canPop(context)) Navigator.of(context).pop();
+            },
           ),
           title: Text(
-            'Tahmin Detayı',
+            AppLocalizations.of(context)!.predictionDetail,
             style: TextStyle(
               color: Colors.grey.shade400,
               fontSize: 14,
@@ -102,79 +102,15 @@ class _FeedPostDetailState extends State<FeedPostDetail> {
                       child: _PredictionDetailBody(model: model, scaffoldKey: scaffoldKey),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(MockupDesign.screenPadding, spacing24, MockupDesign.screenPadding, spacing8),
-                      child: Text(
-                        'Yorumlar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildListDelegate(
-                      state.toldyaReplyMap == null ||
-                              state.toldyaReplyMap[postId] == null ||
-                              (state.toldyaReplyMap[postId] ?? []).isEmpty
-                          ? [
-                              Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Center(
-                                  child: Text(
-                                    'Henüz yorum yok. İlk yorumu sen yap.',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                          : (state.toldyaReplyMap[postId] ?? [])
-                              .map<Widget>((x) => Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Theme.of(context).brightness == Brightness.dark
-                                              ? AppColor.cardDarkBorder
-                                              : Colors.black.withOpacity(0.06),
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: _commentRow(x),
-                                      ),
-                                    ),
-                                  ))
-                              .toList(),
-                    ),
-                  ),
                   SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
-        floatingActionButton: model != null
-            ? FloatingActionButton(
-                onPressed: () {
-                  state.setToldyaToReply = model;
-                  Navigator.of(context).pushNamed('/ComposeToldyaPage/toldya/$postId');
-                },
-                backgroundColor: Theme.of(context).primaryColor,
-                child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-              )
-            : null,
       ),
     );
   }
 }
 
-/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, Oracle chip’ler, bar+tooltip, bahis, son bahisler.
+/// Tasarım önerilerine uygun: badge, soru, kullanıcı+countdown, bar+tooltip, tahmin, son katılımlar.
 class _PredictionDetailBody extends StatelessWidget {
   final FeedModel model;
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -188,16 +124,14 @@ class _PredictionDetailBody extends StatelessWidget {
     final totalNo = sumOfVote(model.unlikeList ?? []);
     final total = totalYes + totalNo;
     final percent = total == 0 ? 0.5 : totalYes / total;
-    final closed = isBettingClosed(model.statu, model.endDate);
+    final closed = isToldyaStakeClosed(model.statu, model.endDate);
     final evetColor = AppNeon.green;
     final hayirColor = AppNeon.red;
     final balance = authState.userModel?.pegCount ?? 0;
-    final xp = authState.userModel?.xp ?? 0;
-    final maxBet = [balance, Tokenomics.maxBetByRank(balance, xp), Tokenomics.maxBetByPool(total)].reduce((a, b) => a < b ? a : b);
-    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
+    final maxStakeAmount = (balance * 0.75).floor();
+    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? AppLocalizations.of(context)!.topicGeneral;
     final kapanisText = getEndTime(model.endDate ?? '');
-    final userName = model.user?.userName ?? model.user?.displayName ?? '';
-    final displayHandle = userName.isNotEmpty ? (userName.startsWith('@') ? userName : '@$userName') : '@kullanıcı';
+    final authorUserId = model.userId ?? model.user?.userId ?? '';
     final percentNo = 1.0 - percent;
 
     return Padding(
@@ -219,49 +153,68 @@ class _PredictionDetailBody extends StatelessWidget {
               urlStyle: TextStyle(fontSize: 23, color: AppNeon.cyan, fontWeight: FontWeight.w700),
             ),
           SizedBox(height: 16),
-          // 2. Kullanıcı & bilgi satırı: avatar, @kullaniciadi, kategori | Kapanış
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${model.userId}'),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.grey.shade800,
-                  child: ClipOval(
-                    child: customProfileImage(context, model.user?.profilePic, userId: model.user?.userId, height: 44),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayHandle,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: Colors.white,
+          // 2. Kullanıcı & bilgi satırı: güncel profil (getuserDetail) + formatHandle
+          FutureBuilder<UserModel?>(
+            future: authorUserId.isEmpty ? Future.value(null) : Provider.of<AuthState>(context, listen: false).getuserDetail(authorUserId),
+            builder: (context, authorSnap) {
+              final author = authorSnap.data ?? model.user;
+              final displayHandle = formatHandle(author?.userName, author?.displayName);
+              final handleToShow = displayHandle.isEmpty ? AppLocalizations.of(context)!.userHandlePlaceholder : displayHandle;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${model.userId}'),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.grey.shade800,
+                      child: ClipOval(
+                        child: customProfileImage(context, author?.profilePic, userId: author?.userId ?? model.userId, height: 44),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (model.topic != null && (model.topic ?? '').isNotEmpty)
-                      Text(
-                        topicLabel,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              Text(
-                kapanisText.isNotEmpty ? 'Kapanış: $kapanisText' : '',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-                textAlign: TextAlign.end,
-              ),
-            ],
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                handleToShow,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (model.topic != null && (model.topic ?? '').isNotEmpty)
+                          Text(
+                            topicLabel,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    model.statu == Statu.statusPendingAdminReview
+                        ? AppLocalizations.of(context)!.statuUnderReview
+                        : (kapanisText.isNotEmpty
+                            ? AppLocalizations.of(context)!.closingAt(kapanisText)
+                            : ''),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                    textAlign: TextAlign.end,
+                  ),
+                ],
+              );
+            },
           ),
           SizedBox(height: 20),
           // 3. Oran çubuğu: üstte YES % / NO %, altta bar
@@ -269,7 +222,7 @@ class _PredictionDetailBody extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'YES ${(percent * 100).round()}%',
+                '${AppLocalizations.of(context)!.yes} ${(percent * 100).round()}%',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -277,7 +230,7 @@ class _PredictionDetailBody extends StatelessWidget {
                 ),
               ),
               Text(
-                'NO ${(percentNo * 100).round()}%',
+                '${AppLocalizations.of(context)!.no} ${(percentNo * 100).round()}%',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -301,29 +254,35 @@ class _PredictionDetailBody extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Maksimum bahis: $maxBet token',
+            AppLocalizations.of(context)!.maxStakeTokens(maxStakeAmount.toString()),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           ),
           SizedBox(height: 16),
-          // 4. Ana eylem butonları: Evet / Hayır, 56px, stadium, tam renk
+          // 4. Ana eylem butonları: Evet / Hayır, 56px, stadium, tam renk (bounce + haptic)
           Row(
             children: [
               Expanded(
-                child: Material(
-                  color: evetColor,
-                  borderRadius: BorderRadius.circular(28),
-                  child: InkWell(
-                    onTap: () => _openBet(context, authState, 0),
+                child: AnimatedBounceButton(
+                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
+                  child: Material(
+                    color: evetColor,
                     borderRadius: BorderRadius.circular(28),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Evet ile bahis yap',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _openStakeSheet(context, authState, 0);
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context)!.toldyaYesLabel,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -332,21 +291,27 @@ class _PredictionDetailBody extends StatelessWidget {
               ),
               SizedBox(width: 16),
               Expanded(
-                child: Material(
-                  color: hayirColor,
-                  borderRadius: BorderRadius.circular(28),
-                  child: InkWell(
-                    onTap: () => _openBet(context, authState, 1),
+                child: AnimatedBounceButton(
+                  enabled: !closed && (authState.userModel?.pegCount ?? 0) > 0,
+                  child: Material(
+                    color: hayirColor,
                     borderRadius: BorderRadius.circular(28),
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Hayır ile bahis yap',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _openStakeSheet(context, authState, 1);
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context)!.toldyaNoLabel,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -356,13 +321,13 @@ class _PredictionDetailBody extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24),
-          // 5. Son Bahisler başlığı
+          // 5. Son katılımlar başlığı
           Text(
-            'Son Bahisler',
+            AppLocalizations.of(context)!.recentStakesTitle,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           SizedBox(height: 12),
-          _RecentBetsList(
+          _RecentStakesList(
             likeList: model.likeList ?? [],
             unlikeList: model.unlikeList ?? [],
             emptyCta: closed || balance == 0 ? null : () {
@@ -380,59 +345,30 @@ class _PredictionDetailBody extends StatelessWidget {
     );
   }
 
-  void _openBet(BuildContext context, AuthState authState, int flag) {
-    final closed = isBettingClosed(model.statu, model.endDate);
-    if (closed || (authState.userModel?.pegCount ?? 0) == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            closed ? 'Kapandığı için seçim yapılamaz' : 'Token yetersiz',
-            style: TextStyle(color: Colors.white),
-          ),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.black87,
-        ),
-      );
-      return;
-    }
+  void _openStakeSheet(BuildContext context, AuthState authState, int flag) {
     final commentFlag = flag == 0 ? AppIcon.evetCommentFlag : AppIcon.hayirCommentFlag;
-    if (userAlreadyBetOnOtherSide(model, authState.userId, commentFlag)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            'Bu tahminde zaten diğer tarafa bahis yaptınız. Bir tahminde yalnızca tek tarafa (Evet veya Hayır) bahis yapabilirsiniz.',
-            style: TextStyle(color: Colors.white),
-          ),
-          duration: Duration(seconds: 4),
-          backgroundColor: Colors.orange.shade800,
-        ),
-      );
-      return;
-    }
-    ToldyaBottomSheet().openRetoldyabottomSheet(
-      commentFlag,
-      context,
-      type: ToldyaType.Detail,
+    openToldyaStakeFlowWithFeedback(
+      context: context,
       model: model,
+      commentFlag: commentFlag,
+      type: ToldyaType.Detail,
       scaffoldKey: scaffoldKey,
     );
   }
 }
 
-class _RecentBetsList extends StatelessWidget {
+class _RecentStakesList extends StatelessWidget {
   final List<UserPegModel> likeList;
   final List<UserPegModel> unlikeList;
   final VoidCallback? emptyCta;
 
-  const _RecentBetsList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
+  const _RecentStakesList({Key? key, required this.likeList, required this.unlikeList, this.emptyCta}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final combined = <_BetEntry>[
-      ...likeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
-      ...unlikeList.map((e) => _BetEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
+    final combined = <_StakeEntry>[
+      ...likeList.map((e) => _StakeEntry(userId: e.userId, pegCount: e.pegCount, isYes: true)),
+      ...unlikeList.map((e) => _StakeEntry(userId: e.userId, pegCount: e.pegCount, isYes: false)),
     ];
     combined.sort((a, b) => b.pegCount.compareTo(a.pegCount));
     final top = combined.take(10).toList();
@@ -448,13 +384,13 @@ class _RecentBetsList extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Henüz bahis yok.',
+              AppLocalizations.of(context)!.noStakesYet,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 4),
             Text(
-              'Yukarıdaki "Evet ile bahis yap" veya "Hayır ile bahis yap" butonuna tıklayarak bahis yapabilirsiniz.',
+              AppLocalizations.of(context)!.noStakesYetHint,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               textAlign: TextAlign.center,
             ),
@@ -480,7 +416,7 @@ class _RecentBetsList extends StatelessWidget {
             builder: (context, AsyncSnapshot snapshot) {
               final user = snapshot.data;
               final name = user?.displayName ?? user?.userName ?? e.userId;
-              final displayName = name.length > 1 ? name : 'Kullanıcı';
+              final displayName = name.length > 1 ? name : AppLocalizations.of(context)!.user;
               final tokenColor = e.isYes ? AppNeon.green : AppNeon.red;
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -533,9 +469,9 @@ class _RecentBetsList extends StatelessWidget {
   }
 }
 
-class _BetEntry {
+class _StakeEntry {
   final String userId;
   final int pegCount;
   final bool isYes;
-  _BetEntry({required this.userId, required this.pegCount, required this.isYes});
+  _StakeEntry({required this.userId, required this.pegCount, required this.isYes});
 }

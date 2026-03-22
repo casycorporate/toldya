@@ -65,6 +65,9 @@ TextStyle get textStyle14 => TextStyle(
     fontWeight: FontWeight.bold);
 
 class ToldyaColor {
+  /// Logo mavisi (#2563EB) – yeni Toldya logosu ile uyumlu
+  static final Color logoBlue = Color(0xFF2563EB);
+  static final Color logoBlueLight = Color(0xFF3B82F6);
   static final Color bondiBlue = Color.fromRGBO(0, 132, 180, 1.0);
   static final Color yesGreen = Color.fromRGBO(18, 176, 55, 1);
   static final Color okRed = Color.fromRGBO(102, 37, 17, 1);
@@ -84,14 +87,15 @@ class ToldyaColor {
   static final Color primaryColor = Colors.yellow.shade500;
 }
 
-/// Neon / vibrant accent palette (dark mode)
+/// Neon / vibrant accent palette (dark mode) – logo mavisi vurgulu
 class AppNeon {
   static final Color orange = Color(0xFFFFA400);
   static final Color cyan = Color(0xFF00E5FF);
   static final Color green = Color(0xFF4CAF50);
   static final Color red = Color(0xFFE53935);
   static final Color pink = Color(0xFFFF4081);
-  static final Color blue = Color(0xFF2196F3);
+  /// Logo mavisi (Toldya logosu ile aynı)
+  static final Color blue = Color(0xFF2563EB);
 }
 
 class AppColor {
@@ -118,12 +122,13 @@ bool get useDarkTheme => true;
 /// Mockup’larla uyumlu tek tip değerler (kart, boşluk, radius)
 class MockupDesign {
   MockupDesign._();
-  // Renkler (dark)
+  // Renkler (dark) – logo mavisi vurgu
   static const Color background = Color(0xFF1C1C1E);
   static const Color card = Color(0xFF252530);
   static const Color cardBorder = Color(0xFF2C2C38);
   static const Color accentOrange = Color(0xFFFFA400);
   static const Color accentCyan = Color(0xFF00E5FF);
+  static const Color accentLogoBlue = Color(0xFF2563EB);
   static const Color textPrimary = Color(0xFFE8E8ED);
   static const Color textSecondary = Color(0xFFA0A0B0);
   // Ölçüler
@@ -186,9 +191,9 @@ class AppTheme {
 
   static final ThemeData _darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primarySwatch: Colors.orange,
+    primarySwatch: Colors.blue,
     scaffoldBackgroundColor: AppColor.surfaceDark,
-    primaryColor: AppNeon.orange,
+    primaryColor: ToldyaColor.logoBlue,
     cardColor: AppColor.cardDark,
     unselectedWidgetColor: AppColor.textSecondaryDark,
     bottomSheetTheme: BottomSheetThemeData(
@@ -213,21 +218,21 @@ class AppTheme {
       ),
     ),
     tabBarTheme: TabBarThemeData(
-      labelStyle: titleStyle.copyWith(color: AppNeon.orange, fontSize: 14),
+      labelStyle: titleStyle.copyWith(color: ToldyaColor.logoBlue, fontSize: 14),
       unselectedLabelColor: AppColor.textSecondaryDark,
       unselectedLabelStyle: titleStyle.copyWith(color: AppColor.textSecondaryDark, fontSize: 14),
-      labelColor: AppNeon.orange,
+      labelColor: ToldyaColor.logoBlue,
       labelPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-      indicatorColor: AppNeon.orange,
+      indicatorColor: ToldyaColor.logoBlue,
       indicatorSize: TabBarIndicatorSize.label,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppNeon.orange,
+      backgroundColor: ToldyaColor.logoBlue,
       foregroundColor: Colors.white,
       elevation: 2,
     ),
     colorScheme: ColorScheme.dark(
-      primary: AppNeon.orange,
+      primary: ToldyaColor.logoBlue,
       secondary: AppNeon.cyan,
       surface: AppColor.cardDark,
       error: AppNeon.red,

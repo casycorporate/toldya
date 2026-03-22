@@ -6,13 +6,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:bendemistim/widgets/newWidget/DataHolder.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/DataHolder.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'newWidget/ImageGridItem.dart';
 
 Widget customTitleText(String title, {BuildContext? context}) {
@@ -160,6 +161,20 @@ Widget customImage(
   double height = 50,
   bool isBorder = false,
 }) {
+  final effectivePath = path ?? dummyProfilePic;
+  if (effectivePath == kToldyaLogo) {
+    return Container(
+      width: height,
+      height: height,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      ),
+      child: ClipOval(
+        child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
+      ),
+    );
+  }
   return Container(
     decoration: BoxDecoration(
       shape: BoxShape.circle,
@@ -168,7 +183,7 @@ Widget customImage(
     child: CircleAvatar(
       maxRadius: height / 2,
       backgroundColor: Theme.of(context).cardColor,
-      backgroundImage: customAdvanceNetworkImage(path ?? dummyProfilePic),
+      backgroundImage: customAdvanceNetworkImage(effectivePath),
     ),
   );
 }
@@ -184,6 +199,19 @@ Widget customProfileImage(
   final effectivePath = (profilePic != null && profilePic.trim().isNotEmpty)
       ? profilePic
       : DefaultProfilePics.assetForUser(userId);
+  if (effectivePath == kToldyaLogo) {
+    return Container(
+      width: height,
+      height: height,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey.shade100, width: isBorder ? 2 : 0),
+      ),
+      child: ClipOval(
+        child: ToldyaLogo(width: height, height: height, fit: BoxFit.cover),
+      ),
+    );
+  }
   final isAsset = effectivePath.startsWith('assets/');
   return Container(
     decoration: BoxDecoration(
@@ -196,36 +224,6 @@ Widget customProfileImage(
       backgroundImage: isAsset
           ? AssetImage(effectivePath)
           : customAdvanceNetworkImage(effectivePath),
-    ),
-  );
-}
-
-Widget ratingBar(int initialRating,int itemCount,
-    BuildContext context, {
-      bool ignoreGestures = true,
-      double itemSize =10.0
-    }) {
-  return Container(
-    height: 10,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      // border: Border.all(color: Colors.grey.shade100, width:2),
-    ),
-    child:  RatingBar(
-        ratingWidget: RatingWidget(
-          full: Image.asset("assets/icons/prometheusfull.png"),
-          half:Image.asset("assets/icons/prometheushalf.png"),
-          empty:Image.asset("assets/icons/prometheusempty.png"),
-        ),
-      initialRating: (initialRating / 100).toDouble(),
-      minRating: 1,
-      direction: Axis.horizontal,
-      allowHalfRating: true,
-      itemCount: itemCount,
-      itemSize: itemSize,
-      itemPadding: EdgeInsets.symmetric(horizontal: 1.0),
-      ignoreGestures: ignoreGestures,
-      onRatingUpdate: (_) {},
     ),
   );
 }
@@ -275,9 +273,20 @@ SizedBox sizedBox({double height = 5, String? title}) {
 }
 
 Widget customNetworkImage(String path, {BoxFit fit = BoxFit.contain}) {
+  final url = path ?? dummyProfilePic;
+  if (url == kToldyaLogo) {
+    return ToldyaLogo(fit: fit);
+  }
+  if (url.startsWith('assets/')) {
+    return Image.asset(
+      url,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Icon(Icons.error),
+    );
+  }
   return CachedNetworkImage(
     fit: fit,
-    imageUrl: path ?? dummyProfilePic,
+    imageUrl: url,
     imageBuilder: (context, imageProvider) => Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -298,16 +307,18 @@ dynamic customAdvanceNetworkImage(String path) {
   if (path == null) {
     path = dummyProfilePic;
   }
-  return CachedNetworkImageProvider(
-    path ?? dummyProfilePic,
-  );
+  path = path ?? dummyProfilePic;
+  if (path.startsWith('assets/')) {
+    return AssetImage(path);
+  }
+  return CachedNetworkImageProvider(path);
 }
 
 void showAlert(BuildContext context,
     {required Function onPressedOk,
     required String title,
-    String okText = 'OK',
-    String cancelText = 'Cancel'}) async {
+    String? okText,
+    String? cancelText}) async {
   showDialog(
       context: context,
       builder: (context) {
@@ -322,11 +333,12 @@ void showAlert(BuildContext context,
 Widget customAlert(BuildContext context,
     {required Function onPressedOk,
     required String title,
-    String okText = 'OK',
-    String cancelText = 'Cancel'}) {
+    String? okText,
+    String? cancelText}) {
   final onSurface = Theme.of(context).colorScheme.onSurface;
+  final l10n = AppLocalizations.of(context)!;
   return AlertDialog(
-    title: Text('Alert',
+    title: Text(AppLocalizations.of(context)!.alert,
         style: TextStyle(
             fontSize: getDimention(context, 25),
             color: onSurface.withOpacity(0.8))),
@@ -336,17 +348,17 @@ Widget customAlert(BuildContext context,
     actions: <Widget>[
       TextButton(
         onPressed: () {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
         },
-        child: Text(cancelText,
+        child: Text(cancelText ?? l10n.cancel,
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
       ),
       TextButton(
         onPressed: () {
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           onPressedOk();
         },
-        child: Text(okText, style: TextStyle(color: Theme.of(context).primaryColor)),
+        child: Text(okText ?? l10n.confirm, style: TextStyle(color: Theme.of(context).primaryColor)),
       )
     ],
   );
@@ -572,7 +584,7 @@ openImagePickerUseCameraAndGallery(
         child: Column(
           children: <Widget>[
             Text(
-              'Bir resim seçin',
+              AppLocalizations.of(context)!.selectImage,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
@@ -584,7 +596,7 @@ openImagePickerUseCameraAndGallery(
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
                     child: Text(
-                      'Kamerayı Kullan',
+                      AppLocalizations.of(context)!.useCameraLabel,
                       style:
                           TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                     ),
@@ -603,7 +615,7 @@ openImagePickerUseCameraAndGallery(
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
                     child: Text(
-                      'Galeriyi Kullan',
+                      AppLocalizations.of(context)!.useGalleryLabel,
                       style:
                           TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                     ),
@@ -648,7 +660,7 @@ openImagePicker(BuildContext context, Function onImageSelected,int type) {
         child: Column(
           children: <Widget>[
             Text(
-              'Bir resim seçin',
+              AppLocalizations.of(context)!.selectImage,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Expanded(
@@ -680,6 +692,6 @@ openImagePicker(BuildContext context, Function onImageSelected,int type) {
 getImage(BuildContext context, ImageSource source, Function onImageSelected) {
   ImagePicker().pickImage(source: source, imageQuality: 50).then((XFile? file) {
     if (file != null) onImageSelected(File(file.path));
-    Navigator.pop(context);
+    if (context.mounted && Navigator.canPop(context)) Navigator.pop(context);
   });
 }

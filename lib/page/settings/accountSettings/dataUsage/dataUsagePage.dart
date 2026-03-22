@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 
 class DataUsagePage extends StatelessWidget {
   const DataUsagePage({Key? key}) : super(key: key);
@@ -21,10 +22,10 @@ class DataUsagePage extends StatelessWidget {
         return Container(
           height: height,
           decoration: BoxDecoration(
-            color: ToldyaColor.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
+            color: MockupDesign.card,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
           ),
           child: child,
@@ -50,14 +51,14 @@ class DataUsagePage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 15),
-            child: TitleText('Data preference'),
+            child: TitleText(AppLocalizations.of(context)!.dataPreference),
           ),
           Divider(height: 0),
-          _row("Mobile data & Wi-Fi"),
+          _row(AppLocalizations.of(context)!.mobileDataWifi),
           Divider(height: 0),
-          _row("Wi-Fi only"),
+          _row(AppLocalizations.of(context)!.wifiOnly),
           Divider(height: 0),
-          _row("Never"),
+          _row(AppLocalizations.of(context)!.never),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class DataUsagePage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -106,76 +107,56 @@ class DataUsagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Data Usage',
+          l10n.dataUsageTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Data Saver'),
+          HeaderWidget(l10n.dataSaverHeader),
           SettingRowWidget(
-            "Data saver",
-            showCheckBox: true,
+            l10n.dataSaverTitle,
             vPadding: 15,
             showDivider: false,
-            subtitle:
-                'When enabled, video won\'t autoplay and lower-quality images load. This automatically reduces your data usage for all Fwitter accounts on this device.',
+            subtitle: l10n.featureComingSoon(l10n.dataSaverTitle),
           ),
           Divider(height: 0),
-          HeaderWidget('Images'),
+          HeaderWidget(l10n.imagesHeader),
           SettingRowWidget(
-            "High quality images",
-            subtitle:
-                'Mobile data & Wi-Fi \n\nSelect when high quality images should load.',
+            l10n.highQualityImagesTitle,
+            subtitle: l10n.featureComingSoon(l10n.highQualityImagesTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
             showDivider: false,
           ),
-          HeaderWidget(
-            'Video',
-            secondHeader: true,
-          ),
+          HeaderWidget(l10n.videoHeader, secondHeader: true),
           SettingRowWidget(
-            "High-quality video",
-            subtitle:
-                'Wi-Fi only \n\nSelect when the highest quality available should play.',
+            l10n.highQualityVideoTitle,
+            subtitle: l10n.featureComingSoon(l10n.highQualityVideoTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
           SettingRowWidget(
-            "Video autoplay",
-            subtitle:
-                'Wi-Fi only \n\nSelect when video should play automatically.',
+            l10n.videoAutoplayTitle,
+            subtitle: l10n.featureComingSoon(l10n.videoAutoplayTitle),
             vPadding: 15,
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
           ),
-          HeaderWidget(
-            'Data sync',
-            secondHeader: true,
+          HeaderWidget(l10n.dataSyncHeader, secondHeader: true),
+          SettingRowWidget(
+            l10n.syncDataTitle,
+            subtitle: l10n.featureComingSoon(l10n.syncDataTitle),
           ),
           SettingRowWidget(
-            "Sync data",
-            showCheckBox: true,
-          ),
-          SettingRowWidget(
-            "Sync interval",
-            subtitle: 'Daily',
+            l10n.syncIntervalTitle,
+            subtitle: l10n.featureComingSoon(l10n.syncIntervalTitle),
           ),
           SettingRowWidget(
             '',
-            subtitle:
-                'Allow Fwitter to sync data in the background to enhance your experience.',
+            subtitle: l10n.syncDataDescription,
             vPadding: 10,
           ),
         ],

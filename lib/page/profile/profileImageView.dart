@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/profile/profilePage.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/profile/profilePage.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/toldya_logo.dart';
 import 'package:provider/provider.dart';
 
 class ProfileImageView extends StatelessWidget {
@@ -12,10 +14,11 @@ class ProfileImageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const List<Choice> choices = const <Choice>[
-      const Choice(title: 'Share image link', icon: Icons.share),
-      const Choice(title: 'Open in browser', icon: Icons.open_in_browser),
-      const Choice(title: 'Save', icon: Icons.save),
+    final l10n = AppLocalizations.of(context)!;
+    final List<Choice> choices = [
+      Choice(title: l10n.shareImageLink, icon: Icons.share),
+      Choice(title: l10n.openInBrowser, icon: Icons.open_in_browser),
+      Choice(title: l10n.save, icon: Icons.save),
     ];
     var authstate = Provider.of<AuthState>(context, listen: false);
     return Scaffold(
@@ -24,15 +27,12 @@ class ProfileImageView extends StatelessWidget {
         actions: <Widget>[
           PopupMenuButton<Choice>(
             onSelected: (d) {
-              switch (d.title) {
-                case "Share image link":
-                  share(authstate.profileUserModel?.profilePic ?? '');
-                  break;
-                case "Open in browser":
-                  launchURL(authstate.profileUserModel?.profilePic ?? '');
-                  break;
-                case "Save":
-                  break;
+              if (d.title == l10n.shareImageLink) {
+                share(authstate.profileUserModel?.profilePic ?? '');
+              } else if (d.title == l10n.openInBrowser) {
+                launchURL(authstate.profileUserModel?.profilePic ?? '');
+              } else if (d.title == l10n.save) {
+                // Save action
               }
             },
             itemBuilder: (BuildContext context) {
@@ -59,6 +59,14 @@ class ProfileImageView extends StatelessWidget {
     final path = (profilePic != null && profilePic.trim().isNotEmpty)
         ? profilePic
         : DefaultProfilePics.assetForUser(authstate.profileUserModel?.userId);
+    if (path == kToldyaLogo) {
+      return Center(
+        child: ToldyaLogo(
+          width: fullWidth(context) * 0.6,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
     final isAsset = path.startsWith('assets/');
     return Container(
       alignment: Alignment.center,

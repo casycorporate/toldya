@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi - Ben demiştim</title>
+  <title>Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi - Toldya</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     * { box-sizing: border-box; }
@@ -65,7 +65,7 @@
   </div>
 
   <h1>Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi</h1>
-  <p><strong>Proje:</strong> Ben demiştim (Sosyal Tahmin Pazarı)</p>
+  <p><strong>Proje:</strong> Toldya (Sosyal Tahmin Pazarı)</p>
   <p><strong>Değerlendirme:</strong> Mevcut teknolojilerin spec’e uygunluğu ve eksik ihtiyaçlar (geliştirme yapılmadan).</p>
 
   <h2>1. Mevcut Teknoloji Özeti</h2>
@@ -120,7 +120,7 @@
   </table>
   <p><strong>Sonuç:</strong> Veri modeli ve istemci tarafı için mevcut stack uygun. Oracle’ı otomatik kullanmak ve zamana göre kilit/sonuç için sunucu tarafı (örn. Cloud Functions) eksik.</p>
 
-  <h3>2.2 Bahis Mantığı (havuz, dağıtım)</h3>
+  <h3>2.2 Tahmin havuzu mantığı (havuz, dağıtım)</h3>
   <table>
     <thead>
       <tr><th>İhtiyaç</th><th>Mevcut teknoloji yeterli mi?</th><th>Eksik / not</th></tr>
@@ -157,7 +157,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>“endDate’te bahisleri kapat”</td>
+        <td>“endDate’te katılımı kapat”</td>
         <td>Hayır</td>
         <td>Realtime DB ve Flutter’da zamanlanmış görev (cron) yok. Cihaz kapalıyken veya uygulama açık değilken çalışacak bir “saat X’te tüm tahminleri kilitle” mekanizması sadece sunucu tarafında (Cloud Functions + scheduler) mümkün.</td>
       </tr>
@@ -202,7 +202,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>Bahisçi skoru (rank)</td>
+        <td>Katılımcı skoru (rank)</td>
         <td>Evet</td>
         <td>user.rank + calculateRank zaten var.</td>
       </tr>
@@ -228,7 +228,7 @@
       </tr>
       <tr>
         <td><strong>Zamanlayıcı (cron)</strong></td>
-        <td>endDate’te bahis kapatma, sonuçlanma zamanında sonuç atama / API çağrısı</td>
+        <td>endDate’te katılım kapatma, sonuçlanma zamanında sonuç atama / API çağrısı</td>
                <td>Cloud Scheduler veya Cloud Functions scheduled function.</td>
       </tr>
       <tr>
@@ -258,6 +258,6 @@
   </ul>
   <p><strong>Kısa cevap:</strong> Mevcut teknolojiler spec’e benzetmek için büyük ölçüde uygun. Eksik olan şey yeni paketlerden çok sunucu tarafı (Cloud Functions + zamanlayıcı) ve iş kurallarının (kilit, dağıtım, oracle) buraya taşınması.</p>
 
-  <p class="note" style="margin-top:2rem;">Belge: Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi — Ben demiştim (Sosyal Tahmin Pazarı). Geliştirme yapılmadan hazırlanmış değerlendirme raporu.</p>
+  <p class="note" style="margin-top:2rem;">Belge: Teknoloji Uygunluk ve İhtiyaç Değerlendirmesi — Toldya (Sosyal Tahmin Pazarı). Geliştirme yapılmadan hazırlanmış değerlendirme raporu.</p>
 </body>
 </html>

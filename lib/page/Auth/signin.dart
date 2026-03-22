@@ -1,14 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/Auth/signup.dart';
-import 'package:bendemistim/page/Auth/widget/bezierContainer.dart';
-import 'package:bendemistim/page/Auth/widget/googleLoginButton.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/page/Auth/signup.dart';
+import 'package:toldya/page/Auth/widget/bezierContainer.dart';
+import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
+import 'package:toldya/page/Auth/widget/appleLoginButton.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 // import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -71,7 +73,7 @@ class _SignInState extends State<SignIn> {
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 5),
                         alignment: Alignment.centerRight,
-                        child: _labelButton('Şifreyi unuttum?', onPressed: () {
+                        child: _labelButton(AppLocalizations.of(context)!.forgotPassword, onPressed: () {
                           Navigator.of(context).pushNamed('/ForgetPasswordPage');
                         }),
                         // child: Text('Forgot Password ?',
@@ -84,13 +86,11 @@ class _SignInState extends State<SignIn> {
                         loader: loader,
                       ),
                       Platform.isIOS ? _divider() :SizedBox(),
-                      // Platform.isIOS ? SignInWithAppleButton(text: "Apple ile Bağlan",
-                      //   style: SignInWithAppleButtonStyle.white,
-                      //   iconAlignment: IconAlignment.center,
-                      //   onPressed: () {
-                      //     context.read<AuthState>().signInWithApple();
-                      //   },
-                      // ) : SizedBox(),
+                      if (Platform.isIOS)
+                        AppleLoginButton(
+                          loginCallback: widget.loginCallback,
+                          loader: loader,
+                        ),
                       SizedBox(height: fullHeight(context) * .055),
                       _createAccountLabel(),
                     ],
@@ -133,7 +133,7 @@ class _SignInState extends State<SignIn> {
             ),
             SizedBox(width: 10),
             Text(
-              'Hemen kaydol',
+              AppLocalizations.of(context)!.signUpNow,
               style: GoogleFonts.sawarabiMincho(
                 color: theme.colorScheme.primary,
                 fontSize: 13,
@@ -186,7 +186,7 @@ class _SignInState extends State<SignIn> {
   Widget _backButton() {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Navigator.pop(context),
+      onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Row(
@@ -330,7 +330,7 @@ class _SignInState extends State<SignIn> {
     }
     loader.showLoader(context);
     var isValid = validateCredentials(
-        _scaffoldKey, _emailController.text, _passwordController.text);
+        context, _scaffoldKey, _emailController.text, _passwordController.text);
     if (isValid) {
       state
           .signIn(_emailController.text, _passwordController.text,
@@ -338,7 +338,7 @@ class _SignInState extends State<SignIn> {
           .then((status) {
         if (state.user != null) {
           loader.hideLoader();
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) Navigator.pop(context);
           widget.loginCallback?.call();
         } else {
           cprint('Giriş yapılamıyor', errorIn: '_emailLoginButton');

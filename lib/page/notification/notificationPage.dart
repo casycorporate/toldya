@@ -1,16 +1,17 @@
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/userPegModel.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/notificationModel.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/state/notificationState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
-import 'package:bendemistim/widgets/newWidget/emptyList.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/notificationModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/state/notificationState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/emptyList.dart';
 import 'package:provider/provider.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -29,12 +30,14 @@ class _NotificationPageState extends State<NotificationPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       var state = Provider.of<NotificationState>(context, listen: false);
       var authstate = Provider.of<AuthState>(context, listen: false);
-      state.getDataFromDatabase(authstate.userId);
+      final userId = authstate.userId;
+      if (userId.isNotEmpty) state.markAllAsSeen(userId);
+      state.getDataFromDatabase(userId);
     });
   }
 
   void onSettingIconPressed() {
-    Navigator.pushNamed(context, '/NotificationPage');
+    Navigator.pushNamed(context, '/SettingsAndPrivacyPage');
   }
 
   @override
@@ -60,7 +63,7 @@ class _NotificationPageState extends State<NotificationPage> {
               )
             : BackButton(color: Colors.white),
         title: Text(
-          'Bildirimler',
+          AppLocalizations.of(context)!.notificationsTitle,
           style: TextStyle(
             color: Colors.white,
             fontSize: 21,
@@ -79,12 +82,21 @@ class NotificationPageBody extends StatelessWidget {
 
   Widget _notificationRow(BuildContext context, NotificationModel model) {
     var state = Provider.of<NotificationState>(context);
+    final type = model.type ?? '';
+    final isLegacyFollow = type == 'Follow' || type == 'NotificationType.Follow';
+    if (isLegacyFollow) {
+      return SizedBox.shrink();
+    }
+    // Standard payload: model.data => { type, id }. Backward compatible: toldyaKey is still present.
+    final targetId = model.navId;
     return FutureBuilder<FeedModel?>(
-      future: state.getToldyaDetail(model.toldyaKey ?? ''),
+      future: state.getToldyaDetail(targetId),
       builder: (BuildContext context, AsyncSnapshot<FeedModel?> snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           return NotificationTile(
             model: snapshot.data!,
+            postId: targetId,
+            notificationType: model.type,
           );
         } else if (snapshot.connectionState == ConnectionState.waiting ||
             snapshot.connectionState == ConnectionState.active) {
@@ -100,7 +112,7 @@ class NotificationPageBody extends StatelessWidget {
           );
         } else {
           var authstate = Provider.of<AuthState>(context);
-          state.removeNotification(authstate.userId, model.toldyaKey ?? '');
+          state.removeNotification(authstate.userId, model.toldyaKey ?? targetId);
           return SizedBox();
         }
       },
@@ -111,7 +123,32 @@ class NotificationPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     var state = Provider.of<NotificationState>(context);
     var list = state.notificationList;
-    if (state?.isbusy ?? true && (list == null || list.isEmpty)) {
+    final hasError = state.notificationError != null;
+    final l10n = AppLocalizations.of(context)!;
+    if (hasError && list.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.errorTryAgain, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  state.clearNotificationError();
+                  final authstate = Provider.of<AuthState>(context, listen: false);
+                  state.getDataFromDatabase(authstate.userId);
+                },
+                icon: Icon(Icons.refresh),
+                label: Text(l10n.retry),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!state.hasCompletedInitialLoad) {
       return Center(
         child: CustomScreenLoader(
           height: 80,
@@ -119,14 +156,13 @@ class NotificationPageBody extends StatelessWidget {
           backgroundColor: Colors.transparent,
         ),
       );
-    } else if (list == null || list.isEmpty) {
+    }
+    if (list.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
         child: EmptyList(
-          'Henüz bir Bildirim yok',
-          subTitle: 'Yeni bildirim bulunduğunda burada görünürler.',
-          // 'No Notification available yet',
-          // subTitle: 'When new notifiction found, they\'ll show up here.',
+          l10n.notificationsEmptyTitle,
+          subTitle: l10n.notificationsEmptySubtitle,
         ),
       );
     }
@@ -135,98 +171,116 @@ class NotificationPageBody extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: spacing8),
       itemBuilder: (context, index) => Padding(
         padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: spacing4),
-        child: _notificationRow(context, list![index]),
+        child: _notificationRow(context, list[index]),
       ),
-      itemCount: list!.length,
+      itemCount: list.length,
     );
   }
 }
 
 class NotificationTile extends StatelessWidget {
   final FeedModel model;
-  const NotificationTile({Key? key, required this.model}) : super(key: key);
+  /// Tek kaynak: bildirim satırında tıklanınca kullanılacak id (NotificationModel.toldyaKey).
+  final String postId;
+  /// İsteğe bağlı: Message → ChatScreenPage; Reply → yorum metni; Mention/Like/UnLike → FeedPostDetail.
+  final String? notificationType;
+
+  const NotificationTile({
+    Key? key,
+    required this.model,
+    required this.postId,
+    this.notificationType,
+  }) : super(key: key);
 
   static const double _avatarSize = 32.0;
   static const double _overlap = 10.0; // ~30% overlap
   static const double _avatarBorderWidth = 1.0;
-  static const double _heartBadgeSize = 18.0; // rozet için ayrılan alan
+  static const double _heartBadgeSize = 18.0;
 
   Widget _buildOverlappingAvatars(
     BuildContext context,
     List<UserPegModel> list,
   ) {
-    var displayList = List<UserPegModel>.from(list);
-    final noOfUser = displayList.length;
     final state = Provider.of<NotificationState>(context);
-    if (displayList.length > 5) displayList = displayList.take(5).toList();
+    if (list.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    final avatarWidgets = displayList.asMap().entries.map((entry) {
-      final i = entry.key;
-      final userId = entry.value.userId;
-      return Transform.translate(
-        offset: Offset(i * (_avatarSize - _overlap), 0),
-        child: _userAvatar(
-          context,
-          userId,
-          state,
-          (name) {},
-          borderColor: Theme.of(context).scaffoldBackgroundColor,
-        ),
-      );
-    }).toList();
+    // Maksimum gösterilecek avatar sayısı (geri kalanı +N şeklinde)
+    const maxVisible = 4;
+    final totalUserCount = list.length;
+    final visibleUsers = List<UserPegModel>.from(list.take(maxVisible));
+    final extraCount = totalUserCount - visibleUsers.length;
 
-    // Genişlik: avatarlar + kalp rozeti (overflow olmaması için)
-    final contentWidth = (displayList.length * (_avatarSize - _overlap)) + _overlap;
-    final extraForBadge = displayList.isNotEmpty ? _heartBadgeSize : 0.0;
-    final extraForCount = noOfUser > 5 ? 20.0 : 0.0;
-    final totalWidth = contentWidth + extraForBadge + extraForCount;
+    // Stack genişliği: avatarlar + opsiyonel "+N" balonu için alan
+    final avatarTrackWidth =
+        _avatarSize + (visibleUsers.length - 1) * (_avatarSize - _overlap);
+    final extraBubbleWidth = extraCount > 0 ? 26.0 : 0.0;
+    final totalWidth = avatarTrackWidth + extraBubbleWidth;
 
     return SizedBox(
       width: totalWidth,
-      height: _avatarSize + 14,
+      height: _avatarSize + 10,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...avatarWidgets,
-              if (noOfUser > 5)
-                Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Text(
-                    '+${noOfUser - 5}',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          // Kalp rozeti: son avatarın sağ alt köşesine binen mini rozet
-          if (displayList.isNotEmpty)
+          for (var i = 0; i < visibleUsers.length; i++)
             Positioned(
-              right: extraForBadge + extraForCount,
-              bottom: 0,
+              left: i * (_avatarSize - _overlap),
+              top: 0,
+              child: _userAvatar(
+                context,
+                visibleUsers[i].userId,
+                state,
+                (name) {},
+                borderColor: Theme.of(context).scaffoldBackgroundColor,
+              ),
+            ),
+          if (extraCount > 0)
+            Positioned(
+              left: avatarTrackWidth - _overlap + 4,
+              top: (_avatarSize - 22) / 2,
               child: Container(
-                padding: EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: Colors.white.withOpacity(0.06),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.08),
-                    width: 0.5,
-                  ),
                 ),
-                child: Icon(
-                  Icons.favorite,
-                  size: 12,
-                  color: ToldyaColor.ceriseRed,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$extraCount',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
+          // Kalp rozeti: son avatarın sağ alt köşesine binen mini rozet
+          Positioned(
+            left: (visibleUsers.length - 1) * (_avatarSize - _overlap) +
+                _avatarSize -
+                (_heartBadgeSize * 0.65),
+            bottom: -2,
+            child: Container(
+              width: _heartBadgeSize,
+              height: _heartBadgeSize,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.08),
+                  width: 0.5,
+                ),
+              ),
+              child: Icon(
+                Icons.favorite,
+                size: 11,
+                color: ToldyaColor.ceriseRed,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -278,55 +332,117 @@ class NotificationTile extends StatelessWidget {
     final list = rawList.where((x) => seen.add(x.userId)).toList();
     final length = list.length;
     final description = model.description ?? '';
+    final l10n = AppLocalizations.of(context)!;
+
+    final isMessage = notificationType == 'Message' ||
+        notificationType == 'NotificationType.Message';
+    final isReply = notificationType == 'Reply' || notificationType == 'NotificationType.Reply';
+
+    final titleText = isReply
+        ? '${model.user?.displayName ?? model.user?.userName ?? l10n.someone} ${l10n.notificationCommentedOnPost}'
+        : l10n.votedOnYourPost(length);
+
+    final avatarWidget = isReply && model.userId != null
+        ? _buildSingleAvatar(context, model.userId!)
+        : _buildOverlappingAvatars(context, list);
 
     return InkWell(
       onTap: () {
+        if (isMessage) {
+          Navigator.of(context).pushNamed('/ChatScreenPage');
+          return;
+        }
+        if (postId.isEmpty) return;
+        if (!kEnablePostDetail) {
+          return;
+        }
         final state = Provider.of<FeedState>(context, listen: false);
-        state.getpostDetailFromDatabase(model.key ?? '', model: model);
-        Navigator.of(context).pushNamed('/FeedPostDetail/${model.key ?? ''}');
+        state.getpostDetailFromDatabase(postId, model: model);
+        Navigator.of(context).pushNamed('/toldya/$postId');
       },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.06),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.35),
+              offset: const Offset(0, 10),
+              blurRadius: 24,
+              spreadRadius: -8,
+            ),
+          ],
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildOverlappingAvatars(context, list),
-            SizedBox(width: 12),
+            avatarWidget,
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '$length kişi paylaşımınıza oy verdi',
+                    titleText,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 12),
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSingleAvatar(BuildContext context, String userId) {
+    final state = Provider.of<NotificationState>(context);
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: FutureBuilder<UserModel?>(
+        future: state.getuserDetail(userId),
+        builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            final data = snapshot.data!;
+            return GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed('/ProfilePage/${data.userId ?? ""}'),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey.shade800, width: 1),
+                ),
+                child: customProfileImage(context, data.profilePic, userId: data.userId, height: 40),
+              ),
+            );
+          }
+          return SizedBox(width: 40, height: 40);
+        },
       ),
     );
   }

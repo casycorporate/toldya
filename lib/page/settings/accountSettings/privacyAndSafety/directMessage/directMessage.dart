@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsAppbar.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsAppbar.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 class DirectMessagesPage extends StatelessWidget {
@@ -12,36 +13,33 @@ class DirectMessagesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Direct Messages',
+        title: l10n.directMessagesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
           HeaderWidget(
-            'Direct Messages',
+            l10n.directMessagesTitle,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Receive message requests",
+            l10n.receiveMessageRequestsTitle,
             navigateTo: null,
             showDivider: false,
-            visibleSwitch: true,
             vPadding: 20,
-            subtitle:
-                'You will be able to receive Direct Message requests from anyone on Fwitter, even if you don\'t follow them.',
+            subtitle: l10n.featureComingSoon(l10n.receiveMessageRequestsTitle),
           ),
           SettingRowWidget(
-            "Show read receipts",
+            l10n.showReadReceiptsTitle,
             navigateTo: null,
             showDivider: false,
-            visibleSwitch: true,
-            subtitle:
-                'When someone sends you a message, people in the conversation will know you\'ve seen it. If you turn off this setting, you won\'t be able to see read receipt from others.',
+            subtitle: l10n.featureComingSoon(l10n.showReadReceiptsTitle),
           ),
         ],
       ),

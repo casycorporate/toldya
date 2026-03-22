@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/Auth/signin.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/emptyList.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/page/Auth/signin.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/emptyList.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:provider/provider.dart';
 
 class VerifyEmailPage extends StatefulWidget {
@@ -30,16 +30,17 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         children: (state.user?.emailVerified ?? false)
             ? <Widget>[
                 NotifyText(
-                  title: 'Your email address is verified',
-                  subTitle:
-                      'You have got your blue tick on your name. Cheers !!',
+                  title: AppLocalizations.of(context)!.emailVerifiedTitle,
+                  // Blue tick congratulations subtitle removed per UX request.
+                  subTitle: '',
                 ),
               ]
             : <Widget>[
                 NotifyText(
-                  title: 'Verify your email address',
-                  subTitle:
-                      'Send email verification email link to ${state.user?.email ?? ''} to verify address',
+                  title: AppLocalizations.of(context)!.verifyEmailTitle,
+                  subTitle: AppLocalizations.of(context)!.verifyEmailSubtitle(
+                    state.user?.email ?? '',
+                  ),
                 ),
                 SizedBox(
                   height: 30,
@@ -65,7 +66,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             onPressed: _submit,
             padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
             child: TitleText(
-              'Bağlantı Gönder',
+              AppLocalizations.of(context)!.sendLink,
               color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
@@ -90,18 +91,25 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () {
-            var state = Provider.of<AuthState>(context, listen: false);
+            final state = Provider.of<AuthState>(context, listen: false);
+            // If we can go back in the navigation stack, return to the previous screen.
+            // This prevents misrouting (e.g. Account -> Verify -> SignIn).
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+              return;
+            }
+
+            // Fallback: no back stack available, route to SignIn.
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    SignIn(loginCallback: state.getCurrentUser),
+                builder: (context) => SignIn(loginCallback: state.getCurrentUser),
               ),
             );
           },
         ),
         title: customText(
-          'Email Verification',
+          AppLocalizations.of(context)!.emailVerificationTitle,
           context: context,
           style: TextStyle(fontSize: 20),
         ),

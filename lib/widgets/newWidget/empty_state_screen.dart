@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
 
 /// Ortak boş durum içeriği: minimalist dark arka plan, ikon, başlık, alt yazı.
 class EmptyStateContent extends StatelessWidget {
   const EmptyStateContent({
     Key? key,
-    this.title = 'Henüz bir tahmin yok',
-    this.subtitle = 'Yeni tahminler burada görünecek.\nAltta bulunan butona dokunarak tahmin oluşturabilirsiniz.',
+    this.title,
+    this.subtitle,
+    this.icon,
+    this.ctaLabel,
+    this.onCtaPressed,
   }) : super(key: key);
 
-  final String title;
-  final String subtitle;
+  final String? title;
+  final String? subtitle;
+  final IconData? icon;
+  final String? ctaLabel;
+  final VoidCallback? onCtaPressed;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final displayTitle = title ?? l10n.emptyPredictionsDefaultTitle;
+    final displaySubtitle = subtitle ?? l10n.emptyPredictionsDefaultSubtitle;
+    final displayIcon = icon ?? Icons.inbox_outlined;
     return Container(
       color: MockupDesign.background,
-      height: double.infinity,
-      width: double.infinity,
       child: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding * 2),
@@ -25,13 +34,13 @@ class EmptyStateContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.inbox_outlined,
+                displayIcon,
                 size: 100,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.2),
               ),
               SizedBox(height: 32),
               Text(
-                title,
+                displayTitle,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -41,7 +50,7 @@ class EmptyStateContent extends StatelessWidget {
               ),
               SizedBox(height: 16),
               Text(
-                subtitle,
+                displaySubtitle,
                 style: TextStyle(
                   color: Colors.white54,
                   fontSize: 16,
@@ -50,6 +59,21 @@ class EmptyStateContent extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (ctaLabel != null && onCtaPressed != null) ...[
+                SizedBox(height: 22),
+                TextButton(
+                  onPressed: onCtaPressed,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFFF6B6B),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(
+                    ctaLabel!,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -58,7 +82,7 @@ class EmptyStateContent extends StatelessWidget {
   }
 }
 
-/// Modern, minimalist empty state for "Ben Demiştim" social betting app.
+/// Modern, minimalist empty state for the Toldya prediction app.
 /// Dark mode, readable, with FAB and BottomAppBar.
 class EmptyStateScreen extends StatelessWidget {
   const EmptyStateScreen({
@@ -95,7 +119,7 @@ class EmptyStateScreen extends StatelessWidget {
         ),
         centerTitle: true,
         title: Text(
-          'Ben demiştim',
+          AppLocalizations.of(context)!.appTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 20,

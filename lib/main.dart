@@ -1,11 +1,13 @@
-import 'package:bendemistim/page/feed/composeTweet/state/composeTweetState.dart';
-import 'package:bendemistim/services/notification_service.dart';
+import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
+import 'package:toldya/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/state/searchState.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/state/searchState.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_picker/PickerLocalizationsDelegate.dart';
 import 'helper/routes.dart';
@@ -20,38 +22,80 @@ import 'state/notificationState.dart';
 /// Navigator key for FCM deep linking (NotificationService uses this).
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+/// Debug observer to log route pops (e.g. back from Profile).
+class _NavObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    debugPrint('[Nav] didPop current=${route.settings.name} previous=${previousRoute?.settings.name}');
+    super.didPop(route, previousRoute);
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // App Check KAPALI: Bazı cihazlarda GMS "Unknown calling package name 'com.google.android.gms'"
-  // SecurityException veriyor. Sunucuda placeBet/claimDailyBonus için enforceAppCheck: false.
-  // Sorun giderildikten sonra aşağıdaki blok tekrar açılabilir.
-  // if (kDebugMode) {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.debug,
-  //     appleProvider: AppleProvider.debug,
-  //   );
-  // } else {
-  //   await FirebaseAppCheck.instance.activate(
-  //     androidProvider: AndroidProvider.playIntegrity,
-  //     appleProvider: AppleProvider.appAttest,
-  //   );
-  // }
+  // Realtime Database: enable disk persistence for offline/cached data (Android/iOS only; no-op on web).
+  try {
+    FirebaseDatabase.instance.setPersistenceEnabled(true);
+  } catch (_) {}
 
-  // FCM: Bildirim servisini başlat (izin, token, foreground/background/terminated yönetimi).
-  await NotificationService.init(navigatorKey);
-
-  runApp(MyApp());
+  // Startup optimization:
+  // - runApp ASAP (render first frame)
+  // - defer AppCheck/FCM/locale IO to after first frame inside MyApp.
+  runApp(const MyApp(initialLocale: Locale('tr')));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key, required this.initialLocale}) : super(key: key);
+  final Locale initialLocale;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deferredInit();
+    });
+  }
+
+  Future<void> _deferredInit() async {
+    // App Check: do not block first frame (enforcement disabled server-side).
+    try {
+      const bool kForceDebugAppCheck = false;
+      final bool useDebugProvider = kForceDebugAppCheck || kDebugMode || kProfileMode;
+      if (useDebugProvider) {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.debug,
+          appleProvider: AppleProvider.debug,
+        );
+      } else {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.playIntegrity,
+          appleProvider: AppleProvider.appAttest,
+        );
+      }
+    } catch (e) {
+      debugPrint('[AppCheck] activate failed: $e');
+    }
+
+    // FCM: init notification service after first frame.
+    try {
+      await NotificationService.init(navigatorKey);
+    } catch (e) {
+      debugPrint('[FCM] NotificationService init failed: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // initializeDateFormatting('tr');
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AppState>(create: (_) => AppState()),
+        ChangeNotifierProvider<AppState>(create: (_) => AppState(initialLocale: widget.initialLocale)),
         ChangeNotifierProvider<AuthState>(create: (_) => AuthState()),
         ChangeNotifierProvider<FeedState>(create: (_) => FeedState()),
         ChangeNotifierProvider<ChatState>(create: (_) => ChatState()),
@@ -60,29 +104,66 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<NotificationState>(
             create: (_) => NotificationState()),
       ],
-      child: MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'Ben demiştim',
-        theme: AppTheme.apptheme.copyWith(
-          textTheme: GoogleFonts.sawarabiMinchoTextTheme(
-            Theme.of(context).textTheme,
-          ),
+      child: _LocaleLoader(
+        child: Consumer<AppState>(
+        builder: (context, appState, _) {
+          return MaterialApp(
+            key: ValueKey<String>(appState.locale.languageCode),
+            navigatorKey: navigatorKey,
+            navigatorObservers: [_NavObserver()],
+            title: 'Toldya',
+            theme: AppTheme.apptheme.copyWith(
+              textTheme: GoogleFonts.sawarabiMinchoTextTheme(
+                Theme.of(context).textTheme,
+              ),
+            ),
+            debugShowCheckedModeBanner: false,
+            routes: Routes.route(),
+            onGenerateRoute: (settings) => Routes.onGenerateRoute(settings),
+            onUnknownRoute: (settings) => Routes.onUnknownRoute(settings),
+            initialRoute: "SplashPage",
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              PickerLocalizationsDelegate.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: appState.locale,
+            localeResolutionCallback: (_, __) {
+              return appState.locale;
+            },
+          );
+        },
         ),
-        debugShowCheckedModeBanner: false,
-        routes: Routes.route(),
-        onGenerateRoute: (settings) => Routes.onGenerateRoute(settings),
-        onUnknownRoute: (settings) => Routes.onUnknownRoute(settings),
-        initialRoute: "SplashPage",
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          PickerLocalizationsDelegate.delegate
-        ],
-        supportedLocales: [
-          const Locale('tr','TR')
-        ],
       ),
     );
   }
+}
+
+/// Loads saved locale once from SharedPreferences. Must be a descendant of MultiProvider.
+class _LocaleLoader extends StatefulWidget {
+  final Widget child;
+
+  const _LocaleLoader({required this.child});
+
+  @override
+  State<_LocaleLoader> createState() => _LocaleLoaderState();
+}
+
+class _LocaleLoaderState extends State<_LocaleLoader> {
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      Provider.of<AppState>(context, listen: false).loadLocale();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

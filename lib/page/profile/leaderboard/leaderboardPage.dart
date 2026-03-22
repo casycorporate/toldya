@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/searchState.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
-import 'package:bendemistim/widgets/newWidget/emptyList.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/league.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/searchState.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/widgets/newWidget/emptyList.dart';
+import 'package:toldya/widgets/newWidget/custom_shimmer.dart';
+import 'package:toldya/page/profile/leaderboard/league_pre_season_empty_state.dart';
+import 'package:toldya/page/profile/leaderboard/active_league_view.dart';
 import 'package:provider/provider.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -24,7 +29,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SearchState>(context, listen: false).getDataFromDatabase();
     });
@@ -39,17 +44,37 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        leading: BackButton(),
-        title: customTitleText('Liderlik Tablosu'),
-        backgroundColor: theme.scaffoldBackgroundColor,
-        iconTheme: IconThemeData(color: theme.colorScheme.primary),
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? MockupDesign.textPrimary : theme.colorScheme.onSurface;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        backgroundColor: MockupDesign.background,
+        appBar: AppBar(
+        leading: BackButton(color: titleColor),
+        title: Text(
+          AppLocalizations.of(context)!.leaderboardTitle,
+          style: TextStyle(
+            color: titleColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: MockupDesign.background,
+        elevation: 0,
+        iconTheme: IconThemeData(color: titleColor),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
+          labelColor: AppNeon.green,
+          unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.6),
+          indicatorColor: AppNeon.green,
+          indicatorWeight: 3,
+          labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           tabs: [
             Tab(
               child: Row(
@@ -57,7 +82,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 children: [
                   Icon(Icons.lightbulb_outline, size: 18),
                   SizedBox(width: 8),
-                  Text('Tahminciler'),
+                  Text(AppLocalizations.of(context)!.predictors),
                 ],
               ),
             ),
@@ -67,7 +92,17 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 children: [
                   Icon(Icons.emoji_events, size: 18),
                   SizedBox(width: 8),
-                  Text('Bahisçiler'),
+                  Text(AppLocalizations.of(context)!.toldyaParticipants),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.groups, size: 18),
+                  SizedBox(width: 8),
+                  Text(AppLocalizations.of(context)!.weeklyLeague),
                 ],
               ),
             ),
@@ -76,20 +111,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       ),
       body: Consumer<SearchState>(
         builder: (context, state, _) {
-          if (state.isBusy || state.userlist == null) {
-            return Center(
-              child: CustomScreenLoader(
-                height: 80,
-                width: 80,
-                backgroundColor: Colors.transparent,
-              ),
-            );
-          }
           final list = state.userlist ?? [];
+          final isLeagueLoading = state.isBusy || state.userlist == null;
           final topPredictors = List<UserModel>.from(list)
             ..sort((a, b) => (b.predictorScore ?? 0).compareTo(a.predictorScore ?? 0));
-          final topBettors = List<UserModel>.from(list)
+          final topByStakeRank = List<UserModel>.from(list)
             ..sort((a, b) => (b.rank ?? 0).compareTo(a.rank ?? 0));
+          final currentUserId = Provider.of<AuthState>(context, listen: false).userId ?? '';
 
           return TabBarView(
             controller: _tabController,
@@ -97,17 +125,70 @@ class _LeaderboardPageState extends State<LeaderboardPage>
               _LeaderList(
                 users: topPredictors.take(50).toList(),
                 scoreKey: 'predictor',
-                emptyText: 'Henüz tahminci skoru yok',
+                emptyText: AppLocalizations.of(context)!.noPredictorScoreYet,
               ),
               _LeaderList(
-                users: topBettors.take(50).toList(),
-                scoreKey: 'bettor',
-                emptyText: 'Henüz bahisçi skoru yok',
+                users: topByStakeRank.take(50).toList(),
+                scoreKey: 'rank',
+                emptyText: AppLocalizations.of(context)!.noParticipantScoreYet,
+              ),
+              _LeagueTab(
+                userlist: list,
+                currentUserId: currentUserId,
+                isGlobalLoading: isLeagueLoading,
               ),
             ],
           );
         },
       ),
+    ),
+    );
+  }
+}
+
+/// Haftalık Lig sekmesi: LeagueShimmer / PreSeason boş durum / ActiveLeagueView.
+class _LeagueTab extends StatelessWidget {
+  const _LeagueTab({
+    required this.userlist,
+    required this.currentUserId,
+    required this.isGlobalLoading,
+  });
+
+  final List<UserModel> userlist;
+  final String currentUserId;
+  final bool isGlobalLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isGlobalLoading) {
+      return const LeagueShimmer(itemCount: 8);
+    }
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        fetchLeagueGroupForUser(currentUserId),
+        fetchLeagueConfig(),
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const LeagueShimmer(itemCount: 8);
+        }
+        final results = snapshot.data as List<dynamic>?;
+        final entries = results != null && results.isNotEmpty
+            ? results[0] as List<LeagueEntry>
+            : <LeagueEntry>[];
+        final config = results != null && results.length > 1
+            ? results[1] as LeagueConfig
+            : LeagueConfig();
+        if (entries.isEmpty) {
+          return const LeaguePreSeasonEmptyState();
+        }
+        return ActiveLeagueView(
+          config: config,
+          entries: entries,
+          userlist: userlist,
+          currentUserId: currentUserId,
+        );
+      },
     );
   }
 }
@@ -165,71 +246,123 @@ class _LeaderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 32,
-            alignment: Alignment.center,
-            child: Text(
-              '$rank',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: rank <= 3 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-              ),
-            ),
+    final theme = Theme.of(context);
+    final scoreColor = isPredictor ? AppNeon.green : AppNeon.orange;
+    final displayName = user.displayName ?? user.userName ?? '';
+    final handle = user.userName ?? '';
+    final handleText = handle.startsWith('@') ? handle : '@$handle';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/ProfilePage/${user.userId ?? ''}',
+          );
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 12),
+          margin: EdgeInsets.symmetric(horizontal: MockupDesign.screenPadding, vertical: 4),
+          decoration: BoxDecoration(
+            color: MockupDesign.card.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(MockupDesign.cardRadius),
+            border: Border.all(color: MockupDesign.cardBorder.withOpacity(0.5), width: 1),
           ),
-          SizedBox(width: 8),
-          customProfileImage(context, user.profilePic, userId: user.userId, height: 48),
-        ],
-      ),
-      title: Row(
-        children: [
-          customText(
-            user.displayName ?? user.userName ?? '',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          if (user.isVerified ?? false) ...[
-            SizedBox(width: 4),
-            Icon(Icons.verified, size: 16, color: HexColor('#1DA1F2')),
-          ],
-        ],
-      ),
-      subtitle: customText('@${user.userName ?? ''}', style: userNameStyle),
-      trailing: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: (isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'))
-              .withOpacity(0.2),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isPredictor ? Icons.lightbulb_outline : Icons.emoji_events,
-              size: 18,
-              color: isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'),
-            ),
-            SizedBox(width: 6),
-            Text(
-              '$score',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isPredictor ? HexColor('#4CAF50') : HexColor('#FFA400'),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 28,
+                child: Text(
+                  '$rank',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: rank <= 3 ? scoreColor : theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: customProfileImage(context, user.profilePic, userId: user.userId, height: 44),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            displayName,
+                            style: TextStyle(
+                              color: MockupDesign.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if ((user.currentStreak ?? 0) >= 3) ...[
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.local_fire_department,
+                            size: 16,
+                            color: Colors.orange,
+                          ),
+                        ],
+                      ],
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      handleText,
+                      style: TextStyle(
+                        color: MockupDesign.textSecondary,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: scoreColor.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scoreColor.withOpacity(0.4), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isPredictor ? Icons.lightbulb_outline : Icons.emoji_events,
+                      size: 16,
+                      color: scoreColor,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '$score',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: scoreColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/ProfilePage/${user.userId ?? ''}',
-        );
-      },
     );
   }
 }

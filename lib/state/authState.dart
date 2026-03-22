@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -5,18 +6,21 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/network_utils.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/services/notification_service.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path/path.dart' as Path;
-// import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'appState.dart';
 import 'package:firebase_database/firebase_database.dart' as dabase;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -26,15 +30,52 @@ class AuthState extends AppState {
   bool isSignInWithGoogle = false;
   User? user;
   String userId = '';
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  Future<User?>? _getCurrentUserInFlight;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
   dabase.Query? _profileQuery;
+  dabase.DatabaseReference? _mutedPostIdsRef;
+  StreamSubscription<DatabaseEvent>? _profileOnValueSub;
+  StreamSubscription<DatabaseEvent>? _mutedPostIdsOnValueSub;
   List<UserModel>? _profileUserModelList;
   UserModel? _userModel;
+  bool? _isAdminCached;
+  List<String> _mutedPostIds = [];
+  /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
+  String? _pendingProfileRequestId;
+  String? _profileError;
+
+  String? get profileError => _profileError;
+
+  void clearProfileError() {
+    _profileError = null;
+    notifyListeners();
+  }
 
   UserModel? get userModel => _userModel;
+
+  /// Yönetici mi? Tek kaynak: RTDB `profile/{uid}/isAdmin` (true | 1 | "true").
+  /// Normal kullanıcı / admin ayrımı rütbe (XP) ile karıştırılmaz; rütbe ayrı alan.
+  Future<bool> isAdminUser({bool forceRefresh = false}) async {
+    if (!forceRefresh && _isAdminCached != null) return _isAdminCached!;
+    final current = FirebaseAuth.instance.currentUser;
+    final uid = current?.uid;
+    if (uid == null || uid.isEmpty) {
+      _isAdminCached = false;
+      return false;
+    }
+    try {
+      final snap = await FirebaseDatabase.instance.ref('profile/$uid/isAdmin').get();
+      final val = snap.value;
+      final isAdmin = val == true || val == 1 || val == 'true';
+      _isAdminCached = isAdmin;
+      return isAdmin;
+    } catch (_) {
+      _isAdminCached = false;
+      return false;
+    }
+  }
 
   UserModel? get profileUserModel {
     if (_profileUserModelList != null && _profileUserModelList!.length > 0) {
@@ -48,8 +89,55 @@ class AuthState extends AppState {
     _profileUserModelList?.removeLast();
   }
 
+  /// Profil sayfası kapanırken çağrılır (AppBar geri veya sistem geri). Listede son kullanıcı bu sayfaya aitse kaldırılır (async race önlenir).
+  /// profileId null/boş = "kendi profilim" sayfası kapanıyor; dolu = başka kullanıcı profil sayfası. Liste boş kalırsa ensureProfileIsCurrentUser() ile ana ekran siyah kalmaz.
+  /// State-holding screens: back (AppBar or system) should run this cleanup once, then Navigator.pop.
+  void profilePageClosing(String? profileId) {
+    _pendingProfileRequestId = null;
+    final bool isMyProfile = profileId == null || profileId.isEmpty;
+    if (_profileUserModelList != null && _profileUserModelList!.isNotEmpty) {
+      final String? lastUserId = _profileUserModelList!.last.userId;
+      final bool removeLast = isMyProfile
+          ? (lastUserId == _userModel?.userId)
+          : (lastUserId == profileId);
+      if (removeLast) {
+        _profileUserModelList!.removeLast();
+      }
+    }
+    if (_profileUserModelList == null || _profileUserModelList!.isEmpty) {
+      debugPrint('[Profile] list empty after close, calling ensureProfileIsCurrentUser _userModel=${_userModel != null}');
+      if (_userModel != null && userId.isNotEmpty) {
+        ensureProfileIsCurrentUser();
+      } else {
+        notifyListeners();
+      }
+    } else if (isMyProfile &&
+        _userModel != null &&
+        _profileUserModelList!.last.userId != _userModel!.userId) {
+      // "Kendi profilim" kapatıldı; geri dönünce Profil sekmesi kendi kullanıcıyı göstermeli.
+      ensureProfileIsCurrentUser();
+    } else {
+      notifyListeners();
+    }
+  }
+
+  /// "Kendi profilim" sekmesi görünürken profileUserModel başkasıysa (örn. alt bardan dönüldü), listeyi giriş yapan kullanıcıya çevirir.
+  void ensureProfileIsCurrentUser() {
+    // Startup guard: don't mutate profile stack until we actually have a signed-in user.
+    if (_userModel == null || userId.isEmpty) {
+      return;
+    }
+    if (_profileUserModelList == null ||
+        _profileUserModelList!.isEmpty ||
+        _profileUserModelList!.last.userId != userId) {
+      _profileUserModelList = [_userModel!];
+      notifyListeners();
+    }
+  }
+
   /// Logout from device
   void logoutCallback() {
+    unawaited(_cancelProfileDatabaseListeners());
     authStatus = AuthStatus.NOT_LOGGED_IN;
     userId = '';
     _userModel = null;
@@ -70,15 +158,81 @@ class AuthState extends AppState {
     notifyListeners();
   }
 
-  databaseInit() {
+  /// RTDB profil + mutedPostIds dinleyicileri. Abonelikler saklanır; hot restart / çıkışta iptal edilir.
+  void databaseInit() {
+    unawaited(_databaseInitAsync());
+  }
+
+  Future<void> _cancelProfileDatabaseListeners() async {
+    Future<void> safeCancel(StreamSubscription<DatabaseEvent>? sub) async {
+      if (sub == null) return;
+      try {
+        await sub.cancel();
+      } on MissingPluginException catch (_) {
+        // Hot restart veya plugin yeniden bağlanırken platform kanalı yok olabilir.
+      } catch (_) {}
+    }
+
+    await safeCancel(_profileOnValueSub);
+    await safeCancel(_mutedPostIdsOnValueSub);
+    _profileOnValueSub = null;
+    _mutedPostIdsOnValueSub = null;
+    _profileQuery = null;
+    _mutedPostIdsRef = null;
+  }
+
+  Future<void> _databaseInitAsync() async {
     try {
-      if (_profileQuery == null && user != null) {
-        _profileQuery = kDatabase.child("profile").child(user!.uid);
-        _profileQuery!.onValue.listen(_onProfileChanged);
-      }
+      final uid = user?.uid;
+      if (uid == null || uid.isEmpty) return;
+
+      await _cancelProfileDatabaseListeners();
+      if (user == null || user!.uid != uid) return;
+
+      _profileQuery = kDatabase.child("profile").child(uid);
+      _profileOnValueSub = _profileQuery!.onValue.listen(_onProfileChanged);
+      _mutedPostIdsRef = kDatabase.child("profile").child(uid).child("mutedPostIds");
+      _mutedPostIdsOnValueSub = _mutedPostIdsRef!.onValue.listen((event) {
+        if (event.snapshot.value != null) {
+          final list = event.snapshot.value;
+          if (list is List) {
+            _mutedPostIds = list.map((e) => e.toString()).toList();
+          } else {
+            _mutedPostIds = [];
+          }
+        } else {
+          _mutedPostIds = [];
+        }
+        notifyListeners();
+      });
     } catch (error) {
       cprint(error, errorIn: 'databaseInit');
     }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_cancelProfileDatabaseListeners());
+    super.dispose();
+  }
+
+  bool isPostMuted(String postId) {
+    if (postId.isEmpty) return false;
+    return _mutedPostIds.contains(postId);
+  }
+
+  Future<void> addMutedPostId(String postId) async {
+    if (postId.isEmpty || _mutedPostIds.contains(postId)) return;
+    _mutedPostIds = List.from(_mutedPostIds)..add(postId);
+    await _mutedPostIdsRef?.set(_mutedPostIds);
+    notifyListeners();
+  }
+
+  Future<void> removeMutedPostId(String postId) async {
+    if (postId.isEmpty) return;
+    _mutedPostIds = List.from(_mutedPostIds)..remove(postId);
+    await _mutedPostIdsRef?.set(_mutedPostIds);
+    notifyListeners();
   }
 
   /// Verify user's credentials for login
@@ -89,11 +243,13 @@ class AuthState extends AppState {
       var result = await _firebaseAuth.signInWithEmailAndPassword(
           email: email, password: password);
       user = result.user;
+      authStatus = AuthStatus.LOGGED_IN;
       // if(userModel.role==null){
       //   userModel.role=AppIcon.defaultRole;
       //   createUser(userModel);
       // }
       userId = user?.uid ?? '';
+      loading = false;
       return user?.uid;
     } catch (error) {
       loading = false;
@@ -178,6 +334,98 @@ class AuthState extends AppState {
     }
   }
 
+  /// Create user profile from Apple sign-in.
+  Future<void> createUserFromAppleSignIn(
+    User user,
+    AuthorizationCredentialAppleID appleCredential,
+  ) async {
+    final displayName = <String?>[
+      appleCredential.givenName,
+      appleCredential.familyName,
+    ].whereType<String>().where((e) => e.trim().isNotEmpty).join(' ').trim();
+
+    final userEmail = appleCredential.email ?? user.email ?? '';
+
+    var diff = DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
+    if (diff < const Duration(seconds: 15)) {
+      // Ensure firebase profile fields are populated for later use.
+      if (displayName.isNotEmpty) {
+        await user.updateProfile(displayName: displayName);
+      }
+
+      final model = UserModel(
+        bio: 'Edit profile to update bio',
+        dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3).toString(),
+        location: 'Somewhere in universe',
+        profilePic: null,
+        displayName: displayName.isNotEmpty ? displayName : (user.displayName ?? ''),
+        email: userEmail,
+        key: user.uid,
+        userId: user.uid,
+        contact: null,
+        isVerified: false,
+        pegCount: AppIcon.pegCount,
+        stashCount: 0,
+        xp: 0,
+        rank: AppIcon.defaultRank,
+        predictorScore: 0,
+        role: Role.defaultRole,
+      );
+      createUser(model, newUser: true);
+      kAnalytics.logSignUp(signUpMethod: 'apple_sign_up');
+    } else {
+      cprint('Last login at: ${user.metadata.lastSignInTime}', event: 'apple_login');
+    }
+  }
+
+  /// Create user from `Apple sign-in`.
+  Future<User> handleAppleSignIn() async {
+    try {
+      kAnalytics.logLogin(loginMethod: 'apple_login');
+
+      final rawNonce = generateNonce();
+      final nonce = sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      if (appleCredential.identityToken == null) {
+        throw Exception('Apple identityToken is null');
+      }
+
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+
+      user = (await _firebaseAuth.signInWithCredential(oauthCredential)).user;
+      authStatus = AuthStatus.LOGGED_IN;
+      userId = user?.uid ?? '';
+
+      if (user != null) {
+        await createUserFromAppleSignIn(user!, appleCredential);
+      }
+
+      notifyListeners();
+      return user!;
+    } on PlatformException catch (error) {
+      user = null;
+      authStatus = AuthStatus.NOT_LOGGED_IN;
+      cprint(error, errorIn: 'handleAppleSignIn');
+      rethrow;
+    } catch (error) {
+      user = null;
+      authStatus = AuthStatus.NOT_LOGGED_IN;
+      cprint(error, errorIn: 'handleAppleSignIn');
+      rethrow;
+    }
+  }
+
   /// Create new user's profile in db
   Future<String?> signUp(UserModel userModel,
       {GlobalKey<ScaffoldState>? scaffoldKey, String? password}) async {
@@ -206,11 +454,20 @@ class AuthState extends AppState {
     }
   }
 
-  /// Bahis sonrası sadece bakiye alanlarını günceller (backend zaten DB'yi güncelledi).
-  void updateBalanceFromBet(int newPegCount, int newStashBalance) {
+  /// Tahmin katılımı sonrası sadece bakiye alanlarını günceller (backend zaten DB'yi güncelledi).
+  void updateBalanceFromStake(int newPegCount, int newStashBalance) {
     if (_userModel != null) {
       _userModel!.pegCount = newPegCount;
       _userModel!.stashCount = newStashBalance;
+      notifyListeners();
+    }
+  }
+
+  /// Optimistic UI & rollback: bakiye alanlarını doğrudan günceller (submitStake anında veya geri alımda kullanılır).
+  void setBalanceOptimistic(int pegCount, int stashCount) {
+    if (_userModel != null) {
+      _userModel!.pegCount = pegCount;
+      _userModel!.stashCount = stashCount;
       notifyListeners();
     }
   }
@@ -226,7 +483,8 @@ class AuthState extends AppState {
   }
 
   /// Günlük bonusu alır (Callable). Başarıda bakiye ve lastDailyClaimAt güncellenir.
-  Future<String?> claimDailyBonus() async {
+  /// [context] is used for localized fallback message when server does not return one.
+  Future<String?> claimDailyBonus(BuildContext context) async {
     try {
       final result = await FirebaseFunctions.instance
           .httpsCallable("claimDailyBonus")
@@ -238,7 +496,7 @@ class AuthState extends AppState {
         _userModel!.lastDailyClaimAt = DateTime.now().toUtc().toIso8601String();
         notifyListeners();
       }
-      return data["message"] as String? ?? "Günlük bonus alındı.";
+      return data["message"] as String? ?? AppLocalizations.of(context)!.dailyBonusClaimed;
     } on FirebaseFunctionsException catch (e) {
       return e.message;
     } catch (_) {
@@ -255,7 +513,11 @@ class AuthState extends AppState {
       kAnalytics.logEvent(name: 'create_newUser');
       user.createdAt = DateTime.now().toUtc().toString();
     }
-    kDatabase.child('profile').child(user.userId ?? '').set(user.toJson());
+    // Important:
+    // `profile/{uid}` altında `isAdmin` gibi alanlar `UserModel` içinde olmayabilir.
+    // RTDB'de `set(...)` tüm child'ları overwrite ettiği için bu alanlar silinip
+    // admin flag yanlışlıkla `false`'a düşebiliyor. Bu yüzden merge/update yapıyoruz.
+    kDatabase.child('profile').child(user.userId ?? '').update(user.toJson());
     _userModel = user;
     if (_profileUserModelList != null) {
       _profileUserModelList!.last = _userModel!;
@@ -265,25 +527,36 @@ class AuthState extends AppState {
 
   /// Fetch current user profile
   Future<User?> getCurrentUser() async {
-    try {
-      loading = true;
-      logEvent('get_currentUSer');
-      user = _firebaseAuth.currentUser;
-      if (user != null) {
-        authStatus = AuthStatus.LOGGED_IN;
-        userId = user!.uid;
-        getProfileUser();
-      } else {
+    // Avoid duplicate calls during startup/rebuilds.
+    final existing = _getCurrentUserInFlight;
+    if (existing != null) return existing;
+
+    final fut = () async {
+      try {
+        loading = true;
+        logEvent('get_currentUSer');
+        user = _firebaseAuth.currentUser;
+        if (user != null) {
+          authStatus = AuthStatus.LOGGED_IN;
+          userId = user!.uid;
+          getProfileUser();
+        } else {
+          authStatus = AuthStatus.NOT_LOGGED_IN;
+        }
+        loading = false;
+        return user;
+      } catch (error) {
+        loading = false;
+        cprint(error, errorIn: 'getCurrentUser');
         authStatus = AuthStatus.NOT_LOGGED_IN;
+        return null;
+      } finally {
+        _getCurrentUserInFlight = null;
       }
-      loading = false;
-      return user;
-    } catch (error) {
-      loading = false;
-      cprint(error, errorIn: 'getCurrentUser');
-      authStatus = AuthStatus.NOT_LOGGED_IN;
-      return null;
-    }
+    }();
+
+    _getCurrentUserInFlight = fut;
+    return fut;
   }
 
   /// Reload user to get refresh user data
@@ -310,10 +583,10 @@ class AuthState extends AppState {
     currentUser.sendEmailVerification().then((_) {
       logEvent('email_verifcation_sent',
           parameter: {_userModel?.displayName ?? '': currentUser!.email ?? ''});
-      customSnackBar(
-        scaffoldKey,
-        'An email verification link is send to your email.',
-      );
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.emailVerificationSent);
+      }
     }).catchError((error) {
       cprint((error as dynamic).message, errorIn: 'sendEmailVerification');
       logEvent('email_verifcation_block',
@@ -336,8 +609,10 @@ class AuthState extends AppState {
       {GlobalKey<ScaffoldState>? scaffoldKey}) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email).then((value) {
-        if (scaffoldKey != null) customSnackBar(scaffoldKey,
-            'A reset password link is sent yo your mail.You can reset your password from there');
+        final ctx = scaffoldKey?.currentContext;
+        if (scaffoldKey != null && ctx != null) {
+          customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
+        }
         logEvent('forgot+password');
       }).catchError((error) {
         cprint((error as dynamic).message);
@@ -382,7 +657,10 @@ class AuthState extends AppState {
       }
 
       logEvent('update_user');
-      customSnackBar(scaffoldKey, 'Değişiklikler Kaydedildi');
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.changesSaved);
+      }
     } catch (error) {
       cprint(error, errorIn: 'updateUserProfile');
     }
@@ -390,7 +668,7 @@ class AuthState extends AppState {
 
   /// `Update user` profile
   Future<void> updateUserProfile(UserModel userModel,GlobalKey<ScaffoldState> scaffoldKey,
-      {String? image, String? bannerImage}) async {
+      {String? image, String? bannerImage, String? successMessage}) async {
     try {
       if (image == null && bannerImage == null) {
         createUser(userModel);
@@ -419,7 +697,10 @@ class AuthState extends AppState {
       }
 
       logEvent('update_user');
-      customSnackBar(scaffoldKey, 'Değişiklikler Kaydedildi');
+      final ctx = scaffoldKey.currentContext;
+      if (ctx != null) {
+        customSnackBar(scaffoldKey, successMessage ?? AppLocalizations.of(ctx)!.changesSaved);
+      }
     } catch (error) {
       cprint(error, errorIn: 'updateUserProfile');
     }
@@ -448,119 +729,61 @@ class AuthState extends AppState {
   }
 
   /// Fetch user profile
-  /// If `userProfileId` is null then logged in user's profile will fetched
+  /// If `userProfileId` is null then logged in user's profile will fetched.
+  /// Does not clear _profileUserModelList; keeps previous data until new data or error.
   getProfileUser({String? userProfileId}) {
-    try {
-      loading = true;
-      if (_profileUserModelList == null) {
-        _profileUserModelList = [];
-      }
-
-      userProfileId = userProfileId ?? user?.uid ?? '';
-      kDatabase
-          .child("profile")
-          .child(userProfileId!)
-          .once()
-          .then((snapshot) {
-        if (snapshot.snapshot.value != null) {
-          var map = snapshot.snapshot.value;
-          if (map != null) {
-            _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
-            if (user?.uid != null && userProfileId == user!.uid) {
-              _userModel = _profileUserModelList!.last;
-              _userModel!.isVerified = user!.emailVerified;
-              if (!user!.emailVerified) {
-                // Check if logged in user verified his email address or not
-                reloadUser();
-              }
-              updateFCMToken();
-              // if (_userModel.fcmToken != null) {
-              //   updateFCMToken();
-              // }
-            }
-
-            logEvent('get_profile');
-          }
-        }
-        loading = false;
-      });
-    } catch (error) {
-      loading = false;
-      cprint(error, errorIn: 'getProfileUser');
+    _profileError = null;
+    loading = true;
+    if (_profileUserModelList == null) {
+      _profileUserModelList = [];
     }
+
+    userProfileId = userProfileId ?? user?.uid ?? '';
+    _pendingProfileRequestId = userProfileId;
+    final requestedId = userProfileId;
+
+    runWithTimeoutAndRetry(() => kDatabase.child("profile").child(userProfileId!).once())
+        .then((snapshot) {
+      if (requestedId != _pendingProfileRequestId) return;
+      if (snapshot.snapshot.value != null) {
+        var map = snapshot.snapshot.value;
+        if (map != null) {
+          _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
+          if (user?.uid != null && userProfileId == user!.uid) {
+            _userModel = _profileUserModelList!.last;
+            _userModel!.isVerified = user!.emailVerified;
+            if (!user!.emailVerified) {
+              reloadUser();
+            }
+            updateFCMToken();
+          }
+          logEvent('get_profile');
+        }
+      }
+      loading = false;
+      notifyListeners();
+    }).catchError((error) {
+      loading = false;
+      _profileError = error?.toString() ?? 'Failed to load profile';
+      cprint(error, errorIn: 'getProfileUser');
+      notifyListeners();
+    });
   }
 
   /// if firebase token not available in profile
   /// Then get token from firebase and save it to profile
   /// When someone sends you a message FCM token is used
   void updateFCMToken() {
-    if (_userModel == null) {
-      return;
-    }
-    final model = _userModel!;
-    _firebaseMessaging.getToken().then((String? token) {
-      if (token != null) {
-        model.fcmToken = token;
-        createUser(model);
-      }
-    });
+    // Token persistence is owned by NotificationService (single responsibility).
+    // Keep this method for backward compatibility with existing call sites.
+    if (user?.uid == null || user!.uid!.isEmpty) return;
+    // If profile already has a token, don't spam getToken() / logs at startup.
+    if ((_userModel?.fcmToken ?? '').isNotEmpty) return;
+    // Fire-and-forget: NotificationService will skip redundant writes.
+    // ignore: unawaited_futures
+    NotificationService.instance.getTokenAndPersist();
   }
 
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
-  followUser({bool removeFollower = false}) {
-    /// `userModel` is user who is looged-in app.
-    /// `profileUserModel` is user whoose profile is open in app.
-    final profileUser = profileUserModel;
-    final currentUser = userModel;
-    if (profileUser == null || currentUser == null) return;
-    try {
-      if (removeFollower) {
-        /// If logged-in user `alredy follow `profile user then
-        /// 1.Remove logged-in user from profile user's `follower` list
-        /// 2.Remove profile user from logged-in user's `following` list
-        profileUser.followersList?.remove(currentUser.userId);
-
-        /// Remove profile user from logged-in user's following list
-        currentUser.followingList?.remove(profileUser.userId);
-        cprint('user removed from following list', event: 'remove_follow');
-      } else {
-        /// if logged in user is `not following` profile user then
-        /// 1.Add logged in user to profile user's `follower` list
-        /// 2. Add profile user to logged in user's `following` list
-        profileUser.followersList ??= [];
-        profileUser.followersList!.add(currentUser.userId ?? '');
-        currentUser.followingList ??= [];
-        currentUser.followingList!.add(profileUser.userId ?? '');
-      }
-      profileUser.followers = profileUser.followersList?.length ?? 0;
-      currentUser.following = currentUser.followingList?.length ?? 0;
-      kDatabase
-          .child('profile')
-          .child(profileUser.userId ?? '')
-          .child('followerList')
-          .set(profileUser.followersList);
-      kDatabase
-          .child('profile')
-          .child(currentUser.userId ?? '')
-          .child('followingList')
-          .set(currentUser.followingList);
-      cprint('user added to following list', event: 'add_follow');
-      notifyListeners();
-    } catch (error) {
-      cprint(error, errorIn: 'followUser');
-    }
-  }
-
-
-  /// Follow / Unfollow user
-  ///
-  /// If `removeFollower` is true then remove user from follower list
-  ///
-  /// If `removeFollower` is false then add user to follower list
   addBlackList(String userId) {
     final currentUser = userModel;
     if (currentUser == null) return;
@@ -598,6 +821,8 @@ class AuthState extends AppState {
       final updatedUser = UserModel.fromJson(Map<String, dynamic>.from(event.snapshot.value as Map));
       if (updatedUser.userId == user!.uid) {
         _userModel = updatedUser;
+        // Clear cached admin flag so future checks re-read profile/isAdmin.
+        _isAdminCached = null;
       }
       cprint('UserModel Updated');
       notifyListeners();
@@ -620,50 +845,4 @@ class AuthState extends AppState {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
-
-  // Future<User> signInWithApple() async {
-  //   // To prevent replay attacks with the credential returned from Apple, we
-  //   // include a nonce in the credential request. When signing in in with
-  //   // Firebase, the nonce in the id token returned by Apple, is expected to
-  //   // match the sha256 hash of `rawNonce`.
-  //   final rawNonce = generateNonce();
-  //   final nonce = sha256ofString(rawNonce);
-  //
-  //   try {
-  //     // Request credential for the currently signed in Apple account.
-  //     final appleCredential = await SignInWithApple.getAppleIDCredential(
-  //       scopes: [
-  //         AppleIDAuthorizationScopes.email,
-  //         AppleIDAuthorizationScopes.fullName,
-  //       ],
-  //       nonce: nonce,
-  //     );
-  //
-  //     print(appleCredential.authorizationCode);
-  //
-  //     // Create an `OAuthCredential` from the credential returned by Apple.
-  //     final oauthCredential = OAuthProvider("apple.com").credential(
-  //       idToken: appleCredential.identityToken,
-  //       rawNonce: rawNonce,
-  //     );
-  //
-  //     // Sign in the user with Firebase. If the nonce we generated earlier does
-  //     // not match the nonce in `appleCredential.identityToken`, sign in will fail.
-  //     final authResult =
-  //     await _firebaseAuth.signInWithCredential(oauthCredential);
-  //
-  //     final displayName =
-  //         '${appleCredential.givenName} ${appleCredential.familyName}';
-  //     final userEmail = '${appleCredential.email}';
-  //
-  //     final firebaseUser = authResult.user;
-  //     print(displayName);
-  //     await firebaseUser.updateProfile(displayName: displayName);
-  //     await firebaseUser.updateEmail(userEmail);
-  //
-  //     return firebaseUser;
-  //   } catch (exception) {
-  //     print(exception);
-  //   }
-  // }
 }

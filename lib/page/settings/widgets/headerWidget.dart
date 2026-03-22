@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
 
 class HeaderWidget extends StatelessWidget {
   final String title;

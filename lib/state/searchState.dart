@@ -1,14 +1,23 @@
 import 'package:firebase_database/firebase_database.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/network_utils.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
 import 'appState.dart';
 
 class SearchState extends AppState {
   bool isBusy = false;
-  SortUser sortBy = SortUser.ByMaxFollower;
+  SortUser sortBy = SortUser.ByXp;
   List<UserModel>? _userFilterlist;
   List<UserModel>? _userlist;
+  String? _searchError;
+
+  String? get searchError => _searchError;
+
+  void clearSearchError() {
+    _searchError = null;
+    notifyListeners();
+  }
 
   List<UserModel>? get userlist {
     final list = _userFilterlist;
@@ -18,32 +27,36 @@ class SearchState extends AppState {
   }
 
   /// get [UserModel list] from firebase realtime Database
+  /// Does not clear _userlist/_userFilterlist at start; keeps previous data until new data or error.
   void getDataFromDatabase() {
-    try {
-      isBusy = true;
-      kDatabase.child('profile').once().then(
-        (snapshot) {
-          _userlist = <UserModel>[];
-          _userFilterlist = <UserModel>[];
-          if (snapshot.snapshot.value != null) {
-            final map = Map<dynamic, dynamic>.from(snapshot.snapshot.value as Map);
-            map.forEach((key, value) {
-              var model = UserModel.fromJson(Map<String, dynamic>.from(value as Map));
-              model.key = key.toString();
-              _userlist!.add(model);
-              _userFilterlist!.add(model);
-            });
-            _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
-          } else {
-            _userlist = null;
-          }
-          isBusy = false;
-        },
-      );
-    } catch (error) {
+    _searchError = null;
+    isBusy = true;
+    notifyListeners();
+    runWithTimeoutAndRetry(() => kDatabase.child('profile').once()).then((snapshot) {
+      final newList = <UserModel>[];
+      if (snapshot.snapshot.value != null) {
+        final map = Map<dynamic, dynamic>.from(snapshot.snapshot.value as Map);
+        map.forEach((key, value) {
+          var model = UserModel.fromJson(Map<String, dynamic>.from(value as Map));
+          model.key = key.toString();
+          newList.add(model);
+        });
+      }
+      _userlist = newList.isEmpty ? null : newList;
+      if (newList.isEmpty) {
+        _userFilterlist = null;
+      } else {
+        _userFilterlist = List.from(newList);
+        _userFilterlist!.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
+      }
       isBusy = false;
+      notifyListeners();
+    }).catchError((error) {
+      isBusy = false;
+      _searchError = error?.toString() ?? 'Failed to load search data';
       cprint(error, errorIn: 'getDataFromDatabase');
-    }
+      notifyListeners();
+    });
   }
 
   /// It will reset filter list
@@ -52,7 +65,7 @@ class SearchState extends AppState {
   void resetFilterList() {
     if (_userlist != null && _userFilterlist != null && _userlist!.length != _userFilterlist!.length) {
       _userFilterlist = List.from(_userlist!);
-      _userFilterlist!.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+      _userFilterlist!.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
       notifyListeners();
     }
   }
@@ -66,10 +79,7 @@ class SearchState extends AppState {
         _userlist!.length != _userFilterlist!.length) {
       _userFilterlist = List.from(_userlist!);
     }
-    if (_userlist == null || _userlist!.isEmpty) {
-      print("Empty userList");
-      return;
-    }
+    if (_userlist == null || _userlist!.isEmpty) return;
     if (name.isNotEmpty) {
       _userFilterlist = _userlist!
           .where((x) =>
@@ -93,33 +103,33 @@ class SearchState extends AppState {
       case SortUser.ByAlphabetically:
         list.sort((x, y) => (x.displayName ?? '').compareTo(y.displayName ?? ''));
         notifyListeners();
-        return "alphabetically";
+        return "alphabeticallySort";
 
-      case SortUser.ByMaxFollower:
-        list.sort((x, y) => (y.followers ?? 0).compareTo(x.followers ?? 0));
+      case SortUser.ByXp:
+        list.sort((x, y) => (y.xp ?? 0).compareTo(x.xp ?? 0));
         notifyListeners();
-        return "UserModel with max follower";
+        return "sortByXpFirst";
 
       case SortUser.ByNewest:
         list.sort((x, y) =>
             DateTime.parse(y.createdAt ?? '').compareTo(DateTime.parse(x.createdAt ?? '')));
         notifyListeners();
-        return "Newest user first";
+        return "newestUserFirst";
 
       case SortUser.ByOldest:
         list.sort((x, y) =>
             DateTime.parse(x.createdAt ?? '').compareTo(DateTime.parse(y.createdAt ?? '')));
         notifyListeners();
-        return "Oldest user first";
+        return "oldestUserFirst";
 
       case SortUser.ByVerified:
         list.sort((x, y) =>
             (y.isVerified ?? false).toString().compareTo((x.isVerified ?? false).toString()));
         notifyListeners();
-        return "Verified user first";
+        return "verifiedUserFirst";
 
       default:
-        return "Unknown";
+        return "unknown";
     }
   }
 
@@ -141,10 +151,7 @@ class SearchState extends AppState {
 
   List<String> getUserInBlackList(UserModel? userIds) {
     List<String> rt=[];
-    if (_userlist == null || userIds == null) {
-      if (_userlist == null) print("Empty userList");
-      return rt;
-    }
+    if (_userlist == null || userIds == null) return rt;
     final list = _userlist!.where((x) {
       if(x.blackList?.isNotEmpty ?? false){
         if ( userIds.userId != null && x.blackList!.contains(userIds.userId)) {

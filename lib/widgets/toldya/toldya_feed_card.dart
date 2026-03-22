@@ -1,0 +1,727 @@
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/topicMap.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
+import 'package:toldya/widgets/toldya/widgets/parent_toldya.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_icons_row.dart';
+import 'package:toldya/widgets/toldya/widgets/toldya_bottom_sheet.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../customWidgets.dart';
+import 'widgets/retoldya_widget.dart';
+import 'widgets/toldya_image.dart';
+
+/// Statü etiketinin (Beklemede/incelemede/yönetici reddi) kartta gösterilmesi gerekiyor mu?
+bool _showStatuBadge(int? statu) {
+  if (statu == null) return false;
+  // NOTE: case labels must be compile-time constants; use literal statu values.
+  // 1=pending, 6=admin review, 7=admin rejected
+  return statu == 1 || statu == 6 || statu == 7;
+}
+
+String _statuBadgeLabel(BuildContext context, int? statu) {
+  final l10n = AppLocalizations.of(context)!;
+  if (statu == null) return '';
+  switch (statu) {
+    case 1:
+      return l10n.statuPending;
+    case 6:
+      return l10n.statuUnderReview;
+    case 7:
+      return l10n.statuRejectedByAdmin;
+    default:
+      return '';
+  }
+}
+
+Color _statuAccent(int? statu) {
+  if (statu == 7) return const Color(0xFFFF6B6B);
+  // Pending + admin review: warm tone; main accent is used for rejected.
+  return const Color(0xFFFFB74D);
+}
+
+class Toldya extends StatelessWidget {
+  final FeedModel model;
+  final Widget? trailing;
+  final ToldyaType type;
+  final bool isDisplayOnProfile;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
+  const Toldya({
+    Key? key,
+    required this.model,
+    this.trailing,
+    this.type = ToldyaType.Toldya,
+    this.isDisplayOnProfile = false,
+    this.scaffoldKey,
+  }) : super(key: key);
+
+  void onLongPressedToldya(BuildContext context) {
+    if (type == ToldyaType.Detail || type == ToldyaType.ParentToldya) {
+      copyToClipBoard(
+          scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
+          text: model.description ?? "",
+          message: "Panoya kopyala");
+    }
+  }
+
+  void onTapToldya(BuildContext context) {
+    var feedstate = Provider.of<FeedState>(context, listen: false);
+    if (type == ToldyaType.Detail || type == ToldyaType.ParentToldya) {
+      return;
+    }
+    if (!kEnablePostDetail) {
+      return;
+    }
+    if (type == ToldyaType.Toldya && !isDisplayOnProfile) {
+      feedstate.clearAllDetailToldyaStack();
+    }
+    feedstate.getpostDetailFromDatabase(model.key ?? '', model: model);
+    Navigator.of(context).pushNamed('/FeedPostDetail/' + (model.key ?? ''));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topLeft,
+      children: <Widget>[
+        /// Left vertical bar of a toldya
+        type != ToldyaType.ParentToldya
+            ? SizedBox.shrink()
+            : Positioned.fill(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    left: 38,
+                    top: 75,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(width: 3.0, color: Colors.grey.shade400),
+                    ),
+                  ),
+                ),
+              ),
+        InkWell(
+          onLongPress: () {
+            onLongPressedToldya(context);
+          },
+          onTap: () {
+            onTapToldya(context);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                padding: EdgeInsets.only(
+                  top: type == ToldyaType.Toldya || type == ToldyaType.Reply
+                      ? 12
+                      : 0,
+                ),
+                child: type == ToldyaType.Toldya || type == ToldyaType.Reply
+                    ? _ToldyaBody(
+                        isDisplayOnProfile: isDisplayOnProfile,
+                        model: model,
+                        trailing: trailing ?? SizedBox.shrink(),
+                        type: type,
+                        scaffoldKey: scaffoldKey,
+                      )
+                    : _ToldyaDetailBody(
+                        isDisplayOnProfile: isDisplayOnProfile,
+                        model: model,
+                        trailing: trailing ?? SizedBox.shrink(),
+                        type: type,
+                      ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: ToldyaImage(
+                  model: model,
+                  type: type,
+                ),
+              ),
+              model.childRetoldyaKey == null
+                  ? SizedBox.shrink()
+                  : RetoldyaWidget(
+                      childRetoldyaKey: model.childRetoldyaKey!,
+                      type: type,
+                      isImageAvailable:
+                          model.imagePath != null && (model.imagePath?.isNotEmpty ?? false),
+                    ),
+              model.parentkey != null && model.childRetoldyaKey == null
+                  ? SizedBox.shrink()
+                  : Padding(
+                      padding: EdgeInsets.only(
+                          left: type == ToldyaType.Detail ? 10 : 12, right: 12, bottom: 12),
+                      child: ToldyaIconsRow(
+                        type: type,
+                        model: model,
+                        isToldyaDetail: type == ToldyaType.Detail,
+                        iconColor: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
+                        iconEnableColor: ToldyaColor.ceriseRed,
+                        size: 20,
+                        scaffoldKey: scaffoldKey ?? GlobalKey<ScaffoldState>(),
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToldyaBody extends StatelessWidget {
+  final FeedModel model;
+  final Widget trailing;
+  final ToldyaType type;
+  final bool isDisplayOnProfile;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
+  const _ToldyaBody({
+    Key? key,
+    required this.model,
+    Widget? trailing,
+    required this.type,
+    required this.isDisplayOnProfile,
+    this.scaffoldKey,
+  })  : trailing = trailing ?? const SizedBox.shrink(),
+        super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var authstate = Provider.of<AuthState>(context, listen: false);
+
+    void addFavToldya(BuildContext context) {
+      var state = Provider.of<FeedState>(context, listen: false);
+      // var authState = Provider.of<AuthState>(context, listen: false);
+      state.addFavToToldya(model, authstate.userId);
+    }
+
+    void shareToldya(BuildContext context) async {
+      Utility.createLinkToShare(
+        context,
+        "toldya/${model.key}",
+        socialMetaTagParameters: SocialMetaTagParameters(
+            description: model.description ??
+                AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
+            title: AppLocalizations.of(context)!.appTitle,
+            imageUrl: Uri.parse(
+                "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
+      );
+    }
+
+    Widget _userAvater(String userId) {
+      return FutureBuilder<UserModel?>(
+        future: authstate.getuserDetail(userId),
+        builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const SizedBox.shrink();
+          }
+          final data = snapshot.data!;
+          return GestureDetector(
+            onTap: () {
+              Navigator.of(context)
+                  .pushNamed('/ProfilePage/' + (data.userId ?? ''));
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  padding: EdgeInsets.all(2.5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppNeon.orange.withOpacity(0.8),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppNeon.orange.withOpacity(0.2),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Container(
+                      color: Theme.of(context).cardColor,
+                      padding: EdgeInsets.all(2),
+                      child: customProfileImage(
+                        context,
+                        data.profilePic,
+                        userId: data.userId,
+                        height: 44,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    double descriptionFontSize = type == ToldyaType.Toldya
+        ? 15
+        : type == ToldyaType.Detail || type == ToldyaType.ParentToldya
+            ? 18
+            : 14;
+    FontWeight descriptionFontWeight =
+        type == ToldyaType.Toldya || type == ToldyaType.Toldya
+            ? FontWeight.w400
+            : FontWeight.w400;
+    final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
+    final authorUserId = model.user?.userId ?? '';
+    return FutureBuilder<UserModel?>(
+      future: authorUserId.isEmpty ? Future.value(null) : authstate.getuserDetail(authorUserId),
+      builder: (context, authorSnap) {
+        final author = authorSnap.data ?? model.user;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(width: 14),
+            Container(width: 52, height: 78, child: _userAvater(authorUserId)),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Expanded(
+                        child: Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: TitleText(
+                                author?.displayName ?? '',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                overflow: TextOverflow.ellipsis,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            if ((model.user?.currentStreak ?? 0) >= 3)
+                              Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.local_fire_department,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (scaffoldKey != null)
+                        ToldyaBottomSheet().toldyaOptionIcon(
+                          context,
+                          model: model,
+                          type: type,
+                          scaffoldKey: scaffoldKey!,
+                        )
+                      else
+                        Container(child: trailing),
+                    ],
+                  ),
+                if (model.topic != null && (model.topic ?? '').isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColor.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      topicLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColor.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              if (_showStatuBadge(model.statu))
+                Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statuAccent(model.statu).withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pending_actions,
+                              size: 14,
+                              color: _statuAccent(model.statu),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              _statuBadgeLabel(context, model.statu),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _statuAccent(model.statu),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              model.description == null
+                  ? SizedBox()
+                  : Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: UrlText(
+                        text: model.description,
+                        onHashTagPressed: (tag) {
+                          cprint(tag);
+                        },
+                        style: GoogleFonts.sawarabiMincho(
+                          fontSize: descriptionFontSize,
+                          fontWeight: descriptionFontWeight,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        urlStyle: TextStyle(
+                            color: AppNeon.cyan,
+                            fontSize: descriptionFontSize,
+                            fontWeight: descriptionFontWeight),
+                      ),
+                    ),
+            ],
+          ),
+        ),
+        SizedBox(width: 10),
+      ],
+    );
+      },
+    );
+  }
+}
+
+class _ToldyaDetailBody extends StatelessWidget {
+  final FeedModel model;
+  final Widget trailing;
+  final ToldyaType type;
+  final bool isDisplayOnProfile;
+
+  const _ToldyaDetailBody(
+      {Key? key, required this.model, required this.trailing, required this.type, required this.isDisplayOnProfile})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+
+    var authstate = Provider.of<AuthState>(context, listen: false);
+    double descriptionFontSize = type == ToldyaType.Toldya
+        ? getDimention(context, 15)
+        : type == ToldyaType.Detail
+            ? getDimention(context, 18)
+            : type == ToldyaType.ParentToldya
+                ? getDimention(context, 14)
+                : 10;
+
+    FontWeight descriptionFontWeight =
+        type == ToldyaType.Toldya || type == ToldyaType.Toldya
+            ? FontWeight.w300
+            : FontWeight.w400;
+    void addFavToldya(BuildContext context) {
+      var state = Provider.of<FeedState>(context, listen: false);
+      // var authState = Provider.of<AuthState>(context, listen: false);
+      state.addFavToToldya(model, authstate.userId);
+    }
+
+    void shareToldya(BuildContext context) async {
+      Utility.createLinkToShare(
+        context,
+        "toldya/${model.key}",
+        socialMetaTagParameters: SocialMetaTagParameters(
+            description: model.description ??
+                AppLocalizations.of(context)!.sharedPredictionDescription(model.user?.displayName ?? ''),
+            title: AppLocalizations.of(context)!.appTitle,
+            imageUrl: Uri.parse(
+                "https://play-lh.googleusercontent.com/e66XMuvW5hZ7HnFf8R_lcA3TFgkxm0SuyaMsBs3KENijNHZlogUAjxeu9COqsejV5w=s180-rw")),
+      );
+    }
+    Widget _userAvater(String userId) {
+      return FutureBuilder(
+        future: authstate.getuserDetail(userId),
+        //  initialData: InitialData,
+        builder: (BuildContext context, AsyncSnapshot<UserModel?> snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            final data = snapshot.data!;
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context)
+                    .pushNamed('/ProfilePage/' + (data.userId ?? ''));
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  customProfileImage(context, data.profilePic, userId: data.userId),
+                  // FutureBuilder(
+                  //   future: authstate.getuserDetail(model.user.userId),
+                  //   //  initialData: InitialData,
+                  //   builder: (BuildContext context,
+                  //       AsyncSnapshot<UserModel> snapshot) {
+                  //     if (snapshot.hasData) {
+                  //       // name(snapshot.data.displayName);
+                  //       return ratingBar(snapshot.data.rank, 3, context,
+                  //           itemSize: 11.0);
+                  //     } else {
+                  //       return Container();
+                  //     }
+                  //   },
+                  // ),
+                ],
+              ),
+            );
+          } else {
+            return Container();
+          }
+        },
+      );
+    }
+
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        model.parentkey != null &&
+                model.childRetoldyaKey == null &&
+                type != ToldyaType.ParentToldya
+            ? ParentToldyaWidget(
+                childRetoldyaKey: model.parentkey!,
+                type: ToldyaType.ParentToldya,
+                isImageAvailable: false,
+                trailing: trailing)
+            : SizedBox.shrink(),
+        Container(
+          width: fullWidth(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              FutureBuilder<UserModel?>(
+                future: authstate.getuserDetail(model.user?.userId ?? model.userId ?? ''),
+                builder: (context, authorSnap) {
+                  final author = authorSnap.data ?? model.user;
+                  final authorUserId = author?.userId ?? model.userId ?? '';
+                  return ListTile(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 1),
+                    leading: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context)
+                            .pushNamed('/ProfilePage/' + (authorUserId.isNotEmpty ? authorUserId : model?.userId ?? ''));
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 60,
+                        child: authorSnap.hasData && authorSnap.data != null
+                            ? customProfileImage(context, authorSnap.data!.profilePic, userId: authorSnap.data!.userId, height: 40)
+                            : _userAvater(model.user?.userId ?? ''),
+                      ),
+                    ),
+                    title: Row(
+                      children: <Widget>[
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                              minWidth: 0, maxWidth: fullWidth(context) * .31),
+                          child: TitleText(author?.displayName ?? '',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        SizedBox(width: 2),
+
+                        customText(
+                          model.statu == Statu.statusPendingAdminReview
+                              ? AppLocalizations.of(context)!.statuUnderReview
+                              : getEndTime(model.endDate ?? ''),
+                          style: userNameStyle,
+                        ),
+                        SizedBox(
+                          width: (author?.isVerified ?? false) ? 1 : 0,
+                        ),
+                      ],
+                    ),
+                    subtitle:
+                        customText(formatHandle(author?.userName, author?.displayName), style: userNameStyle),
+                    trailing:
+                FittedBox(
+                  fit: BoxFit.fill,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      CupertinoButton(
+                        minSize: double.minPositive,
+                        padding: EdgeInsets.all(5.0),
+                        child: Icon(
+                            (model.favList ?? [])
+                                .any((userId) => userId == authstate.userId)
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: AppColor.primary,
+                            size: 20
+                        ),
+                        onPressed: () {
+                          addFavToldya(context);
+                        },
+                      ),
+                      CupertinoButton(
+                        minSize: double.minPositive,
+                        padding: EdgeInsets.all(5.0),
+                        child: Icon(
+                            Icons.send_to_mobile,
+                            color: AppColor.darkGrey,
+                            size: 20
+                        ),
+                        onPressed: () {
+                          shareToldya(context);
+                        },
+                      ),
+                      Container(child: trailing == null ? SizedBox() : trailing),
+                    ],
+                  ),
+                ),
+              );
+                },
+              ),
+              if (_showStatuBadge(model.statu))
+                Padding(
+                  padding: EdgeInsets.only(left: 16, right: 16, top: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statuAccent(model.statu).withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              model.statu == Statu.statusRejectedByAdmin ? Icons.block : Icons.pending_actions,
+                              size: 14,
+                              color: _statuAccent(model.statu),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              _statuBadgeLabel(context, model.statu),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _statuAccent(model.statu),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (model.statu == Statu.statusRejectedByAdmin && (model.manualModerationReason ?? '').isNotEmpty) ...[
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            model.manualModerationReason!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              model.description == null
+                  ? SizedBox()
+                  : Padding(
+                      padding: type == ToldyaType.ParentToldya
+                          ? EdgeInsets.only(left: 80, right: 16)
+                          : EdgeInsets.symmetric(horizontal: 16),
+                      child: UrlText(
+                        text: model.description,
+                        onHashTagPressed: (tag) {
+                          cprint(tag);
+                        },
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: descriptionFontSize,
+                          fontWeight: descriptionFontWeight,
+                        ),
+                        urlStyle: TextStyle(
+                          color: Colors.blue,
+                          fontSize: descriptionFontSize,
+                          fontWeight: descriptionFontWeight,
+                        ),
+                      ),
+                    )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Belirgin geri sayım chip'i (acil hissi, okunaklı)
+class _CountdownChip extends StatelessWidget {
+  final String? endDate;
+
+  const _CountdownChip({Key? key, this.endDate}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final text = getEndTime(endDate ?? '');
+    if (text.isEmpty) return SizedBox.shrink();
+    final isUrgent = text == 'bitti' || text.contains('sn') || text.contains('dk');
+    final color = isUrgent ? AppNeon.red : Theme.of(context).primaryColor;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule, size: 12, color: color),
+          SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

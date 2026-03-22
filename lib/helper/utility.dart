@@ -1,15 +1,16 @@
 import 'dart:async';
 
-import 'package:bendemistim/model/feedModel.dart';
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,6 +19,18 @@ import 'dart:developer' as developer;
 final kAnalytics = FirebaseAnalytics.instance;
 final DatabaseReference kDatabase = FirebaseDatabase.instance.ref();
 final kScreenloader = CustomLoader();
+
+/// Logging flags (keep default silent; enable temporarily in debug sessions).
+const bool _utilityDebug = false;
+const bool _utilityEventDebug = false;
+
+/// Kullanıcı adı gösterimi: baştaki @ kaldırılır, sadece kullanıcı adı döner (örn. "sinanyilmaz").
+String formatHandle(String? userName, [String? displayName]) {
+  final raw = userName?.trim() ?? displayName?.trim() ?? '';
+  if (raw.isEmpty) return '';
+  final withoutLeadingAt = raw.startsWith('@') ? raw.substring(1) : raw;
+  return withoutLeadingAt.trim();
+}
 
 String getPostTime2(String date) {
   if (date == null || date.isEmpty) {
@@ -37,8 +50,8 @@ int sumOfVote(List<UserPegModel> list){
 
 }
 
-/// Bahisler kapanış tarihinde veya statu kapalıysa true
-bool isBettingClosed(int? statu, String? endDate) {
+/// Tahmin katılımı kapanış tarihinde veya statu kapalıysa true
+bool isToldyaStakeClosed(int? statu, String? endDate) {
   if (statu != null && statu != 0) return true; // Statu.statusLive = 0
   if (endDate == null || endDate.isEmpty) return false;
   try {
@@ -48,9 +61,9 @@ bool isBettingClosed(int? statu, String? endDate) {
   }
 }
 
-/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten bahis yaptıysa true.
-/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek bahis kuralı ihlali.
-bool userAlreadyBetOnOtherSide(FeedModel model, String? userId, int commentFlag) {
+/// Kullanıcı bu tahminde diğer tarafa (Evet/Hayır) zaten katılım gösterdiyse true.
+/// commentFlag: 0 = Evet, 1 = Hayır. Diğer tarafta kayıt varsa tek taraf kuralı ihlali.
+bool userAlreadyStakedOtherSide(FeedModel model, String? userId, int commentFlag) {
   if (userId == null || userId.isEmpty) return false;
   if (commentFlag == 0) return (model.unlikeList ?? []).any((e) => e.userId == userId);
   return (model.likeList ?? []).any((e) => e.userId == userId);
@@ -76,7 +89,7 @@ String getStatuLabel(int? statu) {
     case 4: return 'Tamamlanan';
     case 5: return 'Kilitli';
     case 6: return 'İncelemede';
-    case 7: return 'AI reddi';
+    case 7: return 'Yönetici reddi';
     default: return 'Durum $statu';
   }
 }
@@ -208,33 +221,26 @@ double getCountdownProgress(String? endDate, String? createdAt) {
   }
 }
 
-String getPollTime(String date) {
-  int hr, mm;
-  String msg = 'Poll ended';
+String getPollTime(BuildContext context, String date) {
+  final l10n = AppLocalizations.of(context)!;
   var enddate = DateTime.parse(date);
   if (DateTime.now().isAfter(enddate)) {
-    return msg;
+    return l10n.pollEnded;
   }
-  msg = 'Poll ended in';
   var dur = enddate.difference(DateTime.now());
-  hr = dur.inHours - dur.inDays * 24;
-  mm = dur.inMinutes - (dur.inHours * 60);
+  int hr = dur.inHours - dur.inDays * 24;
+  int mm = dur.inMinutes - (dur.inHours * 60);
+  final parts = <String>[];
   if (dur.inDays > 0) {
-    msg = ' ' + dur.inDays.toString() + (dur.inDays > 1 ? ' Days ' : ' Day');
+    parts.add('${dur.inDays} ${dur.inDays > 1 ? l10n.pollDays : l10n.pollDay}');
   }
   if (hr > 0) {
-    msg += ' ' + hr.toString() + ' hour';
+    parts.add('$hr ${hr > 1 ? l10n.pollHours : l10n.pollHour}');
   }
   if (mm > 0) {
-    msg += ' ' + mm.toString() + ' min';
+    parts.add('$mm ${l10n.pollMin}');
   }
-  return (dur.inDays).toString() +
-      ' Days ' +
-      ' ' +
-      hr.toString() +
-      ' Hours ' +
-      mm.toString() +
-      ' min';
+  return parts.isEmpty ? l10n.pollEnded : '${l10n.pollEndedIn} ${parts.join(' ')}';
 }
 
 String? getSocialLinks(String? url) {
@@ -245,7 +251,6 @@ String? getSocialLinks(String? url) {
                 (!url.contains('https') && !url.contains('http'))
             ? 'https://' + url
             : 'https://www.' + url;
-    cprint('Launching URL : $normalized');
     return normalized;
   }
   return null;
@@ -256,37 +261,60 @@ launchURL(String url) async {
   if (uri != null && await canLaunchUrl(uri)) {
     await launchUrl(uri);
   } else {
-    cprint('Could not launch $url');
+    cprint('Could not launch $url', errorIn: 'launchURL');
   }
 }
 
 void cprint(dynamic data, {String? errorIn, String? event}) {
-  if (errorIn != null) {
-    print(
-        '****************************** error ******************************');
-    developer.log('[Error]', time: DateTime.now(), error: data, name: errorIn);
-    print(
-        '****************************** error ******************************');
-  } else if (data != null) {
+  if (data == null) return;
+  if (errorIn != null && errorIn.isNotEmpty) {
     developer.log(
-      data,
+      errorIn,
+      name: 'toldya',
+      time: DateTime.now(),
+      error: data,
+    );
+    return;
+  }
+  if (kDebugMode && _utilityDebug) {
+    developer.log(
+      data.toString(),
+      name: 'toldya',
       time: DateTime.now(),
     );
   }
-  if (event != null) {
-    // logEvent(event);
+  if (event != null && event.isNotEmpty) {
+    logEvent(event);
   }
 }
 
 void logEvent(String event, {Map<String, dynamic>? parameter}) {
-  kReleaseMode
-      ? kAnalytics.logEvent(name: event, parameters: parameter != null ? Map<String, Object>.from(parameter) : null)
-      : print("[EVENT]: $event");
+  if (event.isEmpty) return;
+  if (kReleaseMode) {
+    kAnalytics.logEvent(
+      name: event,
+      parameters: parameter != null ? Map<String, Object>.from(parameter) : null,
+    );
+    return;
+  }
+  if (_utilityEventDebug) {
+    developer.log(
+      event,
+      name: 'analytics',
+      time: DateTime.now(),
+      error: parameter,
+    );
+  }
 }
 
 void debugLog(String log, {dynamic param = ""}) {
-  final String time = DateFormat("mm:ss:mmm").format(DateTime.now());
-  print("[$time][Log]: $log, $param");
+  if (!kDebugMode || !_utilityDebug) return;
+  developer.log(
+    log,
+    name: 'debug',
+    time: DateTime.now(),
+    error: param,
+  );
 }
 
 void share(String message, {String? subject}) {
@@ -323,22 +351,23 @@ String getUserName({
   return userName;
 }
 
-bool validateCredentials(
+bool validateCredentials(BuildContext context,
     GlobalKey<ScaffoldState> _scaffoldKey, String email, String password) {
-  if (email == null || email.isEmpty) {
-    customSnackBar(_scaffoldKey, 'Lütfen e-posta adresini girin');
+  final l10n = AppLocalizations.of(context)!;
+  if (email.isEmpty) {
+    customSnackBar(_scaffoldKey, l10n.pleaseEnterEmail);
     return false;
-  } else if (password == null || password.isEmpty) {
-    customSnackBar(_scaffoldKey, 'Lütfen şifrenizi giriniz');
+  } else if (password.isEmpty) {
+    customSnackBar(_scaffoldKey, l10n.pleaseEnterPassword);
     return false;
   } else if (password.length < 8) {
-    customSnackBar(_scaffoldKey, 'Şifre en az 8 karakter uzunluğunda olmalı');
+    customSnackBar(_scaffoldKey, l10n.passwordMinLength);
     return false;
   }
 
   var status = validateEmal(email);
   if (!status) {
-    customSnackBar(_scaffoldKey, 'Lütfen geçerli bir e-posta adresi girin');
+    customSnackBar(_scaffoldKey, l10n.validEmailRequired);
     return false;
   }
   return true;
@@ -354,6 +383,8 @@ bool validateEmal(String email) {
   return status;
 }
 class Utility {
+  /// Paylaşım linkleri Firebase Dynamic Links ile üretilir.
+  /// Üretimde domain ve [AndroidParameters.packageName] değerleri Firebase / Play ile eşleşmelidir.
   static Future<void> createLinkToShare(BuildContext context, String id,
       {SocialMetaTagParameters? socialMetaTagParameters}) async {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
@@ -372,7 +403,7 @@ class Utility {
     final ShortDynamicLink shortLink =
     await FirebaseDynamicLinks.instance.buildShortLink(parameters);
     url = shortLink.shortUrl;
-    share(url.toString(), subject: "casy");
+    share(url.toString(), subject: "Toldya");
     // return url;
     // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.casy");
     //return url;
@@ -407,8 +438,8 @@ class Utility {
     var url = createLinkToShare(context, id,
         socialMetaTagParameters: socialMetaTagParameters);
 
-    share(url.toString(), subject: "casy");
-    // share('https://play.google.com/store/apps/details?id=com.casycorporate.casy', subject: "casy");
+    share(url.toString(), subject: "Toldya");
+    // share('https://play.google.com/store/apps/details?id=com.casycorporate.casy', subject: "Toldya");
   }
 }
 void copyToClipBoard({

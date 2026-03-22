@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/rippleButton.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:provider/provider.dart';
 
 class UserListWidget extends StatelessWidget {
@@ -57,38 +57,8 @@ class UserTile extends StatelessWidget {
     return '';
   }
 
-  /// Check if user followerlist contain your or not
-  /// If your id exist in follower list it mean you are following him
-  bool isFollowing() {
-    if (user.followersList != null &&
-        user.followersList!.any((x) => x == myId)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    var authstate = Provider.of<AuthState>(context, listen: false);
-    bool isFollow = isFollowing();
-    isBlackList() {
-      final bl = user.blackList;
-      if (bl != null && bl.isNotEmpty) {
-        return bl.any((x) => x == myId);
-      }
-      return false;
-    }
-    //
-    // isFollower() {
-    //   if (authstate.profileUserModel.followersList != null &&
-    //       authstate.profileUserModel.followersList.isNotEmpty) {
-    //     return (authstate.profileUserModel.followersList
-    //         .any((x) => x == authstate.userModel.userId));
-    //   } else {
-    //     return false;
-    //   }
-    // }
     return Container(
       padding: EdgeInsets.symmetric(vertical: 10),
       color: ToldyaColor.white,

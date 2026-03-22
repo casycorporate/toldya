@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/customWidgets.dart';
 
 class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   SettingsAppBar({Key? key, this.title = '', this.subtitle = ''}) : super(key: key);
@@ -14,19 +14,25 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           SizedBox(height: 5),
-          customTitleText(
+          Text(
             title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontFamily: 'HelveticaNeue',
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
           ),
           Text(
-            subtitle ?? '',
+            subtitle,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              color: Colors.grey.shade400,
               fontSize: 18,
             ),
           )
         ],
       ),
-      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+      iconTheme: const IconThemeData(color: Colors.white),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     );
   }

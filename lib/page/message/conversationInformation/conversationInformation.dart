@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/state/chats/chatState.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
-import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/state/chats/chatState.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/widgets/newWidget/rippleButton.dart';
 import 'package:provider/provider.dart';
 
 class ConversationInformation extends StatelessWidget {
@@ -79,15 +80,15 @@ class ConversationInformation extends StatelessWidget {
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Conversation information',
+          AppLocalizations.of(context)!.conversationInformationTitle,
         ),
       ),
       body: ListView(
         children: <Widget>[
           _header(context, user),
-          HeaderWidget('Notifications'),
+          HeaderWidget(AppLocalizations.of(context)!.notificationsTitle),
           SettingRowWidget(
-            "Mute conversation",
+            AppLocalizations.of(context)!.muteConversation,
             visibleSwitch: true,
           ),
           Container(
@@ -95,14 +96,20 @@ class ConversationInformation extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
           ),
           SettingRowWidget(
-            "Block ${user.userName}",
+            AppLocalizations.of(context)!.blockUser(user.userName ?? ''),
             textColor: ToldyaColor.dodgetBlue,
             showDivider: false,
           ),
-          SettingRowWidget("Report ${user.userName}",
-              textColor: ToldyaColor.dodgetBlue, showDivider: false),
-          SettingRowWidget("Delete conversation",
-              textColor: ToldyaColor.ceriseRed, showDivider: false),
+          SettingRowWidget(
+            AppLocalizations.of(context)!.reportUser(user.userName ?? ''),
+            textColor: ToldyaColor.dodgetBlue,
+            showDivider: false,
+          ),
+          SettingRowWidget(
+            AppLocalizations.of(context)!.deleteConversationTitle,
+            textColor: ToldyaColor.ceriseRed,
+            showDivider: false,
+          ),
         ],
       ),
     );

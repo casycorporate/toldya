@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 import '../customWidgets.dart';
 
 class EmptyList extends StatelessWidget {

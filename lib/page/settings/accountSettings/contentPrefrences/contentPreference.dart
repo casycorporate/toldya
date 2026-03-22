@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsAppbar.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsAppbar.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:provider/provider.dart';
 
 class ContentPrefrencePage extends StatelessWidget {
@@ -12,46 +13,47 @@ class ContentPrefrencePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     var user = Provider.of<AuthState>(context).userModel ?? UserModel();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: SettingsAppBar(
-        title: 'Content preferences',
+        title: l10n.contentPreferencesTitle,
         subtitle: user.userName ?? '',
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Explore'),
+          HeaderWidget(l10n.exploreHeader),
           SettingRowWidget(
-            "Liderlik Tablosu",
+            l10n.leaderboardTitle,
             navigateTo: 'LeaderboardPage',
           ),
           SettingRowWidget(
-            "Trends",
+            l10n.trendsTitle,
             navigateTo: 'TrendsPage',
           ),
           Divider(height: 0),
           SettingRowWidget(
-            "Search settings",
-            navigateTo: '',
+            l10n.searchSettingsTitle,
+            subtitle: l10n.featureComingSoon(l10n.searchSettingsTitle),
+            navigateTo: null,
           ),
           HeaderWidget(
-            'Languages',
+            l10n.languagesHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Recommendations",
+            l10n.recommendationsTitle,
             vPadding: 15,
-            subtitle:
-                "Select which language you want recommended Tweets, people, and trends to include",
+            subtitle: l10n.featureComingSoon(l10n.recommendationsTitle),
           ),
           HeaderWidget(
-            'Safety',
+            l10n.safetyHeader,
             secondHeader: true,
           ),
-          SettingRowWidget("Blocked accounts"),
-          SettingRowWidget("Muted accounts"),
+          SettingRowWidget(l10n.blockedAccountsTitle, subtitle: l10n.featureComingSoon(l10n.blockedAccountsTitle)),
+          SettingRowWidget(l10n.mutedAccountsTitle, subtitle: l10n.featureComingSoon(l10n.mutedAccountsTitle)),
         ],
       ),
     );

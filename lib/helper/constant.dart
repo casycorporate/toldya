@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 
-String dummyProfilePic = 'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d';
+/// Feature flags (`const` — tree-shaking / derleme zamanı koruması).
+/// Post detail (FeedPostDetail) özelliği.
+const bool kEnablePostDetail = false;
+
+/// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
+const String kToldyaLogo = 'assets/images/toldya.svg';
+
+/// Dark tema logosu: koyu arka plan (#1C1C1E), beyaz baykuş.
+const String kToldyaLogoDark = 'assets/images/toldya_dark.svg';
+
+/// Varsayılan profil resmi (uygulama logosu).
+String dummyProfilePic = kToldyaLogo;
 String appFont = 'HelveticaNeuea';
+/// Kayıt sırasında rastgele atanacak varsayılan avatarlar.
 List<String> dummyProfilePicList = [
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d',
-  'https://firebasestorage.googleapis.com/v0/b/casy-570c4.appspot.com/o/ortak%2Fprofil%2FprofilePic%2Fcasy.png?alt=media&token=0eaf5791-67ee-4631-82d2-616b72c50f0d'
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFDjXj1F8Ix-rRFgY_r3GerDoQwfiOMXVt-tZdv_Mcou_yIlUC&s',
-  // 'http://www.azembelani.co.za/wp-content/uploads/2016/07/20161014_58006bf6e7079-3.png',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzDG366qY7vXN2yng09wb517WTWqp-oua-mMsAoCadtncPybfQ&s',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTq7BgpG1CwOveQ_gEFgOJASWjgzHAgVfyozkIXk67LzN1jnj9I&s',
-  // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPxjRIYT8pG0zgzKTilbko-MOv8pSnmO63M9FkOvfHoR9FvInm&s',
-  // 'https://cdn5.f-cdn.com/contestentries/753244/11441006/57c152cc68857_thumb900.jpg',
-  // 'https://cdn6.f-cdn.com/contestentries/753244/20994643/57c189b564237_thumb900.jpg'
+  'assets/images/avatar_1.png',
+  'assets/images/avatar_2.png',
+  'assets/images/avatar_3.png',
+  'assets/images/avatar_4.png',
+  'assets/images/avatar_5.png',
+  kToldyaLogo,
+  'assets/images/avatar_1.png',
+  'assets/images/avatar_2.png',
 ];
+
+/// Toldya logosu – yeni mavi baykuş (light/dark varyantlar).
+/// Evet / Hayır tahmin (token) seçim butonları (sabit renkler)
+class ToldyaStakeButtonPalette {
+  ToldyaStakeButtonPalette._();
+  static const Color yes = Color(0xFF2ED573);
+  static const Color no = Color(0xFFFF4757);
+}
+
+class ToldyaBranding {
+  ToldyaBranding._();
+  static const String appIcon = kToldyaLogo;
+  static const String logoPrimary = kToldyaLogo;
+  static const String logoHorizontal = kToldyaLogo;
+  static const String logoCompact = kToldyaLogo;
+  static const String logoDark = kToldyaLogoDark;
+}
 
 class AppIcon{
   AppIcon._();
@@ -41,7 +63,7 @@ class AppIcon{
   static const IconData settings = IconData(0xf059, fontFamily: _kFontFam);
   static const IconData adTheRate = IconData(0xf064, fontFamily: _kFontFam);
   static const IconData reply = IconData(0xf151, fontFamily: _kFontFam);
-  static const IconData retweet = IconData(0xf152, fontFamily: _kFontFam);
+  static const IconData retoldya = IconData(0xf152, fontFamily: _kFontFam);
   static const IconData image = IconData(0xf109, fontFamily: _kFontFam);
   static const IconData camera = IconData(0xf110, fontFamily: _kFontFam);
   static const IconData arrowDown = IconData(0xf196, fontFamily: _kFontFam);
@@ -86,7 +108,7 @@ class AppIcon{
   static const double rankMultiplierTahminci = 0.25;
   static const double rankMultiplierUsta = 0.50;
   static const int poolThreshold = 1000;
-  static const int maxBetSmallPool = 100;
+  static const int maxStakeSmallPool = 100;
   static const int dailyBonusAmount = 500;
 
   /// Cloud Functions base URL (doğrudan HTTP ile çağrı – GMS broker hatası bypass)
@@ -100,17 +122,24 @@ class Tokenomics {
     if (xp < AppIcon.xpUstaMin) return AppIcon.rankMultiplierTahminci;
     return AppIcon.rankMultiplierUsta;
   }
-  static int maxBetByRank(int balance, int xp) =>
+  static int maxStakeByRank(int balance, int xp) =>
       (balance * rankMultiplierForXp(xp)).floor();
-  static int maxBetByPool(int totalPool) =>
-      totalPool < AppIcon.poolThreshold ? AppIcon.maxBetSmallPool : 0x7FFFFFFF;
+  static int maxStakeByPool(int totalPool) {
+    if (totalPool < AppIcon.poolThreshold) {
+      final scaled = (totalPool * 0.5).floor();
+      return scaled > AppIcon.maxStakeSmallPool ? scaled : AppIcon.maxStakeSmallPool;
+    }
+    return 0x7FFFFFFF;
+  }
 }
 
-class Role{
+/// Uygulama profili türü admin için `profile/{uid}/isAdmin` kullanılır; bu alan sadece uyumluluk içindir.
+class Role {
   Role._();
 
-  static final int defaultRole=1;
-  static final int adminRole=0;
+  static final int defaultRole = 1;
+  @Deprecated('Admin kullanıcılar RTDB profile/{uid}/isAdmin ile belirlenir.')
+  static final int adminRole = 0;
 }
 
 /// Uygulama temasına uyumlu varsayılan kapak görselleri (profil banner).
@@ -176,12 +205,12 @@ class Statu{
   static final int statusOk=2;
   static final int statusDenied=3;
   static final int statusComplete=4;
-  /// Kapanış zamanı geçti, bahisler kapandı, sonuç bekleniyor
+  /// Kapanış zamanı geçti, katılım kapandı, sonuç bekleniyor
   static final int statusLocked=5;
-  /// Yapay zeka incelemesi bekliyor (henüz yayında değil)
-  static final int statusPendingAiReview=6;
-  /// Yapay zeka tarafından reddedildi (topluluk kuralları / tutarlılık)
-  static final int statusRejectedByAi=7;
+  /// Yönetici incelemesi bekliyor (henüz yayında değil)
+  static final int statusPendingAdminReview = 6;
+  /// Yönetici incelemesinde reddedildi
+  static final int statusRejectedByAdmin = 7;
 }
 class FeedResult{
   FeedResult._();

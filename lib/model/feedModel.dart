@@ -1,5 +1,5 @@
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/model/userPegModel.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/model/userPegModel.dart';
 
 class FeedModel {
   String? key;
@@ -16,31 +16,36 @@ class FeedModel {
   int? commentCount;
   int? retoldyaCount;
   String? createdAt;
-  /// Kapanış zamanı: Bahislerin kabul edilmeyeceği an (lock-in)
+  /// Tahmin bitişi: bu ana kadar katılım açık; sonra kilitlenir (statu 5). Sonrasında yönetici kazanan tarafı belirler.
   String? endDate;
-  /// Sonuçlanma zamanı: Olayın gerçekleşeceği ve sonucun girileceği an
-  String? resolutionDate;
   String? imagePath;
   String? topic;
   List<String>? tags;
   List<String>? replyToldyaKeyList;
   UserModel? user;
   List<String>? reportList;
+  /// Report reasons by userId (e.g. "spam", "harassment") for moderation
+  Map<String, String>? reportReasons;
   List<String>? favList;
-  /// Kanıt kaynağı (Oracle): Bahsin neye göre sonuçlanacağı
-  String? oracleSource;
-  /// API URL - otomatik sonuç için (opsiyonel)
-  String? oracleApiUrl;
+  /// Yönetici moderasyon gerekçesi (sunucu: manualModerationReason)
+  String? manualModerationReason;
   /// Tahminci teminatı (sembolik token)
   int? collateralAmount;
   /// İtiraz eden kullanıcı ID'leri
   List<String>? disputeUserIds;
   /// Dağıtım yapıldı mı (Pari-Mutuel ödeme tamamlandı mı)
   bool? distributionDone;
-  /// AI moderasyon gerekçesi (onay veya red nedeni)
-  String? aiModerationReason;
+  /// Yorum oylama: Katılıyorum sayısı (sadece reply için)
+  int? upvoteCount;
+  /// Yorum oylama: Katılmıyorum sayısı (sadece reply için)
+  int? downvoteCount;
+  /// Yorum oylama: Katılıyorum veren kullanıcı ID'leri
+  List<String>? upvoteUserIds;
+  /// Yorum oylama: Katılmıyorum veren kullanıcı ID'leri
+  List<String>? downvoteUserIds;
 
-  FeedModel({this.key,
+  FeedModel({
+    this.key,
     this.description,
     this.userId,
     this.likeCount,
@@ -54,6 +59,7 @@ class FeedModel {
     this.likeList,
     this.tags,
     this.reportList,
+    this.reportReasons,
     this.favList,
     this.user,
     this.topic,
@@ -62,13 +68,15 @@ class FeedModel {
     this.statu,
     this.feedResult,
     this.childRetoldyaKey,
-    this.resolutionDate,
-    this.oracleSource,
-    this.oracleApiUrl,
+    this.manualModerationReason,
     this.collateralAmount,
     this.disputeUserIds,
     this.distributionDone,
-    this.aiModerationReason});
+    this.upvoteCount,
+    this.downvoteCount,
+    this.upvoteUserIds,
+    this.downvoteUserIds,
+  });
 
   toJson() {
     return {
@@ -85,6 +93,7 @@ class FeedModel {
       "unlikeList": unlikeList?.map((e) => e.toJson()).toList() ?? [],
       "tags": tags,
       "reportList": reportList,
+      "reportReasons": reportReasons,
       "favList": favList,
       "topic": topic,
       "replyToldyaKeyList": replyToldyaKeyList,
@@ -93,13 +102,14 @@ class FeedModel {
       "childRetoldyaKey": childRetoldyaKey,
       "statu": statu,
       "feedResult": feedResult,
-      "resolutionDate": resolutionDate,
-      "oracleSource": oracleSource,
-      "oracleApiUrl": oracleApiUrl,
+      "manualModerationReason": manualModerationReason,
       "collateralAmount": collateralAmount,
       "disputeUserIds": disputeUserIds,
       "distributionDone": distributionDone ?? false,
-      "aiModerationReason": aiModerationReason
+      "upvoteCount": upvoteCount ?? 0,
+      "downvoteCount": downvoteCount ?? 0,
+      "upvoteUserIds": upvoteUserIds ?? [],
+      "downvoteUserIds": downvoteUserIds ?? []
     };
   }
 
@@ -128,12 +138,29 @@ class FeedModel {
     topic = map['topic'];
     statu = _parseStatuMap(map['statu']);
     feedResult = map['feedResult'];
-    resolutionDate = map['resolutionDate'];
-    oracleSource = map['oracleSource'];
-    oracleApiUrl = map['oracleApiUrl'];
+    // Eski RTDB kayıtları: deprecated alan adı (yalnızca okuma).
+    manualModerationReason =
+        map['manualModerationReason'] ?? map['aiModerationReason'];
     collateralAmount = map['collateralAmount'];
     distributionDone = map['distributionDone'] ?? false;
-    aiModerationReason = map['aiModerationReason']?.toString();
+    upvoteCount = map['upvoteCount'] ?? 0;
+    downvoteCount = map['downvoteCount'] ?? 0;
+    if (map['upvoteUserIds'] != null) {
+      upvoteUserIds = <String>[];
+      for (final value in map['upvoteUserIds'] as Iterable) {
+        upvoteUserIds!.add(value.toString());
+      }
+    } else {
+      upvoteUserIds = [];
+    }
+    if (map['downvoteUserIds'] != null) {
+      downvoteUserIds = <String>[];
+      for (final value in map['downvoteUserIds'] as Iterable) {
+        downvoteUserIds!.add(value.toString());
+      }
+    } else {
+      downvoteUserIds = [];
+    }
     if (map['disputeUserIds'] != null) {
       disputeUserIds = <String>[];
       for (final value in map['disputeUserIds'] as Iterable) {
@@ -160,6 +187,13 @@ class FeedModel {
       }
     } else {
       reportList = [];
+    }
+    if (map['reportReasons'] != null && map['reportReasons'] is Map) {
+      reportReasons = Map<String, String>.from(
+        (map['reportReasons'] as Map).map((k, v) => MapEntry(k.toString(), v.toString())),
+      );
+    } else {
+      reportReasons = null;
     }
     //favList
     if (map['favList'] != null) {

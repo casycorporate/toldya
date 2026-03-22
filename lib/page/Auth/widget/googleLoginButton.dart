@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/widgets/newWidget/customLoader.dart';
-import 'package:bendemistim/widgets/newWidget/rippleButton.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/widgets/newWidget/customLoader.dart';
+import 'package:toldya/widgets/newWidget/rippleButton.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +19,7 @@ class GoogleLoginButton extends StatelessWidget {
     state.handleGoogleSignIn().then((status) {
       loader.hideLoader();
       if (state.user != null) {
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) Navigator.pop(context);
         loginCallback?.call();
       } else {
         cprint('Unable to login', errorIn: '_googleLoginButton');
@@ -26,10 +27,10 @@ class GoogleLoginButton extends StatelessWidget {
     }).catchError((Object error, StackTrace stackTrace) {
       loader.hideLoader();
       cprint(error, errorIn: '_googleLogin');
-      String message = 'Google ile giriş yapılamadı.';
+      String message = AppLocalizations.of(context)!.googleSignInFailed;
       if (error is PlatformException) {
         if (error.code == 'sign_in_failed' && error.message?.contains('10') == true) {
-          message = 'Google girişi yapılandırılmamış. Firebase Console\'da uygulama SHA parmak izini ekleyin.';
+          message = AppLocalizations.of(context)!.googleSignInNotConfigured;
         } else if (error.message != null && error.message!.isNotEmpty) {
           message = error.message!;
         }
@@ -80,7 +81,7 @@ class GoogleLoginButton extends StatelessWidget {
             ),
             SizedBox(width: 12),
             Text(
-              'Google ile Bağlan',
+              AppLocalizations.of(context)!.googleSignInButton,
               style: GoogleFonts.sawarabiMincho(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

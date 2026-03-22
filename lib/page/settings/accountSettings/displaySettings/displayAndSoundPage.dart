@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/settings/widgets/headerWidget.dart';
-import 'package:bendemistim/page/settings/widgets/settingsRowWidget.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/settings/widgets/headerWidget.dart';
+import 'package:toldya/page/settings/widgets/settingsRowWidget.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 
 class DisplayAndSoundPage extends StatelessWidget {
   const DisplayAndSoundPage({Key? key}) : super(key: key);
@@ -50,14 +51,14 @@ class DisplayAndSoundPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark Mode'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeTitle),
           ),
           Divider(height: 0),
-          _row("On"),
+          _row(AppLocalizations.of(context)!.on),
           Divider(height: 0),
-          _row("Off"),
+          _row(AppLocalizations.of(context)!.off),
           Divider(height: 0),
-          _row("Automatic at sunset"),
+          _row(AppLocalizations.of(context)!.automaticAtSunset),
         ],
       ),
     );
@@ -80,12 +81,12 @@ class DisplayAndSoundPage extends StatelessWidget {
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
-            child: TitleText('Dark mode appearance'),
+            child: TitleText(AppLocalizations.of(context)!.darkModeAppearance),
           ),
           Divider(height: 0),
-          _row("Dim"),
+          _row(AppLocalizations.of(context)!.dim),
           Divider(height: 0),
-          _row("Light out"),
+          _row(AppLocalizations.of(context)!.lightOut),
         ],
       ),
     );
@@ -106,63 +107,57 @@ class DisplayAndSoundPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         isBackButton: true,
         title: customTitleText(
-          'Display and Sound',
+          l10n.displayAndSoundTitle,
         ),
       ),
       body: ListView(
         physics: BouncingScrollPhysics(),
         children: <Widget>[
-          HeaderWidget('Media'),
+          HeaderWidget(l10n.mediaHeader),
           SettingRowWidget(
-            "Media Previews",
+            l10n.mediaPreviewsTitle,
             showCheckBox: false,
           ),
           Divider(height: 0),
-          HeaderWidget('Display'),
+          HeaderWidget(l10n.displayHeader),
           SettingRowWidget(
-            "Dark Mode",
-            subtitle: 'Off',
-            onPressed: () {
-              openDarkModeSettings(context);
-            },
+            l10n.darkModeTitle,
+            subtitle: l10n.featureComingSoon(l10n.darkModeTitle),
             showDivider: false,
           ),
           SettingRowWidget(
-            "Dark Mode appearance",
-            subtitle: 'Dim',
-            onPressed: () {
-              openDarkModeAppearanceSettings(context);
-            },
+            l10n.darkModeAppearance,
+            subtitle: l10n.featureComingSoon(l10n.darkModeAppearance),
             showDivider: false,
           ),
           SettingRowWidget(
-            "Emoji",
-            subtitle:
-                'Use the Fwitter set instead of your device\'s default set',
+            l10n.emojiTitle,
+            subtitle: l10n.featureComingSoon(l10n.emojiTitle),
             showDivider: false,
             showCheckBox: false,
           ),
           HeaderWidget(
-            'Sound',
+            l10n.soundHeader,
             secondHeader: true,
           ),
           SettingRowWidget(
-            "Sound effects",
+            l10n.soundEffectsTitle,
             // vPadding: 15,
             showCheckBox: false,
           ),
           HeaderWidget(
-            'Web browser',
+            l10n.webBrowserHeader,
             secondHeader: false,
           ),
           SettingRowWidget(
-            "Use in-app browser",
-            subtitle: 'Open external links with Fwitter browser',
+            l10n.useInAppBrowserTitle,
+            subtitle: l10n.featureComingSoon(l10n.useInAppBrowserTitle),
             showCheckBox: false,
           ),
         ],

@@ -1,28 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/page/feed/feedPage.dart';
-import 'package:bendemistim/page/message/chatListPage.dart';
-import 'package:bendemistim/page/profile/profilePage.dart';
-import 'package:bendemistim/state/appState.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/chats/chatState.dart';
-import 'package:bendemistim/state/feedState.dart';
-import 'package:bendemistim/state/notificationState.dart';
-import 'package:bendemistim/state/searchState.dart';
-import 'package:bendemistim/widgets/bottomMenuBar/bottomMenuBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/feed/feedPage.dart';
+import 'package:toldya/page/profile/profilePage.dart';
+import 'package:toldya/state/appState.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/chats/chatState.dart';
+import 'package:toldya/state/feedState.dart';
+import 'package:toldya/state/notificationState.dart';
+import 'package:toldya/widgets/bottomMenuBar/bottomMenuBar.dart';
 import 'package:provider/provider.dart';
 import '../helper/locator.dart';
 import '../helper/push_notification_service.dart';
 import '../model/PushNotificationModel.dart';
 import 'common/sidebar.dart';
-import 'notification/notificationPage.dart';
-import 'search/SearchPage.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -36,19 +33,42 @@ class _HomePageState extends State<HomePage> {
   final refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
   int pageIndex = 0;
   late StreamSubscription<PushNotificationModel> pushNotificationSubscription;
+  bool _startupInitScheduled = false;
+  bool _pendingExit = false;
+  /// When on Feed tab, false = hide bar on scroll down, true = show on scroll up. Ignored when not on Feed.
+  bool _bottomBarVisible = true;
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _startupInitScheduled) return;
+      _startupInitScheduled = true;
       var state = Provider.of<AppState>(context, listen: false);
       state.setpageIndex = 0;
-      initToldyas();
-      initProfile();
-      initSearch();
-      initNotificaiton();
-      initChat();
+      _stagedStartupInit();
     });
 
     super.initState();
+  }
+
+  Future<void> _stagedStartupInit() async {
+    // Stage 1: profile (needed for header/userId)
+    if (!mounted) return;
+    initProfile();
+
+    // Stage 2: feed shortly after (lets first frame breathe)
+    await Future.delayed(const Duration(milliseconds: 60));
+    if (!mounted) return;
+    initToldyas();
+
+    // Stage 3: notifications
+    await Future.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+    initNotificaiton();
+
+    // Stage 4: chat (often heaviest; includes server key fetch)
+    await Future.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+    initChat();
   }
 
   void initToldyas() {
@@ -62,16 +82,15 @@ class _HomePageState extends State<HomePage> {
     state.databaseInit();
   }
 
-  void initSearch() {
-    var searchState = Provider.of<SearchState>(context, listen: false);
-    searchState.getDataFromDatabase();
-  }
-
   void initNotificaiton() {
     var state = Provider.of<NotificationState>(context, listen: false);
     var authstate = Provider.of<AuthState>(context, listen: false);
-    state.databaseInit(authstate.userId);
+    final userId = authstate.userId;
+    if (userId.isNotEmpty) {
+      state.databaseInit(userId);
+    }
     state.initfirebaseService();
+    // Token persist is already handled in NotificationService.init (deferred in main.dart).
     pushNotificationSubscription = getIt<PushNotificationService>()
         .pushNotificationResponseStream
         .listen(listenPushNotification);
@@ -104,6 +123,9 @@ class _HomePageState extends State<HomePage> {
     /// `model.data.senderId` is user id who tagged you in a tweet
     else if (model.type == NotificationType.Mention.toString() &&
         model.receiverId == authstate.user?.uid) {
+      if (!kEnablePostDetail) {
+        return;
+      }
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(model.toldyaId);
       Navigator.of(context).pushNamed('/FeedPostDetail/' + model.toldyaId);
@@ -114,6 +136,7 @@ class _HomePageState extends State<HomePage> {
   void initChat() {
     final chatState = Provider.of<ChatState>(context, listen: false);
     final state = Provider.of<AuthState>(context, listen: false);
+    if (state.userId.isEmpty) return;
     chatState.databaseInit(state.userId, state.userId);
 
     /// It will update fcm token in database
@@ -123,7 +146,11 @@ class _HomePageState extends State<HomePage> {
     /// It get fcm server key
     /// Server key is required to configure firebase notification
     /// Without fcm server notification can not be sent
-    chatState.getFCMServerKey();
+    // Defer to avoid blocking startup frame budget.
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      chatState.getFCMServerKey();
+    });
   }
 
   /// On app launch it checks if app is launch by tapping on notification from notification tray
@@ -164,23 +191,31 @@ class _HomePageState extends State<HomePage> {
   //   });
   // }
 
-  Widget _body() {
-    return SafeArea(
-      child: _getPage(Provider.of<AppState>(context).pageIndex),
-    );
-  }
-
-  List<Widget> _buildScreens() {
-    return [
-      FeedPage(
-        scaffoldKey: _scaffoldKey,
-        refreshIndicatorKey: refreshIndicatorKey,
+  Widget _body({required bool reserveBottomPadding}) {
+    final index = Provider.of<AppState>(context).pageIndex;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification n) {
+        if (n is! UserScrollNotification) return false;
+        final appState = Provider.of<AppState>(context, listen: false);
+        if (appState.pageIndex != 0) return false;
+        final visible = n.direction == ScrollDirection.reverse;
+        if (visible != _bottomBarVisible && mounted) {
+          setState(() => _bottomBarVisible = visible);
+        }
+        return false;
+      },
+      child: SafeArea(
+        top: true,
+        bottom: reserveBottomPadding,
+        child: IndexedStack(
+          index: index,
+          children: [
+            _getPage(0),
+            _getPage(1),
+          ],
+        ),
       ),
-      SearchPage(scaffoldKey: _scaffoldKey),
-      NotificationPage(scaffoldKey: _scaffoldKey),
-      ChatListPage(scaffoldKey: _scaffoldKey),
-      FeedPage(scaffoldKey: _scaffoldKey),
-    ];
+    );
   }
 
   Widget _getPage(int index) {
@@ -190,48 +225,39 @@ class _HomePageState extends State<HomePage> {
           scaffoldKey: _scaffoldKey,
           refreshIndicatorKey: refreshIndicatorKey,
         );
-        break;
       case 1:
-        return SearchPage(scaffoldKey: _scaffoldKey);
-        break;
-      case 2:
-        return NotificationPage(scaffoldKey: _scaffoldKey);
-        break;
-      case 3:
-        return ProfilePage();
-        break;
+        return ProfilePage(isTabContent: true, parentScaffoldKey: _scaffoldKey);
       default:
         return FeedPage(scaffoldKey: _scaffoldKey);
-        break;
     }
   }
 
   Widget _floatingActionButton(BuildContext context) {
     return Container(
-      height: 56,
-      width: 56,
+      height: 52,
+      width: 52,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppNeon.green,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
         child: InkWell(
-          customBorder: CircleBorder(),
+          customBorder: const CircleBorder(),
           onTap: () => Navigator.of(context).pushNamed('/CreateFeedPage/toldya'),
           child: Center(
             child: Icon(
               Icons.bolt,
               color: Colors.white,
-              size: 28,
+              size: 26,
             ),
           ),
         ),
@@ -242,16 +268,59 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final bool showFab = MediaQuery.of(context).viewInsets.bottom==0.0;
-    return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: true,
-      key: _scaffoldKey,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: showFab ? _floatingActionButton(context) : null,
-      bottomNavigationBar: BottomMenubar(),
-      drawer: SidebarMenu(),
-      body: _body(),
+    final appState = Provider.of<AppState>(context);
+    // Feed'de bar görünürlüğü FeedPage içindeki scroll olaylarına göre (AppState.feedBottomBarVisible).
+    final showBottomBar = appState.pageIndex == 0
+        ? appState.feedBottomBarVisible
+        : (appState.pageIndex != 0 || _bottomBarVisible);
+    final isFeedTab = appState.pageIndex == 0;
+    final reserveBottomPadding = isFeedTab ? showBottomBar : true;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        final appState = Provider.of<AppState>(context, listen: false);
+        if (appState.pageIndex != 0) {
+          appState.setpageIndex = 0;
+          return;
+        }
+        if (_pendingExit) {
+          SystemNavigator.pop();
+          return;
+        }
+        _pendingExit = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.pressBackAgainToExit)),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _pendingExit = false);
+        });
+      },
+      child: MediaQuery.removePadding(
+        context: context,
+        removeBottom: true,
+        child: Scaffold(
+          extendBody: true,
+          resizeToAvoidBottomInset: true,
+          key: _scaffoldKey,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: showFab && showBottomBar
+              ? _floatingActionButton(context)
+              : null,
+          bottomNavigationBar: SizedBox(
+            height: 56,
+            child: AnimatedSlide(
+              offset: Offset(0, showBottomBar ? 0 : 1),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: BottomMenubar(),
+            ),
+          ),
+          drawer: SidebarMenu(),
+          body: _body(reserveBottomPadding: reserveBottomPadding),
+        ),
+      ),
     );
   }
 }

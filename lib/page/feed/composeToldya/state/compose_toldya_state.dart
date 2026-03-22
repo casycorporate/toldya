@@ -1,0 +1,298 @@
+import 'dart:convert';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/material.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/model/feedModel.dart';
+import 'package:toldya/state/searchState.dart';
+
+class ComposeToldyaState extends ChangeNotifier {
+  static const int kToldyaMaxLength = 120;
+  static const int kToldyaWarnLength = 110;
+
+  bool showUserList = false;
+  bool enableSubmitButton = false;
+  bool hideUserList = false;
+  String description = "";
+  String serverToken = '';
+  final usernameRegex = r'(@\w*[a-zA-Z1-9]$)';
+
+  bool _isOverLimit = false;
+  bool _isNearLimit = false;
+  bool get isOverLimit => _isOverLimit;
+  bool get isNearLimit => _isNearLimit;
+  int get characterCount => description.length;
+
+  bool _isScrollingDown = false;
+  bool get isScrollingDown => _isScrollingDown;
+  set setIsScrolllingDown(bool value) {
+    _isScrollingDown = value;
+    notifyListeners();
+  }
+
+  /// Display/Hide userlist on the basis of username availability in description
+  /// To display userlist in compose screen two condion is required
+  /// First is value of `status` should be true
+  /// Second value of  `hideUserList` should be false
+  bool get displayUserList {
+    RegExp regExp = new RegExp(usernameRegex);
+    var status = regExp.hasMatch(description);
+    if (status && !hideUserList) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /// Hide userlist when a  user select a username from userlist
+  void onUserSelected() {
+    hideUserList = true;
+    notifyListeners();
+  }
+
+  /// This method will trigger every time when user writes toldya description.
+  /// `hideUserList` is set to false to reset user list show flag.
+  /// If description is not empty and its lenth is lesser then 280 characters
+  /// then value of `enableSubmitButton` is set to true.
+  ///
+  /// `enableSubmitButton` is responsible to enable/disable toldya submit button
+  void onDescriptionChanged(String text, SearchState searchState,
+      {bool enableMentionSearch = true}) {
+    description = text;
+    hideUserList = false;
+    _isNearLimit = text.length >= kToldyaWarnLength && text.length < kToldyaMaxLength;
+    _isOverLimit = text.length > kToldyaMaxLength;
+
+    if (text.isEmpty || text.length > kToldyaMaxLength) {
+      enableSubmitButton = false;
+      notifyListeners();
+      return;
+    }
+
+    enableSubmitButton = true;
+
+    if (!enableMentionSearch) {
+      hideUserList = true;
+      notifyListeners();
+      return;
+    }
+
+    var last = text.length > 0 ? text.substring(text.length - 1, text.length) : '';
+
+    RegExp regExp = new RegExp(usernameRegex);
+    var status = regExp.hasMatch(text);
+    if (status) {
+      Iterable<Match> _matches = regExp.allMatches(text);
+      var name = text.substring(_matches.last.start, _matches.last.end);
+
+      if (last == "@") {
+        searchState.filterByUsername("");
+      } else {
+        searchState.filterByUsername(name);
+      }
+    } else {
+      hideUserList = false;
+    }
+    notifyListeners();
+  }
+
+  /// Sync state when initial text is set (e.g. edit mode). Updates description, limit flags, and submit button.
+  void setInitialDescription(String text) {
+    description = text;
+    _isNearLimit = text.length >= kToldyaWarnLength && text.length < kToldyaMaxLength;
+    _isOverLimit = text.length > kToldyaMaxLength;
+    enableSubmitButton = text.isNotEmpty && text.length <= kToldyaMaxLength;
+    notifyListeners();
+  }
+
+  /// When user select user from userlist it will add username in description
+  String getDescription(String username) {
+    RegExp regExp = new RegExp(usernameRegex);
+    Iterable<Match> _matches = regExp.allMatches(description);
+    var name = description.substring(0, _matches.last.start);
+    description = '$name $username';
+    return description;
+  }
+
+  /// Fetch FCM server key from firebase Remote config
+  /// FCM server key is stored in firebase remote config
+  /// you have to add server key in firebase remote config
+  /// To fetch this key go to project setting in firebase
+  /// Click on `cloud messaging` tab
+  /// Copy server key from `Project credentials`
+  /// Now goto `Remote Congig` section in fireabse
+  /// Add [FcmServerKey]  as paramerter key and below json in Default vslue
+  ///  ``` json
+  ///  {
+  ///    "key": "FCM server key here"
+  ///  } ```
+  /// For more detail visit:- https://github.com/orbislas-ai/toldya
+  /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
+  Future<Null> getFCMServerKey() async {
+    /// If FCM server key is already fetched then no need to fetch it again.
+    try {
+      if (serverToken != null && serverToken.isNotEmpty) {
+        return Future.value(null);
+      }
+      final remoteConfig = FirebaseRemoteConfig.instance;
+      var data = remoteConfig.getString('FcmServerKey');
+      if (data.isNotEmpty) {
+        serverToken = jsonDecode(data)["key"] as String? ?? '';
+      }
+    } catch (error) {
+      cprint("Add FcmServerKey in Firebase Remote config");
+    }
+  }
+
+  /// Fecth FCM server key from firebase Remote config
+  /// send notification to user once fcmToken is retrieved from firebase
+  Future<void> sendNotification(FeedModel model, SearchState state) async {
+    final usernameRegex = r"(@\w*[a-zA-Z1-9])";
+    RegExp regExp = new RegExp(usernameRegex);
+    var status = regExp.hasMatch(description);
+
+    /// Check if username is availeble in description or not
+    if (status) {
+      /// Get FCM server key from firebase remote config
+      getFCMServerKey().then((val) async {
+        /// Reset userlist
+        state.filterByUsername("");
+
+        /// Search all username from description
+        Iterable<Match> _matches = regExp.allMatches(description);
+        print("${_matches.length} name found in description");
+
+        /// Send notification to user one by one
+        await Future.forEach(_matches, (Match match) async {
+          var name = description.substring(match.start, match.end);
+          final ul = state.userlist;
+          if (ul != null && ul.any((x) => x.userName == name)) {
+            final user = ul.firstWhere((x) => x.userName == name);
+            await sendNotificationToUser(model, user);
+          } else {
+            cprint("Name: $name ,", errorIn: "UserNot found");
+          }
+        });
+      });
+    }
+  }
+  /// Send notificatinn by using firebase notification rest api;
+  Future<void> sendNotificationToUser(FeedModel model, UserModel user) async {
+    print("Send notification to: ${user.userName}");
+
+    /// Return from here if fcmToken is null
+    if (user.fcmToken == null) {
+      return;
+    }
+
+// String title=type==1 ?  " seni etiketledi." : " gönderine oy kullandı.";
+    /// Create notification payload
+    var body = jsonEncode(<String, dynamic>{
+      'notification': <String, dynamic>{
+        'body': model.description,
+        'title': "${ model.user?.displayName ?? ''}  seni etiketledi."
+      },
+      'priority': 'high',
+      'data': <String, dynamic>{
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        'id': '1',
+        'status': 'done',
+        "type": NotificationType.Mention.toString(),
+        "senderId":   model.user?.userId ?? '',
+        "receiverId": user.userId ?? '',
+        "title": "title",
+        "body": "",
+        "toldyaId": ""
+      },
+      'to': user.fcmToken
+    });
+
+    var response = await http.post(
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$serverToken',
+      },
+      body: body,
+    );
+    cprint(response.body.toString());
+  }
+
+
+  /// Fecth FCM server key from firebase Remote config
+  /// send notification to user once fcmToken is retrieved from firebase
+  Future<void> sendNotificationToFeed(FeedModel model, UserModel user,UserModel ownUser,int FeedType,int count) async {
+    // final usernameRegex = r"(@\w*[a-zA-Z1-9])";
+    // RegExp regExp = new RegExp(usernameRegex);
+    // var status = regExp.hasMatch(description);
+
+    /// Check if us
+    /// Get FCM server key from firebase remote config
+    getFCMServerKey().then((val) async {
+      /// Reset userlist
+
+      /// Search all username from description
+      // Iterable<Match> _matches = regExp.allMatches(description);
+      // print("${_matches.length} name found in description");
+
+      /// Send notification to user one by one
+      // await Future.forEach(_matches, (Match match) async {
+      //   var name = description.substring(match.start, match.end);
+      //   if (state.userlist.any((x) => x.userName == name)) {
+      //     /// Fetch user model from userlist
+      //     /// UserId, FCMtoken is needed to send notification
+      //     final user = state.userlist.firstWhere((x) => x.userName == name);
+      //     await sendNotificationToUser(model, user);
+      //   } else {
+      //     cprint("Name: $name ,", errorIn: "UserNot found");
+      //   }
+      // });
+
+      await sendNotificationToUserFeed(model, user,ownUser,FeedType,count);
+    });
+  }
+  Future<void> sendNotificationToUserFeed(FeedModel model, UserModel user,UserModel ownUser,int FeedType,int count) async {
+    print("Send notification to: ${user.userName}");
+
+    /// Return from here if fcmToken is null
+    if (user.fcmToken == null) {
+      return;
+    }
+
+     String title=FeedType==0 ?  "${count.toString()}  \u{1F44D}" : "${count.toString()}  \u{1F44E}";
+    /// Create notification payload
+    var body = jsonEncode(<String, dynamic>{
+      'notification': <String, dynamic>{
+        'body': model.description ,
+        'title': "${ ownUser.displayName ?? ''}  gönderine oy kullandı. " + title,
+      },
+      'priority': 'high',
+      'data': <String, dynamic>{
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        'id': '1',
+        'status': 'done',
+        "type": NotificationType.Mention.toString(),
+        "senderId":   model.user?.userId ?? '',
+        "receiverId": user.userId ?? '',
+        "title": "başlıkkk",
+        "body": "deneme body",
+        "toldyaId":model.key
+      },
+      'to': user.fcmToken
+    });
+
+    final uri = Uri.tryParse('https://fcm.googleapis.com/fcm/send');
+    if (uri == null) return;
+    var response = await http.post(
+      uri,
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$serverToken',
+      },
+      body: body,
+    );
+    cprint(response.body.toString());
+  }
+}

@@ -1,5 +1,5 @@
 
-import 'package:bendemistim/helper/shared_prefrence_helper.dart';
+import 'package:toldya/helper/shared_prefrence_helper.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;

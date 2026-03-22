@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/chatModel.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/authState.dart';
-import 'package:bendemistim/state/chats/chatState.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/customUrlText.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/chatModel.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/authState.dart';
+import 'package:toldya/state/chats/chatState.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreenPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
   late ChatState state;
   late ScrollController _controller;
   late GlobalKey<ScaffoldState> _scaffoldKey;
+  bool _isSendingMessage = false;
 
   @override
   void dispose() {
@@ -216,14 +218,23 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 10, vertical: 13),
               alignLabelWithHint: true,
-              hintText: 'Mesaj yazın...',
+              hintText: AppLocalizations.of(context)!.writeMessageHint,
               hintStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 fontSize: 16,
               ),
               suffixIcon: IconButton(
-                icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
-                onPressed: submitMessage,
+                icon: _isSendingMessage
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    : Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
+                onPressed: _isSendingMessage ? null : submitMessage,
               ),
             ),
           ),
@@ -232,18 +243,25 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     );
   }
 
-  Future<bool> _onWillPop() async {
-    // final chatState = Provider.of<ChatState>(context,listen: false);
+  /// Cleanup when leaving chat: state-holding screen. Run on both AppBar back and system back (PopScope), then pop.
+  void _onPopInvoked(bool didPop, dynamic result) {
+    if (didPop) return;
     state.setIsChatScreenOpen = false;
     state.onChatScreenClosed();
-    return true;
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
-  void submitMessage() {
-    // var state = Provider.of<ChatState>(context, listen: false);
+  void _onBackPressed() {
+    state.setIsChatScreenOpen = false;
+    state.onChatScreenClosed();
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
+  }
+
+  void submitMessage() async {
     var authstate = Provider.of<AuthState>(context, listen: false);
-    ChatMessage message;
-    message = ChatMessage(
+    if (messageController.text.isEmpty) return;
+
+    ChatMessage message = ChatMessage(
         message: messageController.text,
         createdAt: DateTime.now().toUtc().toString(),
         senderId: authstate.userModel?.userId ?? '',
@@ -251,9 +269,6 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
         seen: false,
         timeStamp: DateTime.now().toUtc().millisecondsSinceEpoch.toString(),
         senderName: authstate.user?.displayName ?? '');
-    if (messageController.text == null || messageController.text.isEmpty) {
-      return;
-    }
     UserModel myUser = UserModel(
         displayName: authstate.userModel?.displayName,
         userId: authstate.userModel?.userId,
@@ -265,22 +280,30 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       userName: state.chatUser?.userName,
       profilePic: state.chatUser?.profilePic,
     );
-    state.onMessageSubmitted(message, myUser: myUser, secondUser: secondUser);
-    Future.delayed(Duration(milliseconds: 50)).then((_) {
-      messageController.clear();
-    });
+
+    setState(() => _isSendingMessage = true);
     try {
-      // final state = Provider.of<ChatState>(context,listen: false);
-      if ((state.messageList?.length ?? 0) > 1 &&
-          _controller.offset > 0) {
-        _controller.animateTo(
-          0.0,
-          curve: Curves.easeOut,
-          duration: const Duration(milliseconds: 300),
+      await state.onMessageSubmitted(message, myUser: myUser, secondUser: secondUser);
+      messageController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.messageSent)),
         );
       }
-    } catch (e) {
-      print("[Error] $e");
+      if (mounted && (state.messageList?.length ?? 0) > 1 && _controller.offset > 0) {
+        _controller.animateTo(0.0, curve: Curves.easeOut, duration: const Duration(milliseconds: 300));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.messageSendFailed),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingMessage = false);
     }
   }
 
@@ -288,11 +311,16 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
   Widget build(BuildContext context) {
     state = Provider.of<ChatState>(context, listen: false);
     userImage = state.chatUser?.profilePic ?? '';
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: _onBackPressed,
+          ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[

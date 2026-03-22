@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/enum.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/page/Auth/signup.dart';
-import 'package:bendemistim/state/authState.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/enum.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/page/Auth/signup.dart';
+import 'package:toldya/page/Auth/verifyEmail.dart';
+import 'package:toldya/state/authState.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../homePage.dart';
@@ -49,7 +51,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ],
           ),
           child: Text(
-            'Giriş',
+            AppLocalizations.of(context)!.login,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -89,7 +91,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
           ),
           child: Text(
-            'Kayıt ol',
+            AppLocalizations.of(context)!.signUp,
             style: GoogleFonts.sawarabiMincho(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -159,7 +161,7 @@ class _WelcomePageState extends State<WelcomePage> {
         ),
         SizedBox(height: 12),
         Text(
-          'Tahminlerini paylaş, demiş mi dememiş mi gör.',
+          AppLocalizations.of(context)!.tagline,
           textAlign: TextAlign.center,
           style: GoogleFonts.sawarabiMincho(
             fontSize: 15,
@@ -240,7 +242,6 @@ class _WelcomePageState extends State<WelcomePage> {
   //           Container(
   //             width: MediaQuery.of(context).size.width - 80,
   //             height: 40,
-  //             child: Image.asset('assets/images/casy.png'),
   //           ),
   //           Spacer(),
   //           TitleText(
@@ -293,11 +294,11 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var state = Provider.of<AuthState>(context, listen: false);
+    final state = Provider.of<AuthState>(context);
     if (state.authStatus == AuthStatus.NOT_LOGGED_IN ||
         state.authStatus == AuthStatus.NOT_DETERMINED) {
       return _body();
     }
-    return HomePage();
+    return (state.user?.emailVerified ?? false) ? HomePage() : VerifyEmailPage();
   }
 }

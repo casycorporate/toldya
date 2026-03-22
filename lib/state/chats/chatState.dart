@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:bendemistim/helper/enum.dart';
+import 'package:toldya/helper/enum.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:bendemistim/model/chatModel.dart';
-import 'package:bendemistim/helper/utility.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/appState.dart';
+import 'package:toldya/model/chatModel.dart';
+import 'package:toldya/helper/utility.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/appState.dart';
 
 class ChatState extends AppState {
   bool setIsChatScreenOpen = false;
@@ -81,7 +81,7 @@ class ChatState extends AppState {
   ///  {
   ///    "key": "FCM server key here"
   ///  } ```
-  /// For more detail visit:- https://github.com/TheAlphamerc/casy/issues/28#issue-611695533
+  /// For more detail visit:- https://github.com/orbislas-ai/toldya
   /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
   void getFCMServerKey() async {
     final remoteConfig = FirebaseRemoteConfig.instance;
@@ -162,28 +162,27 @@ class ChatState extends AppState {
   }
 
   /// Send message to other user
-  void onMessageSubmitted(ChatMessage message,
-      {UserModel? myUser, UserModel? secondUser}) {
-    print(chatUser.userId);
+  Future<void> onMessageSubmitted(ChatMessage message,
+      {UserModel? myUser, UserModel? secondUser}) async {
     try {
-      // if (_messageList == null || _messageList.length < 1) {
-      kDatabase
+      await kDatabase
           .child('chatUsers')
           .child(message.senderId ?? '')
           .child(message.receiverId ?? '')
           .set(message.toJson());
 
-      kDatabase
+      await kDatabase
           .child('chatUsers')
           .child(chatUser.userId ?? '')
           .child(message.senderId ?? '')
           .set(message.toJson());
 
-      kDatabase.child('chats').child(_channelName ?? '').push().set(message.toJson());
+      await kDatabase.child('chats').child(_channelName ?? '').push().set(message.toJson());
       sendAndRetrieveMessage(message);
       logEvent('send_message');
     } catch (error) {
-      cprint(error);
+      cprint(error, errorIn: 'onMessageSubmitted');
+      rethrow;
     }
   }
 

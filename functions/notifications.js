@@ -7,14 +7,14 @@
  * RTDB yapısı (mevcut):
  * - profile/{userId}           → fcmToken, displayName, ...
  * - toldya/{toldyaId}          → statu (0=Live, 5=Locked, 2=Ok), feedResult, userId (creator), description, likeList, unlikeList
- * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni bahis)
- * - followers/{followedUserId}/{followerId} → takip edildiğinde 1 yazılır (isteğe bağlı; yoksa bu tetikleyici atlanır)
+ * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni katılım)
  */
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
 const STATU_OK = 2;
+const STATU_REJECTED_BY_ADMIN = 7;
 
 function getDb() {
   return admin.database();
@@ -90,7 +90,7 @@ async function sendFcm(token, title, body, data) {
 }
 
 /**
- * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda bahis yapan herkese bildirim.
+ * Tahmin sonuçlandığında: toldya statu 2 (Ok) olduğunda taraf seçen herkese bildirim.
  * Tetikleyici: toldya/{toldyaId} onUpdate
  */
 exports.onPredictionResolved = functions.database
@@ -108,7 +108,8 @@ exports.onPredictionResolved = functions.database
     const title = (after.description && String(after.description).trim()) || "Tahmin";
     const notifTitle = "Tahmin Sonuçlandı!";
     const notifBody = `'${title.substring(0, 50)}${title.length > 50 ? "…" : ""}' tahmininin sonucu belli oldu. Kazanıp kazanmadığını gör!`;
-    const dataPayload = { type: "prediction_result", id: toldyaId };
+    // Standard payload: { type, id } + legacy keys for backward compatibility
+    const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "prediction_result" };
 
     try {
       const likeList = Array.isArray(after.likeList) ? after.likeList : [];
@@ -141,8 +142,8 @@ exports.onPredictionResolved = functions.database
   });
 
 /**
- * Yeni bahis: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
- * tahmin sahibine "Tahminine bahis yapıldı" bildirimi.
+ * Yeni katılım: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
+ * tahmin sahibine katılım bildirimi.
  * Tetikleyici: notification/{userId}/{toldyaId} onCreate
  */
 exports.onBetCreated = functions.database
@@ -152,8 +153,8 @@ exports.onBetCreated = functions.database
     const toldyaId = context.params.toldyaId;
     const data = snap.val();
     const type = data && data.type ? String(data.type) : "";
-    const isBet = type.includes("Like") || type.includes("UnLike");
-    if (!isBet) {
+    const isStakeNotification = type.includes("Like") || type.includes("UnLike");
+    if (!isStakeNotification) {
       console.log("[onBetCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
       return null;
     }
@@ -166,9 +167,10 @@ exports.onBetCreated = functions.database
         ? String(toldya.description).trim().substring(0, 50) + (toldya.description.length > 50 ? "…" : "")
         : "Tahmin";
 
-      const notifTitle = "Tahminine Bahis Yapıldı!";
-      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine token yatırdı.`;
-      const dataPayload = { type: "prediction_result", id: toldyaId };
+      const notifTitle = "Tahminine yeni katılım!";
+      const notifBody = `Bir kullanıcı '${predictionTitle}' tahminine puan ayırdı.`;
+      // Katılım -> open toldya detail
+      const dataPayload = { type: "toldya", id: toldyaId, toldyaId: toldyaId, legacyType: "prediction_stake" };
 
       const token = await getFcmToken(ownerId);
       if (token) {
@@ -185,42 +187,49 @@ exports.onBetCreated = functions.database
   });
 
 /**
- * Yeni takipçi: followers/{followedUserId}/{followerId} oluşturulduğunda
- * takip edilen kullanıcıya bildirim.
- * Tetikleyici: followers/{followedUserId}/{followerId} onCreate
- * Not: Takip işleminde bu path'e yazılıyorsa bildirim gider. Yazılmıyorsa bu fonksiyonu devre dışı bırakın veya takip akışına followers path'ini ekleyin.
+ * Yönetici tahmini reddetti: statu=7 ve moderasyon kaydı (manualModerationAt) yazıldığında oluşturucuya FCM.
+ * Tetikleyici: toldya/{toldyaId} onUpdate
  */
-exports.onFollowerCreated = functions.database
-  .ref("followers/{followedUserId}/{followerId}")
-  .onCreate(async (snap, context) => {
-    const followedUserId = context.params.followedUserId;
-    const followerId = context.params.followerId;
-    console.log("[onFollowerCreated] tetiklendi: followed=" + followedUserId + ", follower=" + followerId);
+exports.onToldyaRejectedByAdmin = functions.database
+  .ref("toldya/{toldyaId}")
+  .onUpdate(async (change, context) => {
+    const toldyaId = context.params.toldyaId;
+    const before = change.before.val();
+    const after = change.after.val();
+    if (!after || after.parentkey) return null;
+    if (Number(after.statu) !== STATU_REJECTED_BY_ADMIN) return null;
+    if (!after.manualModerationAt) return null;
+    if (before && before.manualModerationAt === after.manualModerationAt) return null;
+
+    const ownerId = after.userId && String(after.userId).trim();
+    if (!ownerId) return null;
+
+    const title = (after.description && String(after.description).trim()) || "Tahmin";
+    const reason = (after.manualModerationReason && String(after.manualModerationReason).trim()) || "";
+    const notifTitle = "Tahminin reddedildi";
+    const shortTitle = title.length > 45 ? title.substring(0, 45) + "…" : title;
+    const notifBody = reason
+      ? `'${shortTitle}' — ${reason.length > 120 ? reason.substring(0, 120) + "…" : reason}`
+      : `'${title.length > 50 ? title.substring(0, 50) + "…" : title}' tahminin yönetici incelemesinde reddedildi.`;
+    const dataPayload = {
+      type: "toldya",
+      id: toldyaId,
+      toldyaId: toldyaId,
+      legacyType: "toldya_rejected_by_admin",
+    };
 
     try {
-      const token = await getFcmToken(followedUserId);
-      if (!token) {
-        console.log("[onFollowerCreated] takip edilen kullanıcı FCM token yok, bildirim gönderilmedi");
-        return null;
+      const token = await getFcmToken(ownerId);
+      if (token) {
+        const ok = await sendFcm(token, notifTitle, notifBody, dataPayload);
+        console.log("[onToldyaRejectedByAdmin] toldyaId=" + toldyaId + ", ownerId=" + ownerId + ", ok=" + ok);
+      } else {
+        console.log("[onToldyaRejectedByAdmin] no FCM token, ownerId=" + ownerId);
       }
-
-      let followerDisplayName = "Bir kullanıcı";
-      const profileSnap = await getDb().ref("profile").child(followerId).once("value");
-      const profile = profileSnap.val();
-      if (profile) {
-        const name = profile.displayName || profile.userName || profile.name;
-        if (name) followerDisplayName = String(name);
-      }
-
-      const notifTitle = "Yeni Takipçi!";
-      const notifBody = `${followerDisplayName} seni takip etmeye başladı.`;
-      const dataPayload = { type: "new_follower", id: followerId };
-
-      await sendFcm( token, notifTitle, notifBody, dataPayload );
-      console.log("[onFollowerCreated] sent to", followedUserId, "from", followerId);
       return null;
     } catch (e) {
-      console.error("[onFollowerCreated] error", e);
+      console.error("[onToldyaRejectedByAdmin] error", toldyaId, e.message || e);
       return null;
     }
   });
+

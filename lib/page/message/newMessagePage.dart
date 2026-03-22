@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:bendemistim/helper/constant.dart';
-import 'package:bendemistim/helper/theme.dart';
-import 'package:bendemistim/model/user.dart';
-import 'package:bendemistim/state/chats/chatState.dart';
-import 'package:bendemistim/state/searchState.dart';
-import 'package:bendemistim/widgets/customAppBar.dart';
-import 'package:bendemistim/widgets/customWidgets.dart';
-import 'package:bendemistim/widgets/newWidget/title_text.dart';
+import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
+import 'package:toldya/helper/theme.dart';
+import 'package:toldya/model/user.dart';
+import 'package:toldya/state/chats/chatState.dart';
+import 'package:toldya/state/searchState.dart';
+import 'package:toldya/widgets/customAppBar.dart';
+import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:provider/provider.dart';
 
 class NewMessagePage extends StatefulWidget {
@@ -59,23 +60,25 @@ class _NewMessagePageState extends State<NewMessagePage> {
     );
   }
 
-  Future<bool> _onWillPop() async {
-    final state = Provider.of<SearchState>(context, listen: false);
-    state.filterByUsername("");
-    return true;
+  /// Cleanup when leaving: clear search filter. Back (AppBar BackButton or system) triggers PopScope, then pop.
+  void _onPopInvoked(bool didPop, dynamic result) {
+    if (didPop) return;
+    Provider.of<SearchState>(context, listen: false).filterByUsername("");
+    if (Navigator.canPop(context)) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         appBar: CustomAppBar(
           scaffoldKey: widget.scaffoldKey,
           isBackButton: true,
           isbootomLine: true,
           title: customTitleText(
-            'New Message',
+            AppLocalizations.of(context)!.newMessageTitle,
           ),
         ),
         body: Consumer<SearchState>(
@@ -91,7 +94,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
                     fontSize: 18,
                   ),
                   decoration: InputDecoration(
-                    hintText: "Kişi veya grup ara",
+                    hintText: AppLocalizations.of(context)!.searchPeopleOrGroupsHint,
                     hintStyle: TextStyle(
                       fontSize: 18,
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
