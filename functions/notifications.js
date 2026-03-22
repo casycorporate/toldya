@@ -7,7 +7,7 @@
  * RTDB yapısı (mevcut):
  * - profile/{userId}           → fcmToken, displayName, ...
  * - toldya/{toldyaId}          → statu (0=Live, 5=Locked, 2=Ok), feedResult, userId (creator), description, likeList, unlikeList
- * - notification/{userId}/{toldyaId} → placeBet yazınca type: Like/UnLike (tahmin sahibine yeni katılım)
+ * - notification/{userId}/{toldyaId} → submitStake callable yazınca type: Like/UnLike (tahmin sahibine yeni katılım)
  */
 
 const functions = require("firebase-functions");
@@ -142,11 +142,11 @@ exports.onPredictionResolved = functions.database
   });
 
 /**
- * Yeni katılım: notification/{userId}/{toldyaId} oluşturulduğunda (placeBet tarafından)
+ * Yeni katılım: notification/{userId}/{toldyaId} oluşturulduğunda (submitStake callable tarafından)
  * tahmin sahibine katılım bildirimi.
  * Tetikleyici: notification/{userId}/{toldyaId} onCreate
  */
-exports.onBetCreated = functions.database
+exports.onStakeCreated = functions.database
   .ref("notification/{userId}/{toldyaId}")
   .onCreate(async (snap, context) => {
     const ownerId = context.params.userId;
@@ -155,11 +155,11 @@ exports.onBetCreated = functions.database
     const type = data && data.type ? String(data.type) : "";
     const isStakeNotification = type.includes("Like") || type.includes("UnLike");
     if (!isStakeNotification) {
-      console.log("[onBetCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
+      console.log("[onStakeCreated] atlandı: type=" + type + " (Like/UnLike değil), toldyaId=" + toldyaId);
       return null;
     }
 
-    console.log("[onBetCreated] tetiklendi: ownerId=" + ownerId + ", toldyaId=" + toldyaId);
+    console.log("[onStakeCreated] tetiklendi: ownerId=" + ownerId + ", toldyaId=" + toldyaId);
     try {
       const toldyaSnap = await getDb().ref("toldya").child(toldyaId).once("value");
       const toldya = toldyaSnap.val();
@@ -175,13 +175,13 @@ exports.onBetCreated = functions.database
       const token = await getFcmToken(ownerId);
       if (token) {
         const ok = await sendFcm( token, notifTitle, notifBody, dataPayload );
-        console.log("[onBetCreated] tahmin sahibine gönderildi: ownerId=" + ownerId + ", toldyaId=" + toldyaId + ", ok=" + ok);
+        console.log("[onStakeCreated] tahmin sahibine gönderildi: ownerId=" + ownerId + ", toldyaId=" + toldyaId + ", ok=" + ok);
       } else {
-        console.log("[onBetCreated] tahmin sahibi (" + ownerId + ") FCM token yok, bildirim gönderilmedi");
+        console.log("[onStakeCreated] tahmin sahibi (" + ownerId + ") FCM token yok, bildirim gönderilmedi");
       }
       return null;
     } catch (e) {
-      console.error("[onBetCreated] error", toldyaId, e.message || e);
+      console.error("[onStakeCreated] error", toldyaId, e.message || e);
       return null;
     }
   });

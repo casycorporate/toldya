@@ -61,13 +61,13 @@
 <p><strong>Kritik eksik:</strong> Katılım işlemi tamamen client'ta; sunucuda miktar/limit kontrolü olmadığı için güvenilir limitlendirme için işlem <strong>Callable Cloud Function</strong> üzerinden geçmelidir.</p>
 <hr>
 
-<h2>3. Callable: placeBet – Tahmin katılımı ve limitler</h2>
+<h2>3. Callable: submitStake – Tahmin katılımı ve limitler</h2>
 
 <h3>3.1 Amaç</h3>
 <p>Tüm katılımlar tek bir noktadan (Cloud Function) geçer; böylece kullanıcı bazlı üst sınır (rütbe/XP), bakiye oran limiti ve havuz bazlı limit (küçük tahminlerde tavan) client'tan bağımsız ve güvenli uygulanır.</p>
 
 <h3>3.2 İmza ve Parametreler</h3>
-<p><strong>Fonksiyon adı:</strong> <code>placeBet</code> (Callable HTTPS).</p>
+<p><strong>Fonksiyon adı:</strong> <code>submitStake</code> (Callable HTTPS).</p>
 <p><strong>Girdi (data):</strong></p>
 <table>
   <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
@@ -99,7 +99,7 @@ RANK_MULTIPLIER: Çaylak 0.10 (0–500 XP), Tahminci 0.25 (500–2000 XP), Üsta
 POOL_THRESHOLD = 1000, MAX_STAKE_SMALL_POOL = 100</pre>
 
 <h3>3.5 Veritabanı Şeması</h3>
-<p><strong>Eklenecek:</strong> profile/{userId}/xp (ve isteğe level). placeBet sonrası: pegCount azalır, tweet likeList/unlikeList güncellenir.</p>
+<p><strong>Eklenecek:</strong> profile/{userId}/xp (ve isteğe level). submitStake sonrası: pegCount azalır, tweet likeList/unlikeList güncellenir.</p>
 <hr>
 
 <h2>4. Rütbe (Seviye) Sistemi</h2>
@@ -125,13 +125,13 @@ POOL_THRESHOLD = 1000, MAX_STAKE_SMALL_POOL = 100</pre>
 <hr>
 
 <h2>7. Flutter Tarafı Uyum</h2>
-<p>Tahmin katılımı: Sadece placeBet Callable çağrılır; doğrudan DB yazımı kaldırılır. maxVal = f(bakiye, xp, havuz). constant.dart ve user.dart’a xp, stashCount, rütbe sabitleri eklenir.</p>
+<p>Tahmin katılımı: Sadece submitStake Callable çağrılır; doğrudan DB yazımı kaldırılır. maxVal = f(bakiye, xp, havuz). constant.dart ve user.dart’a xp, stashCount, rütbe sabitleri eklenir.</p>
 <hr>
 
 <h2>8. Özet Checklist (Uygulama Sırası)</h2>
 <table>
   <tr><th>Sıra</th><th>Öğe</th><th>Backend</th><th>Flutter</th></tr>
-  <tr><td>1</td><td>placeBet + limitler</td><td>Callable; validasyon + atomik güncelleme</td><td>Callable çağrısı; DB yazımı kaldır</td></tr>
+  <tr><td>1</td><td>submitStake + limitler</td><td>Callable; validasyon + atomik güncelleme</td><td>Callable çağrısı; DB yazımı kaldır</td></tr>
   <tr><td>2</td><td>Rütbe/XP</td><td>profile xp/level; dağıtımda XP</td><td>maxVal, rütbe gösterimi</td></tr>
   <tr><td>3</td><td>Günlük bonus</td><td>claimDailyBonus</td><td>"Bugünkü bonusu al" UI</td></tr>
   <tr><td>4</td><td>Kademeli cüzdan</td><td>stashCount, drip schedule</td><td>stash gösterimi</td></tr>
@@ -139,7 +139,7 @@ POOL_THRESHOLD = 1000, MAX_STAKE_SMALL_POOL = 100</pre>
 </table>
 <hr>
 
-<h2>9. Hata Kodları ve Mesajlar (placeBet)</h2>
+<h2>9. Hata Kodları ve Mesajlar (submitStake)</h2>
 <table>
   <tr><th>code</th><th>Mesaj</th></tr>
   <tr><td>UNAUTHORIZED</td><td>Oturum açmanız gerekir.</td></tr>

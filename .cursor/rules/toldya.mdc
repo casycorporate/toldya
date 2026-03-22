@@ -68,9 +68,9 @@ R --> S[Toldya kapanır]
 
 ## Firebase ve güvenlik
 
-- **Tahmin katılımı:** Client tarafında tweet node'una doğrudan yazma YOK. Tüm katılım işlemi `placeBet` Callable Cloud Function üzerinden (istemci metodu: `submitStake`).
+- **Tahmin katılımı:** Client tarafında tweet node'una doğrudan yazma YOK. Tüm katılım işlemi `submitStake` Callable Cloud Function üzerinden.
 - **Post statu:** 6 (Yönetici incelemesi) → 0 (Yayında) → 5 (Kilitli) → 2 (Onaylanan/Ok) → 7 (Yönetici reddi). Moderasyon: `moderateToldya` callable (statu 6 → 0 veya 7).
-- **Bildirimler:** Cloud Functions (onBetCreated, onPredictionResolved, onToldyaRejectedByAdmin, …) FCM ile; token profile/{uid}/fcmToken.
+- **Bildirimler:** Cloud Functions (onStakeCreated, onPredictionResolved, onToldyaRejectedByAdmin, …) FCM ile; token profile/{uid}/fcmToken.
 - **Veri:** Firebase referansları temiz; FeedModel, UserModel gibi modellerle parse et. HTTP/Callable hatalarını kullanıcı dostu Snackbar ile göster (örn. INSUFFICIENT_BALANCE → "Yetersiz Bakiye").
 
 ---

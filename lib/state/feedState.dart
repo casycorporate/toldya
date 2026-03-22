@@ -775,7 +775,7 @@ class FeedState extends AppState {
     // No-op: Tahmin katılımı yalnızca Cloud Function üzerinden yapılmalı.
   }
 
-  /// Tahmin katılımını backend (HTTPS callable `placeBet`) üzerinden gönderir.
+  /// Tahmin katılımını backend (HTTPS callable `submitStake`) üzerinden gönderir.
   /// Optimistic UI: önce yerel state güncellenir (bakiye + post likeList/unlikeList), sonra HTTP çağrısı yapılır.
   /// Başarısız olursa yerel state snapshot ile geri alınır ve hata fırlatılır.
   Future<void> submitStake(
@@ -843,7 +843,7 @@ class FeedState extends AppState {
         );
       }
 
-      final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/placeBet');
+      final uri = Uri.parse('${AppIcon.cloudFunctionsBaseUrl}/submitStake');
 
       final response = await http
           .post(
