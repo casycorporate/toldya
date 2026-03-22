@@ -28,6 +28,9 @@
 .pub-cache/
 .pub/
 /build/
+# Yerel imzalı bundle çıktıları (repoda tutulmaz)
+android/app/release/
+*.aab
 
 # Android related
 **/android/**/gradle-wrapper.jar
@@ -38,6 +41,7 @@ android/.gradle/
 **/android/gradlew
 **/android/gradlew.bat
 **/android/local.properties
+android/key.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/app/google-services.json
 **/android/app/key.jks

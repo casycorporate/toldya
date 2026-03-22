@@ -1,0 +1,7 @@
+# Bu dosyayı kopyalayıp `key.properties` yapın (key.properties git'e eklenmez).
+# Şifreleri doldurun; storeFile yolunu kendi keystore yolunuzla değiştirin (Windows: / kullanın).
+
+storePassword=BURAYA_KEYSTORE_SIFRESI
+keyPassword=BURAYA_KEY_SIFRESI
+keyAlias=key0
+storeFile=C:/Users/sinan.yilmaz/Desktop/toldya_key_store

@@ -79,6 +79,28 @@ int? parseStatu(dynamic value) {
   return null;
 }
 
+/// major.minor.patch sayılarına çevirir (+build ve ilk `-` öncesi segment kullanılır).
+List<int> appVersionToComparableParts(String v) {
+  final core = v.split('+').first.split('-').first.trim();
+  if (core.isEmpty) return [0];
+  return core.split('.').map((s) => int.tryParse(s.trim()) ?? 0).toList();
+}
+
+/// Yüklü sürüm, Remote Config’teki **minimum desteklenen** sürümden büyük veya eşit mi?
+/// Eşitlikte true (kullanıcı tam bu sürümdeyse güncelle zorlanmaz).
+bool isInstalledAppVersionAtLeast(String installed, String minimumRequired) {
+  final i = appVersionToComparableParts(installed);
+  final m = appVersionToComparableParts(minimumRequired);
+  final len = i.length > m.length ? i.length : m.length;
+  for (var k = 0; k < len; k++) {
+    final iv = k < i.length ? i[k] : 0;
+    final mv = k < m.length ? m[k] : 0;
+    if (iv > mv) return true;
+    if (iv < mv) return false;
+  }
+  return true;
+}
+
 String getStatuLabel(int? statu) {
   if (statu == null) return '';
   switch (statu) {
@@ -391,7 +413,7 @@ class Utility {
       uriPrefix: 'https://casycorporate.page.link/',
       link: Uri.parse('https://casycorporate.page.link/$id'),
       androidParameters: AndroidParameters(
-        packageName: 'com.casycorporate.casy',
+        packageName: 'com.casycorporate.toldya',
         minimumVersion: 0,
       ),
       // dynamicLinkParametersOptions: DynamicLinkParametersOptions(
@@ -405,7 +427,7 @@ class Utility {
     url = shortLink.shortUrl;
     share(url.toString(), subject: "Toldya");
     // return url;
-    // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.casy");
+    // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.toldya");
     //return url;
   }
 
@@ -415,7 +437,7 @@ class Utility {
       uriPrefix: 'https://casycorporate.page.link/',
       link: Uri.parse('https://casycorporate.page.link/$id'),
       androidParameters: AndroidParameters(
-        packageName: 'com.casycorporate.casy',
+        packageName: 'com.casycorporate.toldya',
         minimumVersion: 0,
       ),
       // dynamicLinkParametersOptions: DynamicLinkParametersOptions(
@@ -429,7 +451,7 @@ class Utility {
     url = shortLink.shortUrl;
 
      return url;
-    // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.casy");
+    // Uri urlYeni = Uri.tryParse("https://play.google.com/store/apps/details?id=com.casycorporate.toldya");
     //return url;
   }
 
@@ -439,7 +461,7 @@ class Utility {
         socialMetaTagParameters: socialMetaTagParameters);
 
     share(url.toString(), subject: "Toldya");
-    // share('https://play.google.com/store/apps/details?id=com.casycorporate.casy', subject: "Toldya");
+    // share('https://play.google.com/store/apps/details?id=com.casycorporate.toldya', subject: "Toldya");
   }
 }
 void copyToClipBoard({

@@ -2,87 +2,73 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:toldya/helper/constant.dart';
-import 'package:toldya/helper/theme.dart';
 import 'package:toldya/widgets/customWidgets.dart';
-import 'package:image_picker/image_picker.dart';
 
+/// Alt çubuk: karakter sayacı. Kamera/galeri kaldırıldı (izin yok); görsel ekleme şimdilik kapalı.
 class ComposeBottomIconWidget extends StatefulWidget {
-  
   final TextEditingController textEditingController;
   final Function(File) onImageIconSelcted;
-  ComposeBottomIconWidget({Key? key, required this.textEditingController, required this.onImageIconSelcted}) : super(key: key);
-  
+
+  ComposeBottomIconWidget({
+    Key? key,
+    required this.textEditingController,
+    required this.onImageIconSelcted,
+  }) : super(key: key);
+
   @override
   _ComposeBottomIconWidgetState createState() => _ComposeBottomIconWidgetState();
 }
 
 class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
+  late Color wordCountColor;
+  String _draftText = '';
 
- bool reachToWarning = false;
- bool reachToOver = false;
- late Color wordCountColor;
- String _draftText = '';
- 
- @override
- void initState() { 
-   wordCountColor = Colors.blue;
-   widget.textEditingController.addListener(updateUI);
-   super.initState();
- }
- void updateUI(){
-   setState(() {
-     _draftText = widget.textEditingController.text;
-     if (widget.textEditingController.text != null &&
-          widget.textEditingController.text.isNotEmpty) {
-            if (widget.textEditingController.text.length > 259 &&
-                widget.textEditingController.text.length < 280) {
-              wordCountColor = Colors.orange;
-            } else if (widget.textEditingController.text.length >= 280) {
-              wordCountColor = Theme.of(context).colorScheme.error;
-            } else {
-              wordCountColor = Colors.blue;
-            }
-           }
-   });
- }
- Widget _bottomIconWidget() {
+  @override
+  void initState() {
+    wordCountColor = Colors.blue;
+    widget.textEditingController.addListener(updateUI);
+    super.initState();
+  }
+
+  void updateUI() {
+    setState(() {
+      _draftText = widget.textEditingController.text;
+      if (widget.textEditingController.text.isNotEmpty) {
+        if (widget.textEditingController.text.length > 259 &&
+            widget.textEditingController.text.length < 280) {
+          wordCountColor = Colors.orange;
+        } else if (widget.textEditingController.text.length >= 280) {
+          wordCountColor = Theme.of(context).colorScheme.error;
+        } else {
+          wordCountColor = Colors.blue;
+        }
+      }
+    });
+  }
+
+  Widget _bottomIconWidget() {
     return Container(
       width: fullWidth(context),
       height: 50,
       decoration: BoxDecoration(
-          border:
-              Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-          color: Theme.of(context).colorScheme.surface),
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        color: Theme.of(context).colorScheme.surface,
+      ),
       child: Row(
         children: <Widget>[
-          IconButton(
-              onPressed: () {
-                setImage(ImageSource.gallery);
-              },
-              icon: customIcon(context,
-                  icon: AppIcon.image,
-                  istwitterIcon: true,
-                  iconColor: AppColor.primary)),
-          IconButton(
-              onPressed: () {
-                setImage(ImageSource.camera);
-              },
-              icon: customIcon(context,
-                  icon: AppIcon.camera,
-                  istwitterIcon: true,
-                  iconColor: AppColor.primary)),
           Expanded(
-              child: Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
                 child: _draftText.length > 289
                     ? Padding(
                         padding: EdgeInsets.only(right: 10),
                         child: customText(
-                            '${280 - _draftText.length}',
-                            style:
-                                TextStyle(color: Theme.of(context).colorScheme.error)),
+                          '${280 - _draftText.length}',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error),
+                        ),
                       )
                     : Stack(
                         alignment: Alignment.center,
@@ -100,21 +86,15 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
                               : customText('',
                                   style: TextStyle(color: wordCountColor))
                         ],
-                      )),
-          ))
+                      ),
+              ),
+            ),
+          )
         ],
       ),
     );
   }
-  void setImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final xFile = await picker.pickImage(source: source, imageQuality: 20);
-    if (xFile != null) {
-      setState(() {
-        widget.onImageIconSelcted(File(xFile.path));
-      });
-    }
-  }
+
   double getToldyaCharLimit() {
     if (_draftText.isEmpty) {
       return 0.0;
@@ -130,7 +110,7 @@ class _ComposeBottomIconWidgetState extends State<ComposeBottomIconWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-       child: _bottomIconWidget(),
+      child: _bottomIconWidget(),
     );
   }
 }

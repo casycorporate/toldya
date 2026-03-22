@@ -9,8 +9,6 @@ import 'package:flutter/widgets.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
 import 'package:toldya/helper/constant.dart';
 import 'package:toldya/helper/theme.dart';
-import 'package:image_picker/image_picker.dart';
-
 import 'package:toldya/widgets/newWidget/DataHolder.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:toldya/widgets/toldya_logo.dart';
@@ -566,82 +564,6 @@ Widget customListTile(BuildContext context,
   );
 }
 
-openImagePickerUseCameraAndGallery(
-    BuildContext context, Function onImageSelected) {
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return Container(
-        height: 100,
-        decoration: BoxDecoration(
-        color: ToldyaColor.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(15),
-          topRight: Radius.circular(15),
-        ),
-      ),
-        padding: EdgeInsets.all(10),
-        child: Column(
-          children: <Widget>[
-            Text(
-              AppLocalizations.of(context)!.selectImage,
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.useCameraLabel,
-                      style:
-                          TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-                    ),
-                    onPressed: () {
-                      getImageUseCameraAndGallery(
-                          context, ImageSource.camera, onImageSelected);
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.useGalleryLabel,
-                      style:
-                          TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-                    ),
-                    onPressed: () {
-                      getImageUseCameraAndGallery(
-                          context, ImageSource.gallery, onImageSelected);
-                    },
-                  ),
-                )
-              ],
-            )
-          ],
-        ),
-      );
-    },
-  );
-}
-
-getImageUseCameraAndGallery(
-    BuildContext context, ImageSource source, Function onImageSelected) {
-  ImagePicker().pickImage(source: source, imageQuality: 50).then((XFile? file) {
-    if (file != null) onImageSelected(File(file.path));
-    Navigator.pop(context);
-  });
-}
-
 openImagePicker(BuildContext context, Function onImageSelected,int type) {
 
   showModalBottomSheet(backgroundColor: Colors.transparent,
@@ -686,12 +608,5 @@ openImagePicker(BuildContext context, Function onImageSelected,int type) {
     requestedIndex.clear();
     imageData.clear();
     print('Hey there, I\'m calling after hide bottomSheet');
-  });
-}
-
-getImage(BuildContext context, ImageSource source, Function onImageSelected) {
-  ImagePicker().pickImage(source: source, imageQuality: 50).then((XFile? file) {
-    if (file != null) onImageSelected(File(file.path));
-    if (context.mounted && Navigator.canPop(context)) Navigator.pop(context);
   });
 }

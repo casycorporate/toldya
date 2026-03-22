@@ -266,7 +266,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 border: Border.all(color: Colors.white.withOpacity(0.12)),
               ),
               child: Icon(
-                Icons.camera_alt,
+                Icons.palette_outlined,
                 size: 18,
                 color: Colors.white.withOpacity(0.9),
               ),

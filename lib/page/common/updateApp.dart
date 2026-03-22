@@ -74,7 +74,7 @@ class _UpdateAppState extends State<UpdateApp> with WidgetsBindingObserver {
                 ),
                 onPressed: () {
                   launchURL(
-                      "https://play.google.com/store/apps/details?id=com.casycorporate.casy");
+                      "https://play.google.com/store/apps/details?id=com.casycorporate.toldya");
                 },
                 child: TitleText(AppLocalizations.of(context)!.updateNow, color: Colors.white),
               ),

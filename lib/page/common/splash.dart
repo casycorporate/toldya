@@ -81,23 +81,36 @@ class _SplashPageState extends State<SplashPage> {
     _checkAppVersion();
   }
 
-  /// Return installed app version
-  /// For testing purpose in debug mode update screen will not be open up
-  /// In  an old version of  realease app is installed on user's device then
-  /// User will not be able to see home screen
-  /// User will redirected to update app screen.
-  /// Once user update app with latest verson and back to app then user automatically redirected to welcome / Home page
+  /// Remote Config minimum sürümü; altındaysa güncelle ekranı (release ile aynı).
+  /// Debug'da sadece güncelle ekranını atlamak için `kSkipVersionUpdateScreenInDebug`.
   Future<bool> _checkAppVersion() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    final currentAppVersion = "${packageInfo.version}";
-    final appVersion = await _getAppVersionFromFirebaseConfig();
-    if (appVersion != currentAppVersion) {// if (appVersion != currentAppVersion) {
+    final currentAppVersion = packageInfo.version.trim();
+    final minimumVersion = await _getAppVersionFromFirebaseConfig();
+    // Boş = parametre yok → güncelle ekranına gönderme (eskiden '0.0.0' herkesi blokluyordu).
+    if (minimumVersion.isEmpty) {
       if (kDebugMode) {
-        cprint("Latest version of app is not installed on your system");
-        cprint(
-            "In debug mode we are not restrict devlopers to redirect to update screen");
-        cprint(
-            "Redirect devs to update screen can put other devs in confusion");
+        debugPrint(
+          '[RemoteConfig] appVersion boş — sürüm kapısı yok (installed=$currentAppVersion)',
+        );
+      }
+      return true;
+    }
+    final needsUpdate =
+        !isInstalledAppVersionAtLeast(currentAppVersion, minimumVersion);
+    if (kDebugMode && !needsUpdate) {
+      debugPrint(
+        '[RemoteConfig] OK installed=$currentAppVersion >= minimum=$minimumVersion',
+      );
+    }
+    if (needsUpdate) {
+      if (kDebugMode) {
+        debugPrint(
+          '[RemoteConfig] version gate: installed=$currentAppVersion '
+          'minimum=$minimumVersion → redirect to update',
+        );
+      }
+      if (kDebugMode && kSkipVersionUpdateScreenInDebug) {
         return true;
       }
       if (!mounted) return false;
@@ -106,38 +119,33 @@ class _SplashPageState extends State<SplashPage> {
         MaterialPageRoute(builder: (_) => UpdateApp()),
       );
       return false;
-    } else {
-      return true;
     }
+    return true;
   }
 
-  /// Returns app version from firebase config
-  /// Fecth Latest app version from firebase Remote config
-  /// To check current installed app version check [version] in pubspec.yaml
-  /// you have to add latest app version in firebase remote config
-  /// To fetch this key go to project setting in firebase
-  /// Click on `cloud messaging` tab
-  /// Copy server key from `Project credentials`
-  /// Now goto `Remote Congig` section in fireabse
-  /// Add [appVersion]  as paramerter key and below json in Default vslue
-  ///  ``` json
-  ///  {
-  ///    "key": "1.0.0"
-  ///  } ```
-  /// After adding app version key click on Publish Change button
-  /// For package detail check:-  https://pub.dev/packages/firebase_remote_config#-readme-tab-
+  /// Remote Config `appVersion`: **minimum desteklenen** sürüm (örn. `1.0.0`).
+  /// Yüklü sürüm >= bu değerse giriş serbest; düşükse güncelle ekranı.
+  /// Boş bırakılırsa sürüm kapısı uygulanmaz.
+  /// Firebase Console → Remote Config → String `appVersion` = düz metin `1.0.0` (JSON değil).
   Future<String> _getAppVersionFromFirebaseConfig() async {
     final FirebaseRemoteConfig remoteConfig =
         FirebaseRemoteConfig.instance;
-    await remoteConfig.fetchAndActivate();
-    final String data = remoteConfig.getString('appVersion');
+    final updated = await remoteConfig.fetchAndActivate();
+    if (kDebugMode) {
+      debugPrint(
+        '[RemoteConfig] fetchAndActivate updated=$updated '
+        'appVersion(raw)=${remoteConfig.getString('appVersion')}',
+      );
+    }
+    final String data = remoteConfig.getString('appVersion').trim();
     if (data.isNotEmpty) {
       return data;
     }
     cprint(
-        "Please add your app's current version into Remote config in firebase",
+        "Remote Config [appVersion] boş — sürüm kontrolü atlanıyor. Minimum zorunlu ise "
+        "Firebase’de string parametre ekleyin (örn. 1.0.0).",
         errorIn: "_getAppVersionFromFirebaseConfig");
-    return '0.0.0';
+    return '';
   }
 
   Widget _body() {

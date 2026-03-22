@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 /// Post detail (FeedPostDetail) özelliği.
 const bool kEnablePostDetail = false;
 
+/// Debug/profile: güncelle ekranını atla; Remote Config yine sunucudan çekilir ve loglanır.
+/// Yerelde release ile aynı davranış (güncelle ekranı dahil) için **false** bırak.
+const bool kSkipVersionUpdateScreenInDebug = false;
+
 /// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
 const String kToldyaLogo = 'assets/images/toldya.svg';
 

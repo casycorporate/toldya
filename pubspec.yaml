@@ -1,7 +1,9 @@
 name: toldya
 description: Toldya - Flutter uygulaması.
 
-version: 1.0.1+9
+# Play versionCode = + sonrası. android/local.properties içinde flutter.versionCode / flutter.versionName SATIRI OLMASIN (pubspec'i ezer).
+# Play: her yeni yüklemede versionCode, mağazada şimdiye kadar kullanılan EN BÜYÜK koddan büyük olmalı.
+version: 1.0.0+6
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -29,7 +31,6 @@ dependencies:
   equatable: ^2.0.5
   uuid: ^4.5.1
   http: ^1.2.2
-  image_picker: ^1.1.2
   package_info_plus: ^8.1.2
   shared_preferences: ^2.3.3
   firebase_messaging: ^15.1.6
@@ -41,8 +42,6 @@ dependencies:
   google_fonts: ^6.2.1
   firebase_remote_config: ^5.1.6
   firebase_dynamic_links: ^6.0.16
-  qr_code_scanner: ^1.0.1
-  qr_flutter: ^4.1.0
   cupertino_radio_choice: ^1.0.1+1
   animated_bottom_navigation_bar: ^0.3.2
   circular_reveal_animation: ^2.0.0
