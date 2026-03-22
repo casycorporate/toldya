@@ -273,12 +273,14 @@ class _AdminModerationPageState extends State<AdminModerationPage> {
 
     if (!confirmed) return;
 
-    try {
-      await FirebaseDatabase.instance.ref('toldya/$toldyaId').remove();
-    } catch (e) {
-      if (!mounted) return;
+    final out = await _moderate(
+      toldyaId: toldyaId,
+      decision: 'reject',
+    );
+    if (!mounted) return;
+    if (!out.ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.adminModerationActionFailed)),
+        SnackBar(content: Text(out.message ?? l10n.adminModerationActionFailed)),
       );
     }
   }

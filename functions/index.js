@@ -64,7 +64,7 @@ exports.runToldyaBatchJobs = onRequestJob(async (req, res) => {
 
 // --- Callable (App Check kapalı) ---
 const _callables = registerCallables(functions);
-exports.placeBet = _callables.placeBet;
+exports.submitStake = _callables.submitStake;
 exports.claimDailyBonus = _callables.claimDailyBonus;
 exports.deleteAccount = _callables.deleteAccount;
 exports.moderateToldya = _callables.moderateToldya;
@@ -101,5 +101,5 @@ exports.scheduledWeeklyLeagueReset = functions.pubsub
 // --- RTDB tetikleyicileri (FCM) ---
 const notifications = require("./notifications");
 exports.onPredictionResolved = notifications.onPredictionResolved;
-exports.onBetCreated = notifications.onBetCreated;
+exports.onStakeCreated = notifications.onStakeCreated;
 exports.onToldyaRejectedByAdmin = notifications.onToldyaRejectedByAdmin;

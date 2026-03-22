@@ -21,7 +21,7 @@ const { distributeWinningsForToldyaIdLogic } = require("./tokenomics");
 
 function registerCallables(functions) {
   // enforceAppCheck: false → App Check zorunluluğu kapalı (cihaz/GMS hatası geçene kadar)
-  const placeBet = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
+  const submitStake = functions.runWith({ enforceAppCheck: false }).https.onCall(async (data, context) => {
     try {
       if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Oturum açmanız gerekir.");
@@ -72,11 +72,11 @@ function registerCallables(functions) {
       const spendableBalance = profile.pegCount || 0;
       // TEMP: Aggressive max stake cap = 75% of spendable balance.
       // (Rank/pool limits are intentionally disabled for now; can be re-enabled later.)
-      const maxBet = Math.floor(spendableBalance * 0.75);
-      if (amount > maxBet) {
+      const maxStake = Math.floor(spendableBalance * 0.75);
+      if (amount > maxStake) {
         throw new functions.https.HttpsError(
           "resource-exhausted",
-          `En fazla bakiyenizin %75'ini yatırabilirsiniz. (Maks: ${maxBet})`
+          `En fazla bakiyenizin %75'ini yatırabilirsiniz. (Maks: ${maxStake})`
         );
       }
       if (amount > spendableBalance) {
@@ -123,7 +123,7 @@ function registerCallables(functions) {
       return { ok: true, newBalance, newStashBalance, message: "Tahmin katılımı kabul edildi." };
     } catch (err) {
       if (err instanceof functions.https.HttpsError) throw err;
-      log.error("submitStake (placeBet) error", err);
+      log.error("submitStake callable error", err);
       throw new functions.https.HttpsError("internal", err.message || "Tahmin katılımı işlenirken hata oluştu.");
     }
   });
@@ -519,7 +519,7 @@ function registerCallables(functions) {
     return { ok: true, toldyaId, ...deepSanitize(result) };
   });
 
-  return { placeBet, claimDailyBonus, deleteAccount, moderateToldya, adminResolveToldya, adminDistributeWinningsForToldya };
+  return { submitStake, claimDailyBonus, deleteAccount, moderateToldya, adminResolveToldya, adminDistributeWinningsForToldya };
 }
 
 module.exports = { registerCallables };
