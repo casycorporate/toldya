@@ -390,11 +390,16 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
     }
     authState.createUser(userModel);
     var myUser = userModel;
+    final ownerId = (myUser.userId ?? authState.userId).trim();
+    if (ownerId.isEmpty) {
+      throw StateError('Cannot create toldya without ownerId');
+    }
+    myUser.userId = ownerId;
     var profilePic = myUser.profilePic ?? dummyProfilePic;
     var commentedUser = UserModel(
         displayName: myUser.displayName ?? (myUser.email ?? '').split('@')[0],
         profilePic: profilePic,
-        userId: myUser.userId,
+        userId: ownerId,
         isVerified: authState.userModel?.isVerified ?? false,
         userName: authState.userModel?.userName ?? '');
     var tags = getHashTags(_textEditingController.text);
@@ -417,7 +422,8 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
             : widget.isRetoldya
                 ? model.key
                 : null,
-        userId: myUser.userId);
+        userId: ownerId);
+    reply.normalizeOwnershipForWrite();
     return reply;
   }
 

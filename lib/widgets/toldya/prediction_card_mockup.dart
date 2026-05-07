@@ -68,7 +68,7 @@ class PredictionCardMockup extends StatelessWidget {
             children: [
               Expanded(
                 child: FutureBuilder<UserModel?>(
-                  future: Provider.of<AuthState>(context, listen: false).getuserDetail(model.user?.userId ?? ''),
+                  future: Provider.of<AuthState>(context, listen: false).getuserDetail(model.ownerId),
                   builder: (context, AsyncSnapshot<UserModel?> snapshot) {
                     final user = snapshot.data ?? model.user;
                     final handle = formatHandle(user?.userName, user?.displayName);

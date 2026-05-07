@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:toldya/model/feedModel.dart';
 import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
+import 'package:toldya/helper/constant.dart';
 import 'package:toldya/widgets/customWidgets.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:intl/intl.dart';
@@ -373,6 +375,54 @@ String getUserName({
   return userName;
 }
 
+/// Firebase Auth [FirebaseAuthException.code] → kullanıcı dilinde kısa mesaj.
+String localizedFirebaseAuthError(AppLocalizations l10n, Object error) {
+  if (error is FirebaseAuthException) {
+    switch (error.code) {
+      case 'email-already-in-use':
+        return l10n.authErrorEmailAlreadyInUse;
+      case 'invalid-email':
+        return l10n.authErrorInvalidEmail;
+      case 'wrong-password':
+      case 'invalid-credential':
+        return l10n.authErrorInvalidCredential;
+      case 'user-not-found':
+        return l10n.authErrorUserNotFound;
+      case 'weak-password':
+        return l10n.authErrorWeakPassword;
+      case 'user-disabled':
+        return l10n.authErrorUserDisabled;
+      case 'too-many-requests':
+        return l10n.authErrorTooManyRequests;
+      case 'operation-not-allowed':
+        return l10n.authErrorOperationNotAllowed;
+      case 'network-request-failed':
+        return l10n.authErrorNetwork;
+      case 'requires-recent-login':
+        return l10n.authErrorRequiresRecentLogin;
+      case 'credential-already-in-use':
+        return l10n.authErrorCredentialAlreadyInUse;
+      case 'account-exists-with-different-credential':
+        return l10n.authErrorAccountExistsDifferentCredential;
+      case 'missing-email':
+        return l10n.authErrorMissingEmail;
+      default:
+        return l10n.errorGeneric;
+    }
+  }
+  return l10n.errorGeneric;
+}
+
+void showLocalizedFirebaseAuthSnackBar(
+    GlobalKey<ScaffoldState>? scaffoldKey, Object error) {
+  if (scaffoldKey == null) return;
+  final ctx = scaffoldKey.currentContext;
+  if (ctx == null) return;
+  final l10n = AppLocalizations.of(ctx);
+  if (l10n == null) return;
+  customSnackBar(scaffoldKey, localizedFirebaseAuthError(l10n, error));
+}
+
 bool validateCredentials(BuildContext context,
     GlobalKey<ScaffoldState> _scaffoldKey, String email, String password) {
   final l10n = AppLocalizations.of(context)!;
@@ -382,8 +432,8 @@ bool validateCredentials(BuildContext context,
   } else if (password.isEmpty) {
     customSnackBar(_scaffoldKey, l10n.pleaseEnterPassword);
     return false;
-  } else if (password.length < 8) {
-    customSnackBar(_scaffoldKey, l10n.passwordMinLength);
+  } else if (password.length < kMinPasswordLength) {
+    customSnackBar(_scaffoldKey, l10n.passwordMinLength(kMinPasswordLength));
     return false;
   }
 

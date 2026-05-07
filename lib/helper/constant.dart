@@ -8,6 +8,14 @@ const bool kEnablePostDetail = false;
 /// Yerelde release ile aynı davranış (güncelle ekranı dahil) için **false** bırak.
 const bool kSkipVersionUpdateScreenInDebug = false;
 
+/// Firebase Auth ile aynı alt sınır; giriş ve kayıt doğrulaması bunu kullanmalı.
+const int kMinPasswordLength = 6;
+
+/// Firebase Auth email action'ından sonra kullanıcıyı Toldya markalı sayfaya taşır.
+/// Bu domain Firebase Authentication > Authorized domains içinde olmalı.
+const String kEmailVerificationContinueUrl =
+    'https://casy-570c4.web.app/email-verified';
+
 /// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
 const String kToldyaLogo = 'assets/images/toldya.svg';
 
@@ -17,6 +25,7 @@ const String kToldyaLogoDark = 'assets/images/toldya_dark.svg';
 /// Varsayılan profil resmi (uygulama logosu).
 String dummyProfilePic = kToldyaLogo;
 String appFont = 'HelveticaNeuea';
+
 /// Kayıt sırasında rastgele atanacak varsayılan avatarlar.
 List<String> dummyProfilePicList = [
   'assets/images/avatar_1.png',
@@ -46,7 +55,7 @@ class ToldyaBranding {
   static const String logoDark = kToldyaLogoDark;
 }
 
-class AppIcon{
+class AppIcon {
   AppIcon._();
 
   static const _kFontFam = 'TwitterIcon';
@@ -57,7 +66,7 @@ class AppIcon{
   static const IconData searchFill = IconData(0xf558, fontFamily: _kFontFam);
   static const IconData notification = IconData(0xf055, fontFamily: _kFontFam);
   static const IconData notificationFill =
-  IconData(0xf019, fontFamily: _kFontFam);
+      IconData(0xf019, fontFamily: _kFontFam);
   static const IconData messageFab = IconData(0xf053, fontFamily: _kFontFam);
   static const IconData home = IconData(0xf053, fontFamily: _kFontFam);
   static const IconData homeFill = IconData(0xF553, fontFamily: _kFontFam);
@@ -102,6 +111,7 @@ class AppIcon{
   static final int hayirCommentFlag = 1;
   static final int pegCount = 50000;
   static final int defaultRank = 1;
+
   /// Uygulama komisyonu (0.0 - 1.0 arası, örn: 0.05 = %5)
   static const double commissionRate = 0.05;
 
@@ -116,7 +126,8 @@ class AppIcon{
   static const int dailyBonusAmount = 500;
 
   /// Cloud Functions base URL (doğrudan HTTP ile çağrı – GMS broker hatası bypass)
-  static const String cloudFunctionsBaseUrl = 'https://us-central1-casy-570c4.cloudfunctions.net';
+  static const String cloudFunctionsBaseUrl =
+      'https://us-central1-casy-570c4.cloudfunctions.net';
 }
 
 class Tokenomics {
@@ -126,12 +137,15 @@ class Tokenomics {
     if (xp < AppIcon.xpUstaMin) return AppIcon.rankMultiplierTahminci;
     return AppIcon.rankMultiplierUsta;
   }
+
   static int maxStakeByRank(int balance, int xp) =>
       (balance * rankMultiplierForXp(xp)).floor();
   static int maxStakeByPool(int totalPool) {
     if (totalPool < AppIcon.poolThreshold) {
       final scaled = (totalPool * 0.5).floor();
-      return scaled > AppIcon.maxStakeSmallPool ? scaled : AppIcon.maxStakeSmallPool;
+      return scaled > AppIcon.maxStakeSmallPool
+          ? scaled
+          : AppIcon.maxStakeSmallPool;
     }
     return 0x7FFFFFFF;
   }
@@ -177,7 +191,8 @@ class DefaultBanners {
 
   /// Kullanıcıya göre sabit bir varsayılan banner (null/boş banner için).
   static String assetForUser(String? userId) {
-    final index = (userId?.hashCode ?? DateTime.now().millisecondsSinceEpoch).abs() % 3;
+    final index =
+        (userId?.hashCode ?? DateTime.now().millisecondsSinceEpoch).abs() % 3;
     return assets[index];
   }
 }
@@ -201,25 +216,29 @@ class DefaultProfilePics {
   }
 }
 
-class Statu{
+class Statu {
   Statu._();
 
-  static final int statusLive=0;
-  static final int statusPending=1;
-  static final int statusOk=2;
-  static final int statusDenied=3;
-  static final int statusComplete=4;
+  static final int statusLive = 0;
+  static final int statusPending = 1;
+  static final int statusOk = 2;
+  static final int statusDenied = 3;
+  static final int statusComplete = 4;
+
   /// Kapanış zamanı geçti, katılım kapandı, sonuç bekleniyor
-  static final int statusLocked=5;
+  static final int statusLocked = 5;
+
   /// Yönetici incelemesi bekliyor (henüz yayında değil)
   static final int statusPendingAdminReview = 6;
+
   /// Yönetici incelemesinde reddedildi
   static final int statusRejectedByAdmin = 7;
 }
-class FeedResult{
+
+class FeedResult {
   FeedResult._();
 
-  static final int feedResultUnFixed=0;
-  static final int feedResultlike=1;
-  static final int feedResultunLike=2;
+  static final int feedResultUnFixed = 0;
+  static final int feedResultlike = 1;
+  static final int feedResultunLike = 2;
 }

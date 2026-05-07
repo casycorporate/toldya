@@ -309,6 +309,53 @@ class AppLocalizationsDe extends AppLocalizations {
       'Etwas ist schiefgelaufen. Bitte versuche es erneut.';
 
   @override
+  String get authErrorEmailAlreadyInUse =>
+      'Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.';
+
+  @override
+  String get authErrorInvalidEmail => 'Die E-Mail-Adresse ist ungültig.';
+
+  @override
+  String get authErrorInvalidCredential => 'E-Mail oder Passwort ist falsch.';
+
+  @override
+  String get authErrorUserNotFound =>
+      'Zu dieser E-Mail-Adresse wurde kein Konto gefunden.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Das Passwort ist zu schwach. Bitte ein stärkeres Passwort wählen.';
+
+  @override
+  String get authErrorUserDisabled => 'Dieses Konto wurde deaktiviert.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Zu viele Versuche. Bitte später erneut versuchen.';
+
+  @override
+  String get authErrorOperationNotAllowed =>
+      'Diese Anmeldemethode ist nicht aktiviert.';
+
+  @override
+  String get authErrorNetwork => 'Netzwerkfehler. Bitte Verbindung prüfen.';
+
+  @override
+  String get authErrorRequiresRecentLogin =>
+      'Aus Sicherheitsgründen bitte abmelden und erneut anmelden.';
+
+  @override
+  String get authErrorCredentialAlreadyInUse =>
+      'Diese Anmeldedaten sind bereits mit einem anderen Konto verknüpft.';
+
+  @override
+  String get authErrorAccountExistsDifferentCredential =>
+      'Mit dieser E-Mail existiert bereits ein Konto über eine andere Anmeldemethode.';
+
+  @override
+  String get authErrorMissingEmail => 'E-Mail-Adresse ist erforderlich.';
+
+  @override
   String get pleaseEnterName => 'Bitte gib deinen Namen ein';
 
   @override
@@ -355,8 +402,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pleaseEnterPassword => 'Bitte Passwort eingeben';
 
   @override
-  String get passwordMinLength =>
-      'Das Passwort muss mindestens 8 Zeichen haben';
+  String passwordMinLength(int min) {
+    return 'Das Passwort muss mindestens $min Zeichen haben';
+  }
 
   @override
   String get validEmailRequired => 'Bitte eine gültige E-Mail-Adresse eingeben';
@@ -1915,4 +1963,59 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get logoutActionTitle => 'Abmelden';
+
+  @override
+  String get emailVerifyAutoCheckMessage =>
+      'Deine E‑Mail wird überprüft, bitte warte...';
+
+  @override
+  String get emailVerifyAutoCheckHint =>
+      'Solange dieser Bildschirm offen ist, prüfen wir alle 3 Sekunden.';
+
+  @override
+  String get emailVerifySuccessTitle => 'Bestätigt!';
+
+  @override
+  String get emailVerifySuccessMessage =>
+      'Wir bringen dich ins Vorhersage‑Spiel...';
+
+  @override
+  String get emailVerifyOpenInbox =>
+      'Öffne dein Postfach und tippe auf den Bestätigungslink.';
+
+  @override
+  String get emailVerifySpamHint => 'Vergiss den Spam‑Ordner nicht.';
+
+  @override
+  String emailVerifySentTo(String email) {
+    return 'Wir haben den Link an $email gesendet.';
+  }
+
+  @override
+  String get emailVerifyResendButton => 'Erneut senden';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Erneut senden (${seconds}s)';
+  }
+
+  @override
+  String get emailVerifyResendSuccess => 'Bestätigungslink erneut gesendet.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Link konnte nicht gesendet werden. Bitte versuche es gleich erneut.';
+
+  @override
+  String get emailVerifyLeaveTitle => 'Bestätigung verlassen?';
+
+  @override
+  String get emailVerifyLeaveMessage =>
+      'Deine Registrierung ist fast fertig. Wenn du deine E‑Mail ändern möchtest, melde dich ab und starte mit der neuen Adresse erneut.';
+
+  @override
+  String get emailVerifyContinueWaiting => 'Weiter warten';
+
+  @override
+  String get emailVerifyChangeEmail => 'E‑Mail ändern';
 }

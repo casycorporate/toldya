@@ -42,6 +42,7 @@ class AuthState extends AppState {
   UserModel? _userModel;
   bool? _isAdminCached;
   List<String> _mutedPostIds = [];
+
   /// Hangi profil sayfası için istek açıldı; sayfa kapanınca null yapılır, böylece geciken async cevap listeye eklenmez.
   String? _pendingProfileRequestId;
   String? _profileError;
@@ -66,7 +67,8 @@ class AuthState extends AppState {
       return false;
     }
     try {
-      final snap = await FirebaseDatabase.instance.ref('profile/$uid/isAdmin').get();
+      final snap =
+          await FirebaseDatabase.instance.ref('profile/$uid/isAdmin').get();
       final val = snap.value;
       final isAdmin = val == true || val == 1 || val == 'true';
       _isAdminCached = isAdmin;
@@ -105,7 +107,8 @@ class AuthState extends AppState {
       }
     }
     if (_profileUserModelList == null || _profileUserModelList!.isEmpty) {
-      debugPrint('[Profile] list empty after close, calling ensureProfileIsCurrentUser _userModel=${_userModel != null}');
+      debugPrint(
+          '[Profile] list empty after close, calling ensureProfileIsCurrentUser _userModel=${_userModel != null}');
       if (_userModel != null && userId.isNotEmpty) {
         ensureProfileIsCurrentUser();
       } else {
@@ -191,7 +194,8 @@ class AuthState extends AppState {
 
       _profileQuery = kDatabase.child("profile").child(uid);
       _profileOnValueSub = _profileQuery!.onValue.listen(_onProfileChanged);
-      _mutedPostIdsRef = kDatabase.child("profile").child(uid).child("mutedPostIds");
+      _mutedPostIdsRef =
+          kDatabase.child("profile").child(uid).child("mutedPostIds");
       _mutedPostIdsOnValueSub = _mutedPostIdsRef!.onValue.listen((event) {
         if (event.snapshot.value != null) {
           final list = event.snapshot.value;
@@ -255,7 +259,7 @@ class AuthState extends AppState {
       loading = false;
       cprint(error, errorIn: 'signIn');
       kAnalytics.logLogin(loginMethod: 'email_login');
-      if (scaffoldKey != null) customSnackBar(scaffoldKey!, (error as dynamic).message);
+      showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
       // logoutCallback();
       return null;
     }
@@ -283,7 +287,9 @@ class AuthState extends AppState {
       authStatus = AuthStatus.LOGGED_IN;
       userId = user?.uid ?? '';
       isSignInWithGoogle = true;
-      if (user != null) createUserFromGoogleSignIn(user!);
+      if (user != null) {
+        await ensureGoogleProfileInRtdb(user!);
+      }
       notifyListeners();
       return user!;
     } on PlatformException catch (error) {
@@ -304,33 +310,74 @@ class AuthState extends AppState {
     }
   }
 
-  /// Create user profile from google login
-  createUserFromGoogleSignIn(User user) {
-    var diff = DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
-    // Check if user is new or old
-    // If user is new then add new user to firebase realtime kDatabase
-    if (diff < Duration(seconds: 15)) {
-      UserModel model = UserModel(
-          bio: 'Edit profile to update bio',
-          dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3)
-              .toString(),
-          location: 'Somewhere in universe',
-          profilePic: user.photoURL,
-          displayName: user.displayName,
-          email: user.email ?? '',
-          key: user.uid,
-          userId: user.uid,
-          contact: user.phoneNumber,
-          isVerified: false,
-          pegCount: AppIcon.pegCount,
-          stashCount: 0,
-          xp: 0,
-          rank: AppIcon.defaultRank,
-          predictorScore: 0,
-          role: Role.defaultRole);
+  /// RTDB'de kayıtlı profil var mı? (Lig/hayalet düğümlerinden ayırt etmek için —
+  /// `functions/leagues.js` ile uyumlu: createdAt / email / displayName.)
+  bool _rtdbProfileDataLooksRegistered(dynamic raw) {
+    if (raw == null) return false;
+    if (raw is! Map) return false;
+    final m = Map<String, dynamic>.from(raw as Map);
+    bool ne(String key) {
+      final v = m[key];
+      if (v == null) return false;
+      return v.toString().trim().isNotEmpty;
+    }
+
+    return ne('createdAt') || ne('email') || ne('displayName');
+  }
+
+  String? _readExistingFcmToken(dynamic raw) {
+    if (raw is Map && raw['fcmToken'] != null) {
+      final s = raw['fcmToken'].toString();
+      return s.trim().isEmpty ? null : s;
+    }
+    return null;
+  }
+
+  /// Google girişinden sonra RTDB profili yoksa veya sadece `fcmToken` vb. hayalet ise tam profil yazar.
+  /// Auth kullanıcısı eski olsa bile veritabanı silindiyse yeniden bootstrap olur.
+  Future<void> ensureGoogleProfileInRtdb(User user) async {
+    final creationDiff =
+        DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
+    final isBrandNewAuth = creationDiff < const Duration(seconds: 15);
+
+    final snap = await kDatabase.child('profile').child(user.uid).once();
+    final raw = snap.snapshot.value;
+    final needsBootstrap = !_rtdbProfileDataLooksRegistered(raw);
+
+    if (!needsBootstrap) {
+      if (!isBrandNewAuth) {
+        cprint('Last login at: ${user.metadata.lastSignInTime}');
+      }
+      return;
+    }
+
+    final model = UserModel(
+      bio: 'Edit profile to update bio',
+      dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3)
+          .toString(),
+      location: 'Somewhere in universe',
+      profilePic: user.photoURL,
+      displayName: user.displayName ?? '',
+      email: user.email ?? '',
+      key: user.uid,
+      userId: user.uid,
+      contact: user.phoneNumber,
+      isVerified: false,
+      pegCount: AppIcon.pegCount,
+      stashCount: 0,
+      xp: 0,
+      rank: AppIcon.defaultRank,
+      predictorScore: 0,
+      role: Role.defaultRole,
+      fcmToken: _readExistingFcmToken(raw),
+    );
+
+    if (isBrandNewAuth) {
       createUser(model, newUser: true);
     } else {
-      cprint('Last login at: ${user.metadata.lastSignInTime}');
+      model.userName = getUserName(id: user.uid, name: model.displayName ?? '');
+      model.createdAt = DateTime.now().toUtc().toString();
+      createUser(model, newUser: false);
     }
   }
 
@@ -346,7 +393,8 @@ class AuthState extends AppState {
 
     final userEmail = appleCredential.email ?? user.email ?? '';
 
-    var diff = DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
+    var diff =
+        DateTime.now().difference(user.metadata.creationTime ?? DateTime.now());
     if (diff < const Duration(seconds: 15)) {
       // Ensure firebase profile fields are populated for later use.
       if (displayName.isNotEmpty) {
@@ -355,10 +403,12 @@ class AuthState extends AppState {
 
       final model = UserModel(
         bio: 'Edit profile to update bio',
-        dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3).toString(),
+        dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3)
+            .toString(),
         location: 'Somewhere in universe',
         profilePic: null,
-        displayName: displayName.isNotEmpty ? displayName : (user.displayName ?? ''),
+        displayName:
+            displayName.isNotEmpty ? displayName : (user.displayName ?? ''),
         email: userEmail,
         key: user.uid,
         userId: user.uid,
@@ -374,7 +424,41 @@ class AuthState extends AppState {
       createUser(model, newUser: true);
       kAnalytics.logSignUp(signUpMethod: 'apple_sign_up');
     } else {
-      cprint('Last login at: ${user.metadata.lastSignInTime}', event: 'apple_login');
+      final snap = await kDatabase.child('profile').child(user.uid).once();
+      final raw = snap.snapshot.value;
+      if (_rtdbProfileDataLooksRegistered(raw)) {
+        cprint('Last login at: ${user.metadata.lastSignInTime}',
+            event: 'apple_login');
+        return;
+      }
+
+      final restored = UserModel(
+        bio: 'Edit profile to update bio',
+        dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3)
+            .toString(),
+        location: 'Somewhere in universe',
+        profilePic: null,
+        displayName:
+            displayName.isNotEmpty ? displayName : (user.displayName ?? ''),
+        email: userEmail,
+        key: user.uid,
+        userId: user.uid,
+        contact: null,
+        isVerified: false,
+        pegCount: AppIcon.pegCount,
+        stashCount: 0,
+        xp: 0,
+        rank: AppIcon.defaultRank,
+        predictorScore: 0,
+        role: Role.defaultRole,
+        fcmToken: _readExistingFcmToken(raw),
+      );
+      restored.userName =
+          getUserName(id: user.uid, name: restored.displayName ?? '');
+      restored.createdAt = DateTime.now().toUtc().toString();
+      createUser(restored, newUser: false);
+      cprint('Restored Apple user RTDB profile after empty/partial snapshot',
+          event: 'apple_login');
     }
   }
 
@@ -449,7 +533,7 @@ class AuthState extends AppState {
     } catch (error) {
       loading = false;
       cprint(error, errorIn: 'signUp');
-      if (scaffoldKey != null) customSnackBar(scaffoldKey, (error as dynamic).message);
+      showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
       return null;
     }
   }
@@ -479,7 +563,9 @@ class AuthState extends AppState {
     final last = DateTime.tryParse(at);
     if (last == null) return true;
     final now = DateTime.now();
-    return now.year != last.year || now.month != last.month || now.day != last.day;
+    return now.year != last.year ||
+        now.month != last.month ||
+        now.day != last.day;
   }
 
   /// Günlük bonusu alır (Callable). Başarıda bakiye ve lastDailyClaimAt güncellenir.
@@ -492,11 +578,13 @@ class AuthState extends AppState {
       final data = result.data;
       if (data == null || data["ok"] != true) return null;
       if (_userModel != null) {
-        _userModel!.pegCount = data["newBalance"] as int? ?? _userModel!.pegCount;
+        _userModel!.pegCount =
+            data["newBalance"] as int? ?? _userModel!.pegCount;
         _userModel!.lastDailyClaimAt = DateTime.now().toUtc().toIso8601String();
         notifyListeners();
       }
-      return data["message"] as String? ?? AppLocalizations.of(context)!.dailyBonusClaimed;
+      return data["message"] as String? ??
+          AppLocalizations.of(context)!.dailyBonusClaimed;
     } on FirebaseFunctionsException catch (e) {
       return e.message;
     } catch (_) {
@@ -508,8 +596,15 @@ class AuthState extends AppState {
   /// IF `newUser` is true new user is created
   /// Else existing user will update with new values
   createUser(UserModel user, {bool newUser = false}) {
+    final normalizedUserId = (user.userId ?? '').trim();
+    if (normalizedUserId.isEmpty) {
+      cprint('createUser blocked: empty userId', errorIn: 'createUser');
+      return;
+    }
+    user.userId = normalizedUserId;
     if (newUser) {
-      user.userName = getUserName(id: user.userId ?? '', name: user.displayName ?? '');
+      user.userName =
+          getUserName(id: user.userId ?? '', name: user.displayName ?? '');
       kAnalytics.logEvent(name: 'create_newUser');
       user.createdAt = DateTime.now().toUtc().toString();
     }
@@ -517,7 +612,7 @@ class AuthState extends AppState {
     // `profile/{uid}` altında `isAdmin` gibi alanlar `UserModel` içinde olmayabilir.
     // RTDB'de `set(...)` tüm child'ları overwrite ettiği için bu alanlar silinip
     // admin flag yanlışlıkla `false`'a düşebiliyor. Bu yüzden merge/update yapıyoruz.
-    kDatabase.child('profile').child(user.userId ?? '').update(user.toJson());
+    kDatabase.child('profile').child(normalizedUserId).update(user.toJson());
     _userModel = user;
     if (_profileUserModelList != null) {
       _profileUserModelList!.last = _userModel!;
@@ -575,27 +670,114 @@ class AuthState extends AppState {
     }
   }
 
+  /// Sessiz yenileme: VerifyEmailPage'in 3 saniyelik polling Timer'ı bunu çağırır.
+  /// Doğrulanmadıysa dinleyici tetiklenmez (gereksiz rebuild engellenir);
+  /// doğrulanırsa `true` döner ama state hâlâ değiştirilmez. Kullanıcı arayüzü
+  /// önce başarı animasyonunu oynatır, ardından `promoteToVerifiedAndContinue`
+  /// ile splash → HomePage geçişi tetiklenir.
+  Future<bool> reloadAndCheckEmailVerified() async {
+    try {
+      final current = _firebaseAuth.currentUser;
+      if (current == null) return false;
+      await current.reload();
+      final refreshed = _firebaseAuth.currentUser;
+      if (refreshed == null) return false;
+      // Pollin sırasında her zaman en taze auth referansını saklarız.
+      user = refreshed;
+      return refreshed.emailVerified;
+    } catch (e) {
+      cprint(e, errorIn: 'reloadAndCheckEmailVerified');
+      return false;
+    }
+  }
+
+  /// Doğrulama animasyonu tamamlandıktan sonra çağrılır:
+  /// - Auth user referansı tazelenir
+  /// - RTDB profili `isVerified=true` ile güncellenir
+  /// - notifyListeners → SplashPage rebuild → HomePage
+  Future<void> promoteToVerifiedAndContinue() async {
+    try {
+      final current = _firebaseAuth.currentUser;
+      if (current == null) return;
+      await current.reload();
+      user = _firebaseAuth.currentUser;
+      if (user == null || !user!.emailVerified) {
+        notifyListeners();
+        return;
+      }
+      _userModel?.isVerified = true;
+      logEvent('email_verification_complete',
+          parameter: {_userModel?.userName ?? '': user!.email ?? ''});
+      if (_userModel != null) {
+        createUser(_userModel!);
+      }
+      notifyListeners();
+    } catch (e) {
+      cprint(e, errorIn: 'promoteToVerifiedAndContinue');
+      notifyListeners();
+    }
+  }
+
+  ActionCodeSettings get _emailVerificationActionCodeSettings {
+    return ActionCodeSettings(
+      url: kEmailVerificationContinueUrl,
+      // Android package fields intentionally omitted:
+      // Firebase turns those links into *.page.link Dynamic Links, which can
+      // show an OAuth-domain error before the user ever returns to Toldya.
+      handleCodeInApp: false,
+    );
+  }
+
+  Future<void> _sendEmailVerificationWithToldyaContinueUrl(
+      User currentUser) async {
+    try {
+      await currentUser
+          .sendEmailVerification(_emailVerificationActionCodeSettings);
+    } on FirebaseAuthException catch (e) {
+      // Firebase Console'da continue URL domain'i henüz whitelist edilmediyse
+      // kullanıcıyı bloklamamak için varsayılan doğrulama linkine düş.
+      if (e.code == 'unauthorized-continue-uri' ||
+          e.code == 'invalid-continue-uri') {
+        await currentUser.sendEmailVerification();
+      } else {
+        rethrow;
+      }
+    }
+  }
+
   /// Send email verification link to email2
   Future<void> sendEmailVerification(
       GlobalKey<ScaffoldState> scaffoldKey) async {
-    User? currentUser = _firebaseAuth.currentUser;
+    final currentUser = _firebaseAuth.currentUser;
     if (currentUser == null) return;
-    currentUser.sendEmailVerification().then((_) {
+    _sendEmailVerificationWithToldyaContinueUrl(currentUser).then((_) {
       logEvent('email_verifcation_sent',
-          parameter: {_userModel?.displayName ?? '': currentUser!.email ?? ''});
+          parameter: {_userModel?.displayName ?? '': currentUser.email ?? ''});
       final ctx = scaffoldKey.currentContext;
       if (ctx != null) {
-        customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.emailVerificationSent);
+        customSnackBar(
+            scaffoldKey, AppLocalizations.of(ctx)!.emailVerificationSent);
       }
     }).catchError((error) {
       cprint((error as dynamic).message, errorIn: 'sendEmailVerification');
       logEvent('email_verifcation_block',
-          parameter: {_userModel?.displayName ?? '': currentUser?.email ?? ''});
-      customSnackBar(
-        scaffoldKey,
-        (error as dynamic).message,
-      );
+          parameter: {_userModel?.displayName ?? '': currentUser.email ?? ''});
+      showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
     });
+  }
+
+  /// SnackBar göstermeden doğrulama bağlantısını yeniden gönderir
+  /// (VerifyEmailPage açılışında otomatik tetiklemek için kullanılır).
+  /// Hata fırlatır; çağıran taraf 60s spam koruma sayacını ona göre yönetir.
+  Future<void> sendEmailVerificationSilent() async {
+    final currentUser = _firebaseAuth.currentUser;
+    if (currentUser == null) {
+      throw FirebaseAuthException(code: 'no-current-user');
+    }
+    if (currentUser.emailVerified) return;
+    await _sendEmailVerificationWithToldyaContinueUrl(currentUser);
+    logEvent('email_verifcation_sent',
+        parameter: {_userModel?.displayName ?? '': currentUser.email ?? ''});
   }
 
   /// Check if user's email is verified
@@ -611,21 +793,24 @@ class AuthState extends AppState {
       await _firebaseAuth.sendPasswordResetEmail(email: email).then((value) {
         final ctx = scaffoldKey?.currentContext;
         if (scaffoldKey != null && ctx != null) {
-          customSnackBar(scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
+          customSnackBar(
+              scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
         }
         logEvent('forgot+password');
       }).catchError((error) {
         cprint((error as dynamic).message);
+        showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
         return false;
       });
     } catch (error) {
-      if (scaffoldKey != null) customSnackBar(scaffoldKey, (error as dynamic).message);
+      showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
       return Future.value(false);
     }
   }
 
   /// `Update user` profile
-  Future<void> updateUserProfileOld(UserModel userModel,GlobalKey<ScaffoldState> scaffoldKey,
+  Future<void> updateUserProfileOld(
+      UserModel userModel, GlobalKey<ScaffoldState> scaffoldKey,
       {File? image, File? bannerImage}) async {
     try {
       if (image == null && bannerImage == null) {
@@ -638,8 +823,8 @@ class AuthState extends AppState {
               'user/profile/${userModel.userName}/${Path.basename(image.path)}');
           // print(fileURL);
           var name = userModel?.displayName ?? user?.displayName ?? '';
-          _firebaseAuth.currentUser
-              ?.updateProfile(displayName: name, photoURL: userModel.profilePic);
+          _firebaseAuth.currentUser?.updateProfile(
+              displayName: name, photoURL: userModel.profilePic);
         }
 
         /// upload banner image if not null
@@ -667,7 +852,8 @@ class AuthState extends AppState {
   }
 
   /// `Update user` profile
-  Future<void> updateUserProfile(UserModel userModel,GlobalKey<ScaffoldState> scaffoldKey,
+  Future<void> updateUserProfile(
+      UserModel userModel, GlobalKey<ScaffoldState> scaffoldKey,
       {String? image, String? bannerImage, String? successMessage}) async {
     try {
       if (image == null && bannerImage == null) {
@@ -679,8 +865,8 @@ class AuthState extends AppState {
           userModel.profilePic = image;
           // print(fileURL);
           var name = userModel?.displayName ?? user?.displayName ?? '';
-          _firebaseAuth.currentUser
-              ?.updateProfile(displayName: name, photoURL: userModel.profilePic);
+          _firebaseAuth.currentUser?.updateProfile(
+              displayName: name, photoURL: userModel.profilePic);
         }
 
         /// upload banner image if not null
@@ -699,7 +885,8 @@ class AuthState extends AppState {
       logEvent('update_user');
       final ctx = scaffoldKey.currentContext;
       if (ctx != null) {
-        customSnackBar(scaffoldKey, successMessage ?? AppLocalizations.of(ctx)!.changesSaved);
+        customSnackBar(scaffoldKey,
+            successMessage ?? AppLocalizations.of(ctx)!.changesSaved);
       }
     } catch (error) {
       cprint(error, errorIn: 'updateUserProfile');
@@ -720,12 +907,90 @@ class AuthState extends AppState {
     var snapshot = await kDatabase.child('profile').child(userId).once();
     if (snapshot.snapshot.value != null) {
       var map = snapshot.snapshot.value;
-      var profileUser = UserModel.fromJson(Map<String, dynamic>.from(map as Map));
+      var profileUser =
+          UserModel.fromJson(Map<String, dynamic>.from(map as Map));
       profileUser.key = snapshot.snapshot.key;
       return profileUser;
     } else {
       return null;
     }
+  }
+
+  /// RTDB'de yalnızca lig alanları veya eksik şema ile kalmış profilleri Auth + varsayılanlarla tamamlar.
+  void _ensureProfileCompleteness() {
+    final u = user;
+    final m = _userModel;
+    if (u == null || m == null) return;
+
+    final patch = <String, dynamic>{};
+
+    final authEmail = u.email;
+    if ((m.email == null || m.email!.trim().isEmpty) &&
+        authEmail != null &&
+        authEmail.trim().isNotEmpty) {
+      patch['email'] = authEmail.trim();
+      m.email = authEmail.trim();
+    }
+
+    final authName = u.displayName;
+    if ((m.displayName == null || m.displayName!.trim().isEmpty) &&
+        authName != null &&
+        authName.trim().isNotEmpty) {
+      patch['displayName'] = authName.trim();
+      m.displayName = authName.trim();
+    }
+
+    if (m.bio == null || m.bio!.trim().isEmpty) {
+      const defaultBio = 'Edit profile to update bio';
+      patch['bio'] = defaultBio;
+      m.bio = defaultBio;
+    }
+
+    if (m.userId == null || m.userId!.trim().isEmpty) {
+      m.userId = u.uid;
+      patch['userId'] = u.uid;
+    }
+
+    if (m.userName == null || m.userName!.trim().isEmpty) {
+      final un = getUserName(id: m.userId ?? u.uid, name: m.displayName ?? '');
+      patch['userName'] = un;
+      m.userName = un;
+    }
+
+    if (m.createdAt == null || m.createdAt!.trim().isEmpty) {
+      final ca = DateTime.now().toUtc().toString();
+      patch['createdAt'] = ca;
+      m.createdAt = ca;
+    }
+
+    if (m.pegCount == null) {
+      patch['pegCount'] = AppIcon.pegCount;
+      m.pegCount = AppIcon.pegCount;
+    }
+    if (m.stashCount == null) {
+      patch['stashCount'] = 0;
+      m.stashCount = 0;
+    }
+    if (m.xp == null) {
+      patch['xp'] = 0;
+      m.xp = 0;
+    }
+    if (m.rank == null) {
+      patch['rank'] = AppIcon.defaultRank;
+      m.rank = AppIcon.defaultRank;
+    }
+    if (m.predictorScore == null) {
+      patch['predictorScore'] = 0;
+      m.predictorScore = 0;
+    }
+    if (m.role == null) {
+      patch['role'] = Role.defaultRole;
+      m.role = Role.defaultRole;
+    }
+
+    if (patch.isEmpty) return;
+
+    kDatabase.child('profile').child(u.uid).update(patch);
   }
 
   /// Fetch user profile
@@ -742,13 +1007,15 @@ class AuthState extends AppState {
     _pendingProfileRequestId = userProfileId;
     final requestedId = userProfileId;
 
-    runWithTimeoutAndRetry(() => kDatabase.child("profile").child(userProfileId!).once())
+    runWithTimeoutAndRetry(
+            () => kDatabase.child("profile").child(userProfileId!).once())
         .then((snapshot) {
       if (requestedId != _pendingProfileRequestId) return;
       if (snapshot.snapshot.value != null) {
         var map = snapshot.snapshot.value;
         if (map != null) {
-          _profileUserModelList!.add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
+          _profileUserModelList!
+              .add(UserModel.fromJson(Map<String, dynamic>.from(map as Map)));
           if (user?.uid != null && userProfileId == user!.uid) {
             _userModel = _profileUserModelList!.last;
             _userModel!.isVerified = user!.emailVerified;
@@ -756,6 +1023,7 @@ class AuthState extends AppState {
               reloadUser();
             }
             updateFCMToken();
+            _ensureProfileCompleteness();
           }
           logEvent('get_profile');
         }
@@ -787,6 +1055,12 @@ class AuthState extends AppState {
   addBlackList(String userId) {
     final currentUser = userModel;
     if (currentUser == null) return;
+    final currentUserId = (currentUser.userId ?? '').trim();
+    if (currentUserId.isEmpty) {
+      cprint('addBlackList blocked: current userId empty',
+          errorIn: 'addBlackList');
+      return;
+    }
     try {
       if (currentUser.blackList != null &&
           currentUser.blackList!.length > 0 &&
@@ -804,7 +1078,7 @@ class AuthState extends AppState {
       }
       kDatabase
           .child('profile')
-          .child(currentUser.userId ?? '')
+          .child(currentUserId)
           .child('blackList')
           .set(currentUser.blackList);
       cprint('user added to blackList list', event: 'add_blackList');
@@ -818,7 +1092,8 @@ class AuthState extends AppState {
   /// Firebase event callback for profile update
   void _onProfileChanged(DatabaseEvent event) {
     if (event.snapshot.value != null && user != null) {
-      final updatedUser = UserModel.fromJson(Map<String, dynamic>.from(event.snapshot.value as Map));
+      final updatedUser = UserModel.fromJson(
+          Map<String, dynamic>.from(event.snapshot.value as Map));
       if (updatedUser.userId == user!.uid) {
         _userModel = updatedUser;
         // Clear cached admin flag so future checks re-read profile/isAdmin.

@@ -133,7 +133,7 @@ class FeedState extends AppState {
         if (x.parentkey != null &&
             x.statu == Statu.statusLive &&
             x.childRetoldyaKey == null &&
-            x.user?.userId != userModel.userId) {
+            x.ownerId != userModel.userId) {
           return false;
         }
         return x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
@@ -173,14 +173,14 @@ class FeedState extends AppState {
       if (x.parentkey != null &&
           x.childRetoldyaKey == null &&
           userModel != null &&
-          x.user?.userId != userModel.userId) {
+          x.ownerId != userModel.userId) {
         return false;
       }
-      if (userModel != null && inBlackList.contains(x.user?.userId)) {
+      if (userModel != null && inBlackList.contains(x.ownerId)) {
         return false;
       }
       final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
-      final isMine = userModel != null && x.userId == userModel.userId;
+      final isMine = userModel != null && x.ownerId == userModel.userId;
       final isAdminReviewOrRejected = x.statu == Statu.statusPendingAdminReview || x.statu == Statu.statusRejectedByAdmin;
 
       // Feed'de netlik: Yayında filtredeyken kendi "incelemede / yönetici reddi" gönderilerini de göster.
@@ -235,7 +235,7 @@ class FeedState extends AppState {
       final list = filterList.where((x) {
         if (x.parentkey != null &&
             x.childRetoldyaKey == null &&
-            x.user?.userId != userModel.userId) {
+            x.ownerId != userModel.userId) {
           return false;
         }
         final isPublished = x.statu == Statu.statusLive || x.statu == Statu.statusLocked;
@@ -297,7 +297,9 @@ class FeedState extends AppState {
       if (_feedQuery == null) {
         _feedQuery = kDatabase.child("toldya");
         _feedQuery!.onChildAdded.listen(_onToldyaAdded);
-        _feedQuery!.onValue.listen(_onToldyaChanged);
+        // Kök `onValue` tüm toldya koleksiyonunu verir; tek modele parse etmek hatalıydı.
+        // Alan güncellemeleri (ör. admin onayı → statu=0) için çocuk bazlı dinleme gerekir.
+        _feedQuery!.onChildChanged.listen(_onToldyaChildChanged);
         _feedQuery!.onChildRemoved.listen(_onToldyaRemoved);
       }
 
@@ -336,6 +338,7 @@ class FeedState extends AppState {
           try {
             var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
             model.key = key;
+            model.normalizeOwnershipForWrite();
             final isFirst = i == 0;
             final isLast = i == childrenList.length - 1;
             if (isFirst || isLast) {
@@ -361,6 +364,7 @@ class FeedState extends AppState {
             try {
               var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
               model.key = key.toString();
+              model.normalizeOwnershipForWrite();
               final isFirst = i == 0;
               final isLast = i == entries.length - 1;
               if (isFirst || isLast) {
@@ -440,6 +444,7 @@ class FeedState extends AppState {
             try {
               var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
               model.key = key.toString();
+              model.normalizeOwnershipForWrite();
               if (model.isValidToldya) list.add(model);
             } catch (_) {}
           });
@@ -451,6 +456,7 @@ class FeedState extends AppState {
             try {
               var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
               model.key = key;
+              model.normalizeOwnershipForWrite();
               if (model.isValidToldya) list.add(model);
             } catch (_) {}
           }
@@ -510,6 +516,7 @@ class FeedState extends AppState {
             try {
               var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
               model.key = key.toString();
+              model.normalizeOwnershipForWrite();
               if (model.isValidToldya) list.add(model);
             } catch (_) {}
           });
@@ -521,6 +528,7 @@ class FeedState extends AppState {
             try {
               var model = FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
               model.key = key;
+              model.normalizeOwnershipForWrite();
               if (model.isValidToldya) list.add(model);
             } catch (_) {}
           }
@@ -562,6 +570,7 @@ class FeedState extends AppState {
             final map = Map<String, dynamic>.from(snapshot.snapshot.value as Map);
             _toldyaDetail = FeedModel.fromJson(map);
             _toldyaDetail!.key = snapshot.snapshot.key ?? '';
+            _toldyaDetail!.normalizeOwnershipForWrite();
             setFeedModel = _toldyaDetail!;
           }
         });
@@ -589,6 +598,7 @@ class FeedState extends AppState {
         final map = Map<String, dynamic>.from(snapshot.snapshot.value as Map);
         _toldyaDetail = FeedModel.fromJson(map);
         _toldyaDetail!.key = snapshot.snapshot.key ?? '';
+        _toldyaDetail!.normalizeOwnershipForWrite();
       } else {
         cprint("Fetched null value from  DB");
       }
@@ -692,6 +702,7 @@ class FeedState extends AppState {
     try {
       final key = model.key;
       if (key == null || key.isEmpty) return;
+      model.normalizeOwnershipForWrite();
 
       // IMPORTANT: Never overwrite the whole `toldya/{id}` node from client.
       // Root `.set(model.toJson())` can accidentally null out server-controlled fields
@@ -1108,35 +1119,82 @@ class FeedState extends AppState {
     }
   }
 
-  /// Trigger when any tweet changes or update
-  /// When any tweet changes it update it in UI
-  /// No matter if Tweet is in home page or in detail page or in comment section.
-  _onToldyaChanged(DatabaseEvent event) {
-    final value = event.snapshot.value;
-    if (value == null) return;
-    final map = Map<String, dynamic>.from(value as Map);
-    var model = FeedModel.fromJson(map);
-    model.key = event.snapshot.key ?? '';
-    final feedlist = _feedlist;
-    if (feedlist != null && feedlist.any((x) => x.key == model.key)) {
-      var oldEntry = feedlist.lastWhere((entry) => entry.key == event.snapshot.key);
-      final idx = feedlist.indexOf(oldEntry);
-      if (idx >= 0) feedlist[idx] = model;
-      _markFeedCacheDirty();
+  /// Profil sekmesindeki önbelleği mevcut kullanıcı listesiyle senkron tut.
+  void _syncLegacyProfileListPointer(String userId) {
+    if (_profileUserToldyaUserId == userId) {
+      _profileUserToldyaList = _profileUserToldyaCache[userId];
     }
+  }
 
-    final detailList = _toldyaDetailModelList;
-    if (detailList != null && detailList.isNotEmpty) {
-      if (detailList.any((x) => x.key == model.key)) {
-        var oldEntry = detailList.lastWhere((entry) => entry.key == event.snapshot.key);
-        final idx = detailList.indexOf(oldEntry);
+  /// `loadToldyaListForUser` önbelleği: RTDB güncellemelerinde statü vb. anında yansır.
+  void _syncProfileToldyaCacheForModel(FeedModel model, {required bool insertIfMissing}) {
+    final uid = model.ownerId;
+    if (uid.isEmpty || !model.isValidToldya) return;
+    var list = _profileUserToldyaCache[uid];
+    if (list == null) {
+      if (!insertIfMissing) return;
+      list = <FeedModel>[model];
+      _profileUserToldyaCache[uid] = list;
+      _syncLegacyProfileListPointer(uid);
+      return;
+    }
+    final idx = list.indexWhere((m) => m.key == model.key);
+    if (idx >= 0) {
+      list[idx] = model;
+    } else if (insertIfMissing) {
+      list.insert(0, model);
+    }
+    _syncLegacyProfileListPointer(uid);
+  }
+
+  void _removeFromProfileToldyaCaches(FeedModel deleted) {
+    final uid = deleted.ownerId;
+    if (uid.isEmpty) return;
+    final list = _profileUserToldyaCache[uid];
+    if (list == null) return;
+    list.removeWhere((m) => m.key == deleted.key);
+    _syncLegacyProfileListPointer(uid);
+  }
+
+  /// Tek bir toldya düğümü değiştiğinde (moderasyon statu, endDate, havuz vb.).
+  void _onToldyaChildChanged(DatabaseEvent event) {
+    final key = event.snapshot.key;
+    final value = event.snapshot.value;
+    if (key == null || value == null) return;
+    try {
+      FeedModel model =
+          FeedModel.fromJson(Map<String, dynamic>.from(value as Map));
+      model.key = key;
+      model.normalizeOwnershipForWrite();
+
+      final feedlist = _feedlist;
+      if (feedlist != null && feedlist.any((x) => x.key == model.key)) {
+        final idx = feedlist.indexWhere((x) => x.key == model.key);
+        if (idx >= 0) {
+          feedlist[idx] = model;
+          _markFeedCacheDirty();
+        }
+      }
+
+      final detailList = _toldyaDetailModelList;
+      if (detailList != null &&
+          detailList.isNotEmpty &&
+          detailList.any((x) => x.key == model.key)) {
+        final idx = detailList.indexWhere((x) => x.key == model.key);
         if (idx >= 0) detailList[idx] = model;
       }
-    }
-    if (event.snapshot != null) {
-      cprint('Tweet updated');
+
+      _syncProfileToldyaCacheForModel(model, insertIfMissing: false);
+
+      if (_feedDebug) {
+        debugPrint(
+            '[FeedDebug] _onToldyaChildChanged: key=$key statu=${model.statu}');
+      }
       isBusy = false;
       notifyListeners();
+    } catch (error, stack) {
+      cprint(error, errorIn: '_onToldyaChildChanged');
+      if (_feedDebug) debugPrint('$stack');
     }
   }
 
@@ -1150,15 +1208,20 @@ class FeedState extends AppState {
     final map = Map<String, dynamic>.from(value as Map);
     FeedModel toldya = FeedModel.fromJson(map);
     toldya.key = event.snapshot.key ?? '';
+    toldya.normalizeOwnershipForWrite();
     if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: parsed key=${toldya.key}, statu=${toldya.statu}, user?.userName=${toldya.user?.userName}, isValidToldya=${toldya.isValidToldya}, alreadyInList=${_feedlist?.any((x) => x.key == toldya.key) ?? false}");
 
     _feedlist ??= <FeedModel>[];
-    // Sadece listede aynı key yoksa ekle (getDataFromDatabase + onChildAdded aynı kaydı iki kez eklemesin)
-    final added = toldya.isValidToldya && !_feedlist!.any((x) => x.key == toldya.key);
+    final existingIdx = _feedlist!.indexWhere((x) => x.key == toldya.key);
+    final added = toldya.isValidToldya && existingIdx < 0;
     if (added) {
       _feedlist!.add(toldya);
       _markFeedCacheDirty();
+    } else if (existingIdx >= 0 && toldya.isValidToldya) {
+      _feedlist![existingIdx] = toldya;
+      _markFeedCacheDirty();
     }
+    _syncProfileToldyaCacheForModel(toldya, insertIfMissing: true);
     if (_feedDebug) debugPrint("[FeedDebug] _onToldyaAdded: added=$added, _feedlist.length now=${_feedlist?.length ?? 0}");
     isBusy = false;
     notifyListeners();
@@ -1172,6 +1235,7 @@ class FeedState extends AppState {
     final map = Map<String, dynamic>.from(value as Map);
     FeedModel toldya = FeedModel.fromJson(map);
     toldya.key = event.snapshot.key ?? '';
+    toldya.normalizeOwnershipForWrite();
     var toldyaId = toldya.key ?? '';
     var parentkey = toldya.parentkey;
 
@@ -1221,6 +1285,7 @@ class FeedState extends AppState {
       }
 
       deletedToldya ??= toldya;
+      _removeFromProfileToldyaCaches(deletedToldya);
 
       /// Delete toldya image from firebase storage if exist.
       if (deletedToldya.imagePath != null &&

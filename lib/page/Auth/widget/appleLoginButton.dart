@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,12 +36,13 @@ class AppleLoginButton extends StatelessWidget {
       loader.hideLoader();
       cprint(error, errorIn: '_appleLogin');
 
-      String message = AppLocalizations.of(context)!.appleSignInFailed;
-      if (error is PlatformException) {
+      final l10n = AppLocalizations.of(context)!;
+      String message = l10n.appleSignInFailed;
+      if (error is FirebaseAuthException) {
+        message = localizedFirebaseAuthError(l10n, error);
+      } else if (error is PlatformException) {
         if (error.code == 'sign_in_failed' && error.message?.contains('10') == true) {
-          message = AppLocalizations.of(context)!.appleSignInNotConfigured;
-        } else if (error.message != null && error.message!.isNotEmpty) {
-          message = error.message!;
+          message = l10n.appleSignInNotConfigured;
         }
       }
 

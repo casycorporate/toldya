@@ -15,6 +15,18 @@ function getTierFromXp(xp) {
   return "Diamond";
 }
 
+/**
+ * Lig ataması yalnızca uygulama kaydıyla oluşmuş profillere yapılmalı.
+ * Yalnızca lig alanları (leagueGroupId / tier vb.) içeren hayalet düğümler burada elenir.
+ */
+function hasRegisteredProfile(p) {
+  if (!p || typeof p !== "object") return false;
+  if (p.createdAt && String(p.createdAt).trim()) return true;
+  if (p.email && String(p.email).trim()) return true;
+  if (p.displayName && String(p.displayName).trim()) return true;
+  return false;
+}
+
 /** ISO hafta kimliği (örn. "2025-W06") */
 function getISOWeekId(date) {
   const d = new Date(date);
@@ -69,6 +81,7 @@ async function runLeagueAssignmentLogic() {
   const entries = [];
   for (const [userId, p] of Object.entries(profiles)) {
     if (!p || typeof p !== "object") continue;
+    if (!hasRegisteredProfile(p)) continue;
     const xp = typeof p.xp === "number" ? p.xp : (parseInt(p.xp, 10) || 0);
     entries.push({ userId: String(userId), xp });
   }
@@ -124,10 +137,12 @@ async function runWeeklyLeagueResetLogic() {
   if (currentGroups && typeof currentGroups === "object") {
     for (const [, groupMap] of Object.entries(currentGroups)) {
       if (!groupMap || typeof groupMap !== "object") continue;
-      const entries = Object.entries(groupMap).map(([uid, xp]) => ({
-        userId: uid,
-        xp: typeof xp === "number" ? xp : (parseInt(xp, 10) || 0),
-      }));
+      const entries = Object.entries(groupMap)
+        .map(([uid, xp]) => ({
+          userId: uid,
+          xp: typeof xp === "number" ? xp : (parseInt(xp, 10) || 0),
+        }))
+        .filter((e) => hasRegisteredProfile(profiles[e.userId]));
       entries.sort((a, b) => b.xp - a.xp);
       const tierIdx = (tier) => {
         const i = LEAGUE_TIERS.indexOf(tier);
@@ -152,6 +167,7 @@ async function runWeeklyLeagueResetLogic() {
 
   for (const [userId, p] of Object.entries(profiles)) {
     if (!p || typeof p !== "object") continue;
+    if (!hasRegisteredProfile(p)) continue;
     if (!userIdToNextTier[userId]) userIdToNextTier[userId] = getTierFromXp(p.xp);
   }
 

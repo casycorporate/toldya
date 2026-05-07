@@ -3,7 +3,7 @@ description: Toldya - Flutter uygulaması.
 
 # Play versionCode = + sonrası. android/local.properties içinde flutter.versionCode / flutter.versionName SATIRI OLMASIN (pubspec'i ezer).
 # Play: her yeni yüklemede versionCode, mağazada şimdiye kadar kullanılan EN BÜYÜK koddan büyük olmalı.
-version: 1.0.0+6
+version: 1.0.0+7
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

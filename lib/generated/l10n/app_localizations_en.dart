@@ -307,6 +307,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorGeneric => 'Something went wrong. Please try again.';
 
   @override
+  String get authErrorEmailAlreadyInUse =>
+      'This email address is already in use by another account.';
+
+  @override
+  String get authErrorInvalidEmail => 'The email address is badly formatted.';
+
+  @override
+  String get authErrorInvalidCredential => 'Invalid email or password.';
+
+  @override
+  String get authErrorUserNotFound =>
+      'No account found with this email address.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'The password is too weak. Choose a stronger password.';
+
+  @override
+  String get authErrorUserDisabled => 'This account has been disabled.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Too many attempts. Please try again later.';
+
+  @override
+  String get authErrorOperationNotAllowed =>
+      'This sign-in method is not enabled.';
+
+  @override
+  String get authErrorNetwork => 'Network error. Check your connection.';
+
+  @override
+  String get authErrorRequiresRecentLogin =>
+      'For security, please sign out and sign in again.';
+
+  @override
+  String get authErrorCredentialAlreadyInUse =>
+      'These credentials are already linked to another account.';
+
+  @override
+  String get authErrorAccountExistsDifferentCredential =>
+      'An account already exists with this email using a different sign-in method.';
+
+  @override
+  String get authErrorMissingEmail => 'Email address is required.';
+
+  @override
   String get pleaseEnterName => 'Please enter your name';
 
   @override
@@ -352,7 +399,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseEnterPassword => 'Please enter your password';
 
   @override
-  String get passwordMinLength => 'Password must be at least 8 characters';
+  String passwordMinLength(int min) {
+    return 'Password must be at least $min characters';
+  }
 
   @override
   String get validEmailRequired => 'Please enter a valid email address';
@@ -1897,4 +1946,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutActionTitle => 'Log out';
+
+  @override
+  String get emailVerifyAutoCheckMessage =>
+      'Verifying your email, please wait...';
+
+  @override
+  String get emailVerifyAutoCheckHint =>
+      'We check every 3 seconds while this screen is open.';
+
+  @override
+  String get emailVerifySuccessTitle => 'Verified!';
+
+  @override
+  String get emailVerifySuccessMessage =>
+      'Taking you into the prediction game...';
+
+  @override
+  String get emailVerifyOpenInbox =>
+      'Open your inbox and tap the verification link.';
+
+  @override
+  String get emailVerifySpamHint => 'Don\'t forget to check the spam folder.';
+
+  @override
+  String emailVerifySentTo(String email) {
+    return 'We sent the link to $email.';
+  }
+
+  @override
+  String get emailVerifyResendButton => 'Resend';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Resend (${seconds}s)';
+  }
+
+  @override
+  String get emailVerifyResendSuccess => 'Verification link sent again.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Couldn\'t send the link. Please try again shortly.';
+
+  @override
+  String get emailVerifyLeaveTitle => 'Leave verification?';
+
+  @override
+  String get emailVerifyLeaveMessage =>
+      'Your signup is almost done. If you need to change your email, sign out and start again with the new address.';
+
+  @override
+  String get emailVerifyContinueWaiting => 'Keep waiting';
+
+  @override
+  String get emailVerifyChangeEmail => 'Change email';
 }

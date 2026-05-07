@@ -27,7 +27,7 @@ class RetoldyaWidget extends StatelessWidget {
 
   Widget _embeddedQuotedToldya(BuildContext context, FeedModel model) {
     final authState = Provider.of<AuthState>(context, listen: false);
-    final authorUserId = model.user?.userId ?? model.userId ?? '';
+    final authorUserId = model.ownerId;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[

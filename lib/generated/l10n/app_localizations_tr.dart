@@ -306,6 +306,54 @@ class AppLocalizationsTr extends AppLocalizations {
   String get errorGeneric => 'İşlem yapılamadı. Lütfen tekrar deneyin.';
 
   @override
+  String get authErrorEmailAlreadyInUse =>
+      'Bu e-posta adresi başka bir hesapta kullanılıyor.';
+
+  @override
+  String get authErrorInvalidEmail => 'Geçersiz e-posta adresi.';
+
+  @override
+  String get authErrorInvalidCredential => 'E-posta veya şifre hatalı.';
+
+  @override
+  String get authErrorUserNotFound =>
+      'Bu e-posta ile kayıtlı hesap bulunamadı.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Şifre çok zayıf. Daha güçlü bir şifre seçin.';
+
+  @override
+  String get authErrorUserDisabled => 'Bu hesap devre dışı bırakılmış.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Çok fazla deneme yapıldı. Lütfen bir süre sonra tekrar deneyin.';
+
+  @override
+  String get authErrorOperationNotAllowed =>
+      'Bu giriş yöntemi şu anda kullanılamıyor.';
+
+  @override
+  String get authErrorNetwork =>
+      'Ağ hatası. İnternet bağlantınızı kontrol edin.';
+
+  @override
+  String get authErrorRequiresRecentLogin =>
+      'Güvenlik nedeniyle çıkış yapıp yeniden giriş yapmanız gerekiyor.';
+
+  @override
+  String get authErrorCredentialAlreadyInUse =>
+      'Bu oturum bilgisi başka bir hesaba bağlı.';
+
+  @override
+  String get authErrorAccountExistsDifferentCredential =>
+      'Bu e-posta farklı bir giriş yöntemiyle kayıtlı.';
+
+  @override
+  String get authErrorMissingEmail => 'E-posta adresi gerekli.';
+
+  @override
   String get pleaseEnterName => 'Lütfen isim giriniz';
 
   @override
@@ -351,7 +399,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pleaseEnterPassword => 'Lütfen şifrenizi giriniz';
 
   @override
-  String get passwordMinLength => 'Şifre en az 8 karakter uzunluğunda olmalı';
+  String passwordMinLength(int min) {
+    return 'Şifre en az $min karakter olmalı';
+  }
 
   @override
   String get validEmailRequired => 'Lütfen geçerli bir e-posta adresi girin';
@@ -1896,4 +1946,59 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get logoutActionTitle => 'Çıkış Yap';
+
+  @override
+  String get emailVerifyAutoCheckMessage =>
+      'E-posta adresin doğrulanıyor, lütfen bekle...';
+
+  @override
+  String get emailVerifyAutoCheckHint =>
+      'Bu ekran açıkken her 3 saniyede bir kontrol ediyoruz.';
+
+  @override
+  String get emailVerifySuccessTitle => 'Doğrulandı!';
+
+  @override
+  String get emailVerifySuccessMessage => 'Tahmin oyununa girişin yapılıyor...';
+
+  @override
+  String get emailVerifyOpenInbox =>
+      'Doğrulama bağlantısı için gelen kutunu kontrol et.';
+
+  @override
+  String get emailVerifySpamHint => 'Spam klasörüne de bakmayı unutma.';
+
+  @override
+  String emailVerifySentTo(String email) {
+    return 'Bağlantıyı $email adresine gönderdik.';
+  }
+
+  @override
+  String get emailVerifyResendButton => 'Tekrar Gönder';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Tekrar gönder (${seconds}s)';
+  }
+
+  @override
+  String get emailVerifyResendSuccess =>
+      'Doğrulama bağlantısı yeniden gönderildi.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Bağlantı gönderilemedi. Birazdan tekrar dene.';
+
+  @override
+  String get emailVerifyLeaveTitle => 'Doğrulamadan ayrılmak mı istiyorsun?';
+
+  @override
+  String get emailVerifyLeaveMessage =>
+      'Kayıt neredeyse tamam. E-postanı değiştirmek istiyorsan çıkış yapıp yeni adresle tekrar başlayabilirsin.';
+
+  @override
+  String get emailVerifyContinueWaiting => 'Beklemeye devam et';
+
+  @override
+  String get emailVerifyChangeEmail => 'E-postayı değiştir';
 }

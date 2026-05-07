@@ -78,41 +78,6 @@ class FeedModel {
     this.downvoteUserIds,
   });
 
-  toJson() {
-    return {
-      "userId": userId,
-      "description": description,
-      "likeCount": likeCount,
-      "unlikeCount": unlikeCount,
-      "commentCount": commentCount ?? 0,
-      "retoldyaCount": retoldyaCount ?? 0,
-      "createdAt": createdAt,
-      "endDate": endDate,
-      "imagePath": imagePath,
-      "likeList": likeList?.map((e) => e.toJson()).toList() ?? [],
-      "unlikeList": unlikeList?.map((e) => e.toJson()).toList() ?? [],
-      "tags": tags,
-      "reportList": reportList,
-      "reportReasons": reportReasons,
-      "favList": favList,
-      "topic": topic,
-      "replyToldyaKeyList": replyToldyaKeyList,
-      "user": user?.toJson(),
-      "parentkey": parentkey,
-      "childRetoldyaKey": childRetoldyaKey,
-      "statu": statu,
-      "feedResult": feedResult,
-      "manualModerationReason": manualModerationReason,
-      "collateralAmount": collateralAmount,
-      "disputeUserIds": disputeUserIds,
-      "distributionDone": distributionDone ?? false,
-      "upvoteCount": upvoteCount ?? 0,
-      "downvoteCount": downvoteCount ?? 0,
-      "upvoteUserIds": upvoteUserIds ?? [],
-      "downvoteUserIds": downvoteUserIds ?? []
-    };
-  }
-
   static int? _parseStatuMap(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
@@ -124,7 +89,7 @@ class FeedModel {
   FeedModel.fromJson(Map<dynamic, dynamic> map) {
     key = map['key'];
     description = map['description'];
-    userId = map['userId'];
+    userId = map['userId']?.toString();
     //  name = map['name'];
     //  profilePic = map['profilePic'];
     likeCount = map['likeCount'] ?? 0;
@@ -171,6 +136,7 @@ class FeedModel {
     }
     //  username = map['username'];
     user = map['user'] != null ? UserModel.fromJson(map['user'] as Map<dynamic, dynamic>) : null;
+    _normalizeOwnerFields();
     parentkey = map['parentkey'];
     childRetoldyaKey = map['childRetoldyaKey'] ?? map['childRetwetkey'];
     if (map['tags'] != null) {
@@ -260,12 +226,84 @@ class FeedModel {
     }
   }
 
-  bool get isValidToldya {
-    final un = this.user?.userName;
-    if (un != null && un.isNotEmpty) {
-      return true;
+  static String _firstNonEmpty(List<String?> values) {
+    for (final value in values) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
     }
-    print("Invalid Toldya found. Id:- $key");
+    return '';
+  }
+
+  String get ownerId => _firstNonEmpty([
+        userId,
+        user?.userId,
+      ]);
+
+  String get authorLabel => _firstNonEmpty([
+        user?.userName,
+        user?.displayName,
+        ownerId,
+      ]);
+
+  void _normalizeOwnerFields() {
+    final normalizedOwnerId = ownerId;
+    if (normalizedOwnerId.isEmpty) return;
+    userId = normalizedOwnerId;
+    if (user != null) {
+      user!.userId = normalizedOwnerId;
+    }
+  }
+
+  void normalizeOwnershipForWrite() {
+    _normalizeOwnerFields();
+  }
+
+  bool get isValidToldya {
+    // Minimum valid post:
+    // - an owner must exist (userId or user.userId)
+    // - and either text content or an image should exist
+    final hasOwner = ownerId.isNotEmpty;
+    final hasContent = (description?.trim().isNotEmpty ?? false) || (imagePath?.trim().isNotEmpty ?? false);
+    if (hasOwner && hasContent) return true;
+    print("Invalid Toldya found. Id:- $key ownerId=$ownerId hasContent=$hasContent");
     return false;
+  }
+
+  toJson() {
+    _normalizeOwnerFields();
+    return {
+      "userId": userId,
+      "description": description,
+      "likeCount": likeCount,
+      "unlikeCount": unlikeCount,
+      "commentCount": commentCount ?? 0,
+      "retoldyaCount": retoldyaCount ?? 0,
+      "createdAt": createdAt,
+      "endDate": endDate,
+      "imagePath": imagePath,
+      "likeList": likeList?.map((e) => e.toJson()).toList() ?? [],
+      "unlikeList": unlikeList?.map((e) => e.toJson()).toList() ?? [],
+      "tags": tags,
+      "reportList": reportList,
+      "reportReasons": reportReasons,
+      "favList": favList,
+      "topic": topic,
+      "replyToldyaKeyList": replyToldyaKeyList,
+      "user": user?.toJson(),
+      "parentkey": parentkey,
+      "childRetoldyaKey": childRetoldyaKey,
+      "statu": statu,
+      "feedResult": feedResult,
+      "manualModerationReason": manualModerationReason,
+      "collateralAmount": collateralAmount,
+      "disputeUserIds": disputeUserIds,
+      "distributionDone": distributionDone ?? false,
+      "upvoteCount": upvoteCount ?? 0,
+      "downvoteCount": downvoteCount ?? 0,
+      "upvoteUserIds": upvoteUserIds ?? [],
+      "downvoteUserIds": downvoteUserIds ?? []
+    };
   }
 }

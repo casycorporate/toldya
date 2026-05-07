@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1C1C1E">
+  <title>Toldya | Email verification</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #1c1c1e;
+      --card: #252530;
+      --border: #2c2c38;
+      --text: #e8e8ed;
+      --muted: #a0a0b0;
+      --blue: #2563eb;
+      --green: #2ed573;
+      --red: #ff4757;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top, rgba(37, 99, 235, 0.28), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .card {
+      width: min(440px, 100%);
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background: rgba(37, 37, 48, 0.88);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      backdrop-filter: blur(18px);
+    }
+
+    .logo {
+      width: 66px;
+      height: 66px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 18px;
+      border-radius: 22px;
+      background: var(--blue);
+      color: white;
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+    }
+
+    .ring {
+      width: 88px;
+      height: 88px;
+      margin: 4px auto 22px;
+      border: 4px solid rgba(37, 99, 235, 0.18);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .icon {
+      width: 88px;
+      height: 88px;
+      display: none;
+      place-items: center;
+      margin: 4px auto 22px;
+      border-radius: 50%;
+      background: rgba(46, 213, 115, 0.16);
+      color: var(--green);
+      font-size: 46px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 52px;
+      margin-top: 24px;
+      border: 0;
+      border-radius: 16px;
+      background: var(--blue);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .hint {
+      margin-top: 14px;
+      font-size: 13px;
+    }
+
+    .error .ring { display: none; }
+    .success .ring { display: none; }
+    .success .icon { display: grid; }
+    .error .icon {
+      display: grid;
+      background: rgba(255, 71, 87, 0.14);
+      color: var(--red);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" id="card">
+    <div class="logo">t</div>
+    <div class="ring" aria-hidden="true"></div>
+    <div class="icon" id="icon" aria-hidden="true">✓</div>
+    <h1 id="title">E-postan doğrulanıyor</h1>
+    <p id="message">Toldya hesabını güvenle tamamlıyoruz. Birkaç saniye sürebilir.</p>
+    <a class="button" id="button" href="/email-verified" hidden>Toldya'ya dön</a>
+    <p class="hint" id="hint"></p>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+    import { getAuth, applyActionCode } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+
+    const copy = {
+      tr: {
+        loadingTitle: 'E-postan doğrulanıyor',
+        loadingMessage: 'Toldya hesabını güvenle tamamlıyoruz. Birkaç saniye sürebilir.',
+        successTitle: 'E-posta doğrulandı',
+        successMessage: 'Harika. Şimdi Toldya uygulamasına dönüp tahmin oyununa başlayabilirsin.',
+        errorTitle: 'Bağlantı doğrulanamadı',
+        errorMessage: 'Bu bağlantı süresi dolmuş veya daha önce kullanılmış olabilir. Uygulamadan yeni bağlantı gönderebilirsin.',
+        button: "Toldya'ya dön",
+        hint: 'Uygulama açıksa geri dönmen yeterli; seni otomatik olarak ana sayfaya alacağız.'
+      },
+      en: {
+        loadingTitle: 'Verifying your email',
+        loadingMessage: 'We are securely finishing your Toldya signup. This can take a few seconds.',
+        successTitle: 'Email verified',
+        successMessage: 'Great. Return to the Toldya app and start playing the prediction game.',
+        errorTitle: 'Link could not be verified',
+        errorMessage: 'This link may have expired or already been used. You can send a new link from the app.',
+        button: 'Return to Toldya',
+        hint: 'If the app is open, just go back to it. We will take you to Home automatically.'
+      },
+      de: {
+        loadingTitle: 'Deine E-Mail wird bestätigt',
+        loadingMessage: 'Wir schließen deine Toldya-Registrierung sicher ab. Das kann ein paar Sekunden dauern.',
+        successTitle: 'E-Mail bestätigt',
+        successMessage: 'Super. Kehre zur Toldya-App zurück und starte das Vorhersage-Spiel.',
+        errorTitle: 'Link konnte nicht bestätigt werden',
+        errorMessage: 'Dieser Link ist möglicherweise abgelaufen oder wurde bereits verwendet. Du kannst in der App einen neuen Link senden.',
+        button: 'Zurück zu Toldya',
+        hint: 'Wenn die App geöffnet ist, gehe einfach zurück. Wir bringen dich automatisch zur Startseite.'
+      }
+    };
+
+    const locale = (navigator.language || 'en').slice(0, 2);
+    const t = copy[locale] || copy.en;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const oobCode = params.get('oobCode');
+    const continueUrl = params.get('continueUrl') || '/email-verified';
+
+    const card = document.getElementById('card');
+    const icon = document.getElementById('icon');
+    const title = document.getElementById('title');
+    const message = document.getElementById('message');
+    const button = document.getElementById('button');
+    const hint = document.getElementById('hint');
+
+    title.textContent = t.loadingTitle;
+    message.textContent = t.loadingMessage;
+    button.textContent = t.button;
+    button.href = continueUrl;
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyBY6AhsMuidFEryfVmoQ0Lp2i4zef4LHa0',
+      authDomain: 'casy-570c4.firebaseapp.com',
+      databaseURL: 'https://casy-570c4-default-rtdb.firebaseio.com',
+      projectId: 'casy-570c4',
+      storageBucket: 'casy-570c4.appspot.com',
+      messagingSenderId: '395990044114',
+      appId: '1:395990044114:web:e5561be10d4581c0f64c0b'
+    };
+
+    async function verify() {
+      try {
+        if (mode !== 'verifyEmail' || !oobCode) {
+          throw new Error('Invalid action link');
+        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        await applyActionCode(auth, oobCode);
+        card.classList.add('success');
+        icon.textContent = '✓';
+        title.textContent = t.successTitle;
+        message.textContent = t.successMessage;
+        hint.textContent = t.hint;
+        button.hidden = false;
+      } catch (error) {
+        card.classList.add('error');
+        icon.textContent = '!';
+        title.textContent = t.errorTitle;
+        message.textContent = t.errorMessage;
+        button.hidden = false;
+      }
+    }
+
+    verify();
+  </script>
+</body>
+</html>

@@ -285,7 +285,7 @@ class _ToldyaBody extends StatelessWidget {
             ? FontWeight.w400
             : FontWeight.w400;
     final topicLabel = topic.topicMap[model.topic ?? ''] ?? model.topic ?? 'Genel';
-    final authorUserId = model.user?.userId ?? '';
+    final authorUserId = model.ownerId;
     return FutureBuilder<UserModel?>(
       future: authorUserId.isEmpty ? Future.value(null) : authstate.getuserDetail(authorUserId),
       builder: (context, authorSnap) {
@@ -527,10 +527,10 @@ class _ToldyaDetailBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               FutureBuilder<UserModel?>(
-                future: authstate.getuserDetail(model.user?.userId ?? model.userId ?? ''),
+                future: authstate.getuserDetail(model.ownerId),
                 builder: (context, authorSnap) {
                   final author = authorSnap.data ?? model.user;
-                  final authorUserId = author?.userId ?? model.userId ?? '';
+                  final authorUserId = author?.userId ?? model.ownerId;
                   return ListTile(
                     contentPadding: EdgeInsets.symmetric(horizontal: 1),
                     leading: GestureDetector(
@@ -543,7 +543,7 @@ class _ToldyaDetailBody extends StatelessWidget {
                         height: 60,
                         child: authorSnap.hasData && authorSnap.data != null
                             ? customProfileImage(context, authorSnap.data!.profilePic, userId: authorSnap.data!.userId, height: 40)
-                            : _userAvater(model.user?.userId ?? ''),
+                            : _userAvater(model.ownerId),
                       ),
                     ),
                     title: Row(

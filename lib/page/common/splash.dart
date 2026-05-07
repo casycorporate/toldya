@@ -34,7 +34,6 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void initDynamicLinks() async {
-
     FirebaseDynamicLinks.instance.onLink.listen((dynamicLinkData) {
       final Uri? deepLink = dynamicLinkData.link;
       if (deepLink != null) {
@@ -56,17 +55,43 @@ class _SplashPageState extends State<SplashPage> {
 
   void redirectFromDeepLink(Uri deepLink) {
     print("Found Url from share: ${deepLink.path}");
-    var type = deepLink.path.split("/")[1];
-    var id = deepLink.path.split("/")[2];
+    final segments = deepLink.pathSegments;
+    if (segments.isEmpty) return;
+    final type = segments.first;
+    final id = segments.length > 1 ? segments[1] : '';
+    if ((type == "auth" && id == "verified") || type == "email-verified") {
+      _completeEmailVerificationFromLink();
+      return;
+    }
     if (type == "profile") {
-      Navigator.of(context).pushNamed('/ProfilePage/' + id);
+      Navigator.of(context).pushNamed('/ProfilePage/$id');
     } else if (type == "toldya") {
       if (!kEnablePostDetail) {
         return;
       }
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(id);
-      Navigator.of(context).pushNamed('/FeedPostDetail/' + id);
+      Navigator.of(context).pushNamed('/FeedPostDetail/$id');
+    }
+  }
+
+  Future<void> _completeEmailVerificationFromLink() async {
+    final authState = Provider.of<AuthState>(context, listen: false);
+    await authState.getCurrentUser();
+    final verified = await authState.reloadAndCheckEmailVerified();
+    if (!mounted) return;
+    if (verified) {
+      await authState.promoteToVerifiedAndContinue();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => HomePage()),
+        (route) => false,
+      );
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => VerifyEmailPage()),
+        (route) => false,
+      );
     }
   }
 
@@ -128,8 +153,7 @@ class _SplashPageState extends State<SplashPage> {
   /// Boş bırakılırsa sürüm kapısı uygulanmaz.
   /// Firebase Console → Remote Config → String `appVersion` = düz metin `1.0.0` (JSON değil).
   Future<String> _getAppVersionFromFirebaseConfig() async {
-    final FirebaseRemoteConfig remoteConfig =
-        FirebaseRemoteConfig.instance;
+    final FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.instance;
     final updated = await remoteConfig.fetchAndActivate();
     if (kDebugMode) {
       debugPrint(
@@ -171,7 +195,9 @@ class _SplashPageState extends State<SplashPage> {
           ? _body()
           : state.authStatus == AuthStatus.NOT_LOGGED_IN
               ? WelcomePage()
-              : (state.user?.emailVerified ?? false) ? HomePage() : VerifyEmailPage(),
+              : (state.user?.emailVerified ?? false)
+                  ? HomePage()
+                  : VerifyEmailPage(),
     );
   }
 }

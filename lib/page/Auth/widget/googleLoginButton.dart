@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:toldya/generated/l10n/app_localizations.dart';
@@ -27,12 +28,13 @@ class GoogleLoginButton extends StatelessWidget {
     }).catchError((Object error, StackTrace stackTrace) {
       loader.hideLoader();
       cprint(error, errorIn: '_googleLogin');
-      String message = AppLocalizations.of(context)!.googleSignInFailed;
-      if (error is PlatformException) {
+      final l10n = AppLocalizations.of(context)!;
+      String message = l10n.googleSignInFailed;
+      if (error is FirebaseAuthException) {
+        message = localizedFirebaseAuthError(l10n, error);
+      } else if (error is PlatformException) {
         if (error.code == 'sign_in_failed' && error.message?.contains('10') == true) {
-          message = AppLocalizations.of(context)!.googleSignInNotConfigured;
-        } else if (error.message != null && error.message!.isNotEmpty) {
-          message = error.message!;
+          message = l10n.googleSignInNotConfigured;
         }
       }
       if (context.mounted) {

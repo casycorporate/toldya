@@ -10,5 +10,27 @@
       "firebase-debug.*.log",
       "*.local"
     ]
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/email-action",
+        "destination": "/auth/action/index.html"
+      },
+      {
+        "source": "/email-verified",
+        "destination": "/auth/verified/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

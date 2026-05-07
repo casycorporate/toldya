@@ -652,6 +652,84 @@ abstract class AppLocalizations {
   /// **'İşlem yapılamadı. Lütfen tekrar deneyin.'**
   String get errorGeneric;
 
+  /// No description provided for @authErrorEmailAlreadyInUse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu e-posta adresi başka bir hesapta kullanılıyor.'**
+  String get authErrorEmailAlreadyInUse;
+
+  /// No description provided for @authErrorInvalidEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçersiz e-posta adresi.'**
+  String get authErrorInvalidEmail;
+
+  /// No description provided for @authErrorInvalidCredential.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta veya şifre hatalı.'**
+  String get authErrorInvalidCredential;
+
+  /// No description provided for @authErrorUserNotFound.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu e-posta ile kayıtlı hesap bulunamadı.'**
+  String get authErrorUserNotFound;
+
+  /// No description provided for @authErrorWeakPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre çok zayıf. Daha güçlü bir şifre seçin.'**
+  String get authErrorWeakPassword;
+
+  /// No description provided for @authErrorUserDisabled.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hesap devre dışı bırakılmış.'**
+  String get authErrorUserDisabled;
+
+  /// No description provided for @authErrorTooManyRequests.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok fazla deneme yapıldı. Lütfen bir süre sonra tekrar deneyin.'**
+  String get authErrorTooManyRequests;
+
+  /// No description provided for @authErrorOperationNotAllowed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu giriş yöntemi şu anda kullanılamıyor.'**
+  String get authErrorOperationNotAllowed;
+
+  /// No description provided for @authErrorNetwork.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ağ hatası. İnternet bağlantınızı kontrol edin.'**
+  String get authErrorNetwork;
+
+  /// No description provided for @authErrorRequiresRecentLogin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenlik nedeniyle çıkış yapıp yeniden giriş yapmanız gerekiyor.'**
+  String get authErrorRequiresRecentLogin;
+
+  /// No description provided for @authErrorCredentialAlreadyInUse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu oturum bilgisi başka bir hesaba bağlı.'**
+  String get authErrorCredentialAlreadyInUse;
+
+  /// No description provided for @authErrorAccountExistsDifferentCredential.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu e-posta farklı bir giriş yöntemiyle kayıtlı.'**
+  String get authErrorAccountExistsDifferentCredential;
+
+  /// No description provided for @authErrorMissingEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresi gerekli.'**
+  String get authErrorMissingEmail;
+
   /// No description provided for @pleaseEnterName.
   ///
   /// In tr, this message translates to:
@@ -745,8 +823,8 @@ abstract class AppLocalizations {
   /// No description provided for @passwordMinLength.
   ///
   /// In tr, this message translates to:
-  /// **'Şifre en az 8 karakter uzunluğunda olmalı'**
-  String get passwordMinLength;
+  /// **'Şifre en az {min} karakter olmalı'**
+  String passwordMinLength(int min);
 
   /// No description provided for @validEmailRequired.
   ///
@@ -3567,6 +3645,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çıkış Yap'**
   String get logoutActionTitle;
+
+  /// No description provided for @emailVerifyAutoCheckMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresin doğrulanıyor, lütfen bekle...'**
+  String get emailVerifyAutoCheckMessage;
+
+  /// No description provided for @emailVerifyAutoCheckHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ekran açıkken her 3 saniyede bir kontrol ediyoruz.'**
+  String get emailVerifyAutoCheckHint;
+
+  /// No description provided for @emailVerifySuccessTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulandı!'**
+  String get emailVerifySuccessTitle;
+
+  /// No description provided for @emailVerifySuccessMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin oyununa girişin yapılıyor...'**
+  String get emailVerifySuccessMessage;
+
+  /// No description provided for @emailVerifyOpenInbox.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulama bağlantısı için gelen kutunu kontrol et.'**
+  String get emailVerifyOpenInbox;
+
+  /// No description provided for @emailVerifySpamHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Spam klasörüne de bakmayı unutma.'**
+  String get emailVerifySpamHint;
+
+  /// No description provided for @emailVerifySentTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantıyı {email} adresine gönderdik.'**
+  String emailVerifySentTo(String email);
+
+  /// No description provided for @emailVerifyResendButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar Gönder'**
+  String get emailVerifyResendButton;
+
+  /// No description provided for @emailVerifyResendCountdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar gönder ({seconds}s)'**
+  String emailVerifyResendCountdown(int seconds);
+
+  /// No description provided for @emailVerifyResendSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulama bağlantısı yeniden gönderildi.'**
+  String get emailVerifyResendSuccess;
+
+  /// No description provided for @emailVerifyResendError.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı gönderilemedi. Birazdan tekrar dene.'**
+  String get emailVerifyResendError;
+
+  /// No description provided for @emailVerifyLeaveTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulamadan ayrılmak mı istiyorsun?'**
+  String get emailVerifyLeaveTitle;
+
+  /// No description provided for @emailVerifyLeaveMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıt neredeyse tamam. E-postanı değiştirmek istiyorsan çıkış yapıp yeni adresle tekrar başlayabilirsin.'**
+  String get emailVerifyLeaveMessage;
+
+  /// No description provided for @emailVerifyContinueWaiting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beklemeye devam et'**
+  String get emailVerifyContinueWaiting;
+
+  /// No description provided for @emailVerifyChangeEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-postayı değiştir'**
+  String get emailVerifyChangeEmail;
 }
 
 class _AppLocalizationsDelegate

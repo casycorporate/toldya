@@ -41,39 +41,18 @@ bool _profileListStatuIsPastParticipation(int? s) {
       s == Statu.statusRejectedByAdmin;
 }
 
-/// Oluşturduğun veya oy verdiğin toldya’lar; tekrarlı key birleştirilir.
-List<FeedModel> _mergeProfileParticipationLists({
-  required String id,
-  required String profileUserId,
-  required List<FeedModel> myCreatedSource,
-  required List<FeedModel> votedSource,
+List<FeedModel> _createdToldyasByStatus({
+  required String ownerId,
+  required List<FeedModel> source,
   required bool Function(int? statu) statusMatch,
 }) {
-  final seen = <String>{};
-  final out = <FeedModel>[];
-
-  void consider(FeedModel x) {
-    final key = x.key;
-    if (key == null || key.isEmpty) return;
-    if (seen.contains(key)) return;
-    final s = parseStatu(x.statu);
-    if (!statusMatch(s)) return;
-    seen.add(key);
-    out.add(x);
-  }
-
-  for (final x in myCreatedSource) {
-    if ((x.parentkey == null || x.childRetoldyaKey != null) && x.userId == id) {
-      consider(x);
+  return source.where((x) {
+    if ((x.parentkey != null && x.childRetoldyaKey == null) || x.ownerId != ownerId) {
+      return false;
     }
-  }
-  for (final x in votedSource) {
-    final hasVoted = (x.likeList ?? []).any((e) => e.userId == profileUserId) ||
-        (x.unlikeList ?? []).any((e) => e.userId == profileUserId);
-    if (!hasVoted) continue;
-    consider(x);
-  }
-  return out;
+    final s = parseStatu(x.statu);
+    return statusMatch(s);
+  }).toList();
 }
 
 class ProfilePage extends StatefulWidget {
@@ -225,7 +204,6 @@ class _ProfilePageState extends State<ProfilePage>
     }
     final feedlist = state.feedlist ?? <FeedModel>[];
     String id = widget.profileId ?? authstate.userId ?? '';
-    final profileUserId = authstate.profileUserModel?.userId ?? '';
 
     final profileMatchesPage = authstate.profileUserModel == null
         ? false
@@ -253,27 +231,16 @@ class _ProfilePageState extends State<ProfilePage>
         : feedlist
             .where((x) =>
                 (x.parentkey == null || x.childRetoldyaKey != null) &&
-                x.userId == id)
+                x.ownerId == id)
             .toList();
-    /// Oy verdiklerim: from feedlist where user has voted
-    final listForOyVerdiklerim = feedlist
-        .where((x) =>
-            (x.unlikeList ?? []).any((e) => e.userId == profileUserId) ||
-            (x.likeList ?? []).any((e) => e.userId == profileUserId))
-        .toList();
-
-    final activeParticipationList = _mergeProfileParticipationLists(
-      id: id,
-      profileUserId: profileUserId,
-      myCreatedSource: listForMyToldyas,
-      votedSource: listForOyVerdiklerim,
+    final activeParticipationList = _createdToldyasByStatus(
+      ownerId: id,
+      source: listForMyToldyas,
       statusMatch: _profileListStatuIsActiveParticipation,
     );
-    final pastParticipationList = _mergeProfileParticipationLists(
-      id: id,
-      profileUserId: profileUserId,
-      myCreatedSource: listForMyToldyas,
-      votedSource: listForOyVerdiklerim,
+    final pastParticipationList = _createdToldyasByStatus(
+      ownerId: id,
+      source: listForMyToldyas,
       statusMatch: _profileListStatuIsPastParticipation,
     );
 
@@ -900,7 +867,7 @@ class _ProfilePageState extends State<ProfilePage>
       list = tweetsList
           .where((x) =>
               (x.parentkey == null || x.childRetoldyaKey != null) &&
-              x.userId == id)
+              x.ownerId == id)
           .toList();
 
       /// Tahminlerim sekmesinde statü filtresi (Aktif / Bekleyen / Tamamlanan / Reddedilen / Kilitli)

@@ -380,6 +380,10 @@ class _SignupState extends State<Signup> {
       customSnackBar(_scaffoldKey, l10n.passwordMismatch);
       return;
     }
+    if (_passwordController.text.length < kMinPasswordLength) {
+      customSnackBar(_scaffoldKey, l10n.passwordMinLength(kMinPasswordLength));
+      return;
+    }
 
     loader.showLoader(context);
     var state = Provider.of<AuthState>(context, listen: false);
