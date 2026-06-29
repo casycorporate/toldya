@@ -15,8 +15,18 @@
     "public": "build/web",
     "ignore": [
       "firebase.json",
-      "**/.*",
       "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      }
     ],
     "rewrites": [
       {
@@ -26,6 +36,10 @@
       {
         "source": "/email-verified",
         "destination": "/auth/verified/index.html"
+      },
+      {
+        "source": "/password-reset-done",
+        "destination": "/auth/password-reset-done/index.html"
       },
       {
         "source": "**",

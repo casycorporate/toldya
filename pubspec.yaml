@@ -42,6 +42,7 @@ dependencies:
   google_fonts: ^6.2.1
   firebase_remote_config: ^5.1.6
   firebase_dynamic_links: ^6.0.16
+  app_links: ^6.4.0
   cupertino_radio_choice: ^1.0.1+1
   animated_bottom_navigation_bar: ^0.3.2
   circular_reveal_animation: ^2.0.0

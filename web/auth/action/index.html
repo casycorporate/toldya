@@ -111,6 +111,60 @@
       cursor: pointer;
     }
 
+    .button.secondary {
+      margin-top: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .form {
+      display: none;
+      margin-top: 22px;
+      text-align: left;
+    }
+
+    .form label {
+      display: block;
+      margin: 14px 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .form input {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      outline: none;
+      background: #1c1c27;
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .form input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+
+    .form small {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .form .error-text {
+      min-height: 20px;
+      margin-top: 12px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
     .hint {
       margin-top: 14px;
       font-size: 13px;
@@ -137,44 +191,110 @@
     <div class="icon" id="icon" aria-hidden="true">✓</div>
     <h1 id="title">E-postan doğrulanıyor</h1>
     <p id="message">Toldya hesabını güvenle tamamlıyoruz. Birkaç saniye sürebilir.</p>
+    <form class="form" id="resetForm">
+      <label for="password" id="passwordLabel">Yeni şifre</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" minlength="6" required>
+      <label for="confirmPassword" id="confirmPasswordLabel">Yeni şifre tekrar</label>
+      <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
+      <small id="passwordHelp">En az 6 karakter kullan.</small>
+      <div class="error-text" id="formError" role="alert"></div>
+      <button class="button" type="submit" id="submitButton">Şifreyi güncelle</button>
+    </form>
     <a class="button" id="button" href="/email-verified" hidden>Toldya'ya dön</a>
     <p class="hint" id="hint"></p>
   </main>
 
+  <script src="/auth/app-return.js"></script>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-    import { getAuth, applyActionCode } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+    import {
+      getAuth,
+      applyActionCode,
+      verifyPasswordResetCode,
+      confirmPasswordReset
+    } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 
     const copy = {
       tr: {
         loadingTitle: 'E-postan doğrulanıyor',
         loadingMessage: 'Toldya hesabını güvenle tamamlıyoruz. Birkaç saniye sürebilir.',
         successTitle: 'E-posta doğrulandı',
-        successMessage: 'Harika. Şimdi Toldya uygulamasına dönüp tahmin oyununa başlayabilirsin.',
+        successMessage: 'Hesabın doğrulandı. Devam etmek için aşağıdaki butona dokun.',
         errorTitle: 'Bağlantı doğrulanamadı',
         errorMessage: 'Bu bağlantı süresi dolmuş veya daha önce kullanılmış olabilir. Uygulamadan yeni bağlantı gönderebilirsin.',
+        resetLoadingTitle: 'Şifre sıfırlama hazırlanıyor',
+        resetLoadingMessage: 'Bağlantını kontrol ediyoruz. Birkaç saniye sürebilir.',
+        resetTitle: 'Yeni şifreni belirle',
+        resetMessage: 'Hesabına yeniden erişmek için yeni şifreni gir.',
+        resetSuccessTitle: 'Şifren güncellendi',
+        resetSuccessMessage: 'Yeni şifren kaydedildi. Uygulamayı açıp yeni şifrenle giriş yapabilirsin.',
+        resetErrorTitle: 'Şifre bağlantısı doğrulanamadı',
+        resetErrorMessage: 'Bu bağlantı süresi dolmuş veya daha önce kullanılmış olabilir. Uygulamadan yeni şifre sıfırlama bağlantısı isteyebilirsin.',
+        passwordLabel: 'Yeni şifre',
+        confirmPasswordLabel: 'Yeni şifre tekrar',
+        passwordHelp: 'En az 6 karakter kullan.',
+        passwordSubmit: 'Şifreyi güncelle',
+        passwordTooShort: 'Şifre en az 6 karakter olmalı.',
+        passwordMismatch: 'Şifreler eşleşmiyor.',
+        passwordGenericError: 'Şifre güncellenemedi. Yeni bağlantı isteyip tekrar dene.',
         button: "Toldya'ya dön",
-        hint: 'Uygulama açıksa geri dönmen yeterli; seni otomatik olarak ana sayfaya alacağız.'
+        buttonSignIn: "Toldya'da giriş yap",
+        hintEmailVerify: "Buton Toldya uygulamasını açar. Açılmazsa son uygulamalar menüsünden Toldya'yı seç.",
+        hintPasswordReset: "Buton uygulamayı açar; ardından yeni şifrenle giriş yap. Açılmazsa son uygulamalar menüsünden Toldya'yı seç."
       },
       en: {
         loadingTitle: 'Verifying your email',
         loadingMessage: 'We are securely finishing your Toldya signup. This can take a few seconds.',
         successTitle: 'Email verified',
-        successMessage: 'Great. Return to the Toldya app and start playing the prediction game.',
+        successMessage: 'Your account is verified. Tap the button below to continue.',
         errorTitle: 'Link could not be verified',
         errorMessage: 'This link may have expired or already been used. You can send a new link from the app.',
+        resetLoadingTitle: 'Preparing password reset',
+        resetLoadingMessage: 'We are checking your link. This can take a few seconds.',
+        resetTitle: 'Create a new password',
+        resetMessage: 'Enter a new password to get back into your account.',
+        resetSuccessTitle: 'Password updated',
+        resetSuccessMessage: 'Your new password is saved. Open the app and sign in with it.',
+        resetErrorTitle: 'Password link could not be verified',
+        resetErrorMessage: 'This link may have expired or already been used. Request a new password reset link from the app.',
+        passwordLabel: 'New password',
+        confirmPasswordLabel: 'Repeat new password',
+        passwordHelp: 'Use at least 6 characters.',
+        passwordSubmit: 'Update password',
+        passwordTooShort: 'Password must be at least 6 characters.',
+        passwordMismatch: 'Passwords do not match.',
+        passwordGenericError: 'Could not update password. Request a new link and try again.',
         button: 'Return to Toldya',
-        hint: 'If the app is open, just go back to it. We will take you to Home automatically.'
+        buttonSignIn: 'Sign in on Toldya',
+        hintEmailVerify: 'The button opens the Toldya app. If nothing happens, pick Toldya from your recent apps.',
+        hintPasswordReset: 'The button opens the app so you can sign in with your new password. If nothing happens, pick Toldya from recent apps.'
       },
       de: {
         loadingTitle: 'Deine E-Mail wird bestätigt',
         loadingMessage: 'Wir schließen deine Toldya-Registrierung sicher ab. Das kann ein paar Sekunden dauern.',
         successTitle: 'E-Mail bestätigt',
-        successMessage: 'Super. Kehre zur Toldya-App zurück und starte das Vorhersage-Spiel.',
+        successMessage: 'Dein Konto ist bestätigt. Tippe unten auf die Schaltfläche, um fortzufahren.',
         errorTitle: 'Link konnte nicht bestätigt werden',
         errorMessage: 'Dieser Link ist möglicherweise abgelaufen oder wurde bereits verwendet. Du kannst in der App einen neuen Link senden.',
+        resetLoadingTitle: 'Passwort-Zurücksetzung wird vorbereitet',
+        resetLoadingMessage: 'Wir prüfen deinen Link. Das kann ein paar Sekunden dauern.',
+        resetTitle: 'Neues Passwort festlegen',
+        resetMessage: 'Gib ein neues Passwort ein, um wieder auf dein Konto zuzugreifen.',
+        resetSuccessTitle: 'Passwort aktualisiert',
+        resetSuccessMessage: 'Dein neues Passwort wurde gespeichert. Öffne die App und melde dich damit an.',
+        resetErrorTitle: 'Passwort-Link konnte nicht bestätigt werden',
+        resetErrorMessage: 'Dieser Link ist möglicherweise abgelaufen oder wurde bereits verwendet. Fordere in der App einen neuen Link an.',
+        passwordLabel: 'Neues Passwort',
+        confirmPasswordLabel: 'Neues Passwort wiederholen',
+        passwordHelp: 'Verwende mindestens 6 Zeichen.',
+        passwordSubmit: 'Passwort aktualisieren',
+        passwordTooShort: 'Das Passwort muss mindestens 6 Zeichen haben.',
+        passwordMismatch: 'Die Passwörter stimmen nicht überein.',
+        passwordGenericError: 'Passwort konnte nicht aktualisiert werden. Fordere einen neuen Link an und versuche es erneut.',
         button: 'Zurück zu Toldya',
-        hint: 'Wenn die App geöffnet ist, gehe einfach zurück. Wir bringen dich automatisch zur Startseite.'
+        buttonSignIn: 'In Toldya anmelden',
+        hintEmailVerify: 'Die Schaltfläche öffnet die Toldya-App. Falls nichts passiert, wähle Toldya in den zuletzt verwendeten Apps.',
+        hintPasswordReset: 'Die Schaltfläche öffnet die App für die Anmeldung mit deinem neuen Passwort. Falls nichts passiert, wähle Toldya in den zuletzt verwendeten Apps.'
       }
     };
 
@@ -184,6 +304,7 @@
     const mode = params.get('mode');
     const oobCode = params.get('oobCode');
     const continueUrl = params.get('continueUrl') || '/email-verified';
+    const isPasswordResetFlow = mode === 'resetPassword';
 
     const card = document.getElementById('card');
     const icon = document.getElementById('icon');
@@ -191,11 +312,37 @@
     const message = document.getElementById('message');
     const button = document.getElementById('button');
     const hint = document.getElementById('hint');
+    const resetForm = document.getElementById('resetForm');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const passwordLabel = document.getElementById('passwordLabel');
+    const confirmPasswordLabel = document.getElementById('confirmPasswordLabel');
+    const passwordHelp = document.getElementById('passwordHelp');
+    const submitButton = document.getElementById('submitButton');
+    const formError = document.getElementById('formError');
 
     title.textContent = t.loadingTitle;
     message.textContent = t.loadingMessage;
-    button.textContent = t.button;
-    button.href = continueUrl;
+    passwordLabel.textContent = t.passwordLabel;
+    confirmPasswordLabel.textContent = t.confirmPasswordLabel;
+    passwordHelp.textContent = t.passwordHelp;
+    submitButton.textContent = t.passwordSubmit;
+
+    function applyReturnButton() {
+      const context = isPasswordResetFlow ? 'passwordReset' : 'emailVerified';
+      const label = isPasswordResetFlow ? t.buttonSignIn : t.button;
+      if (window.ToldyaAppReturn) {
+        window.ToldyaAppReturn.applyToElement(button, label, context);
+      } else {
+        button.textContent = label;
+        button.href = continueUrl;
+        button.hidden = false;
+      }
+    }
+
+    function showSuccessHint() {
+      hint.textContent = isPasswordResetFlow ? t.hintPasswordReset : t.hintEmailVerify;
+    }
 
     const firebaseConfig = {
       apiKey: 'AIzaSyBY6AhsMuidFEryfVmoQ0Lp2i4zef4LHa0',
@@ -207,30 +354,94 @@
       appId: '1:395990044114:web:e5561be10d4581c0f64c0b'
     };
 
-    async function verify() {
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    function showError(titleText, messageText) {
+      card.classList.add('error');
+      icon.textContent = '!';
+      title.textContent = titleText;
+      message.textContent = messageText;
+      resetForm.style.display = 'none';
+      applyReturnButton();
+      button.hidden = false;
+    }
+
+    async function verifyEmail() {
       try {
-        if (mode !== 'verifyEmail' || !oobCode) {
+        if (!oobCode) {
           throw new Error('Invalid action link');
         }
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         await applyActionCode(auth, oobCode);
         card.classList.add('success');
         icon.textContent = '✓';
         title.textContent = t.successTitle;
         message.textContent = t.successMessage;
-        hint.textContent = t.hint;
+        showSuccessHint();
+        applyReturnButton();
         button.hidden = false;
       } catch (error) {
-        card.classList.add('error');
-        icon.textContent = '!';
-        title.textContent = t.errorTitle;
-        message.textContent = t.errorMessage;
-        button.hidden = false;
+        showError(t.errorTitle, t.errorMessage);
       }
     }
 
-    verify();
+    async function resetPassword() {
+      try {
+        if (!oobCode) {
+          throw new Error('Invalid reset link');
+        }
+        title.textContent = t.resetLoadingTitle;
+        message.textContent = t.resetLoadingMessage;
+        await verifyPasswordResetCode(auth, oobCode);
+        document.querySelector('.ring').style.display = 'none';
+        title.textContent = t.resetTitle;
+        message.textContent = t.resetMessage;
+        resetForm.style.display = 'block';
+        password.focus();
+      } catch (error) {
+        showError(t.resetErrorTitle, t.resetErrorMessage);
+      }
+    }
+
+    resetForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      formError.textContent = '';
+      const nextPassword = password.value;
+      const confirm = confirmPassword.value;
+      if (nextPassword.length < 6) {
+        formError.textContent = t.passwordTooShort;
+        return;
+      }
+      if (nextPassword !== confirm) {
+        formError.textContent = t.passwordMismatch;
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = '...';
+      try {
+        await confirmPasswordReset(auth, oobCode, nextPassword);
+        resetForm.style.display = 'none';
+        card.classList.add('success');
+        icon.textContent = '✓';
+        title.textContent = t.resetSuccessTitle;
+        message.textContent = t.resetSuccessMessage;
+        showSuccessHint();
+        applyReturnButton();
+        button.hidden = false;
+      } catch (error) {
+        formError.textContent = t.passwordGenericError;
+        submitButton.disabled = false;
+        submitButton.textContent = t.passwordSubmit;
+      }
+    });
+
+    if (mode === 'verifyEmail') {
+      verifyEmail();
+    } else if (mode === 'resetPassword') {
+      resetPassword();
+    } else {
+      showError(t.errorTitle, t.errorMessage);
+    }
   </script>
 </body>
 </html>

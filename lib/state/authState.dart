@@ -253,6 +253,9 @@ class AuthState extends AppState {
       //   createUser(userModel);
       // }
       userId = user?.uid ?? '';
+      if (user != null) {
+        await ensureFirebaseAuthProfileInRtdb(user!);
+      }
       loading = false;
       return user?.uid;
     } catch (error) {
@@ -379,6 +382,48 @@ class AuthState extends AppState {
       model.createdAt = DateTime.now().toUtc().toString();
       createUser(model, newUser: false);
     }
+  }
+
+  /// Firebase Auth'ta var olan ama RTDB `profile/{uid}` kaydı silinmiş
+  /// kullanıcıları tekrar kullanılabilir hale getirir. Özellikle eski
+  /// email/password hesapları aynı e-posta ile tekrar giriş yaptığında Home
+  /// ekranının boş profil yüzünden kırılmasını önler.
+  Future<void> ensureFirebaseAuthProfileInRtdb(User user) async {
+    final snap = await kDatabase.child('profile').child(user.uid).once();
+    final raw = snap.snapshot.value;
+    if (_rtdbProfileDataLooksRegistered(raw)) return;
+
+    final email = user.email ?? '';
+    final fallbackName = email.contains('@')
+        ? email.split('@').first
+        : (user.displayName ?? 'Toldya User');
+    final displayName = (user.displayName ?? '').trim().isNotEmpty
+        ? user.displayName!.trim()
+        : fallbackName;
+
+    final model = UserModel(
+      bio: 'Edit profile to update bio',
+      dob: DateTime(1950, DateTime.now().month, DateTime.now().day + 3)
+          .toString(),
+      location: 'Somewhere in universe',
+      profilePic: user.photoURL ?? DefaultProfilePics.assetForUser(user.uid),
+      displayName: displayName,
+      email: email,
+      key: user.uid,
+      userId: user.uid,
+      contact: user.phoneNumber,
+      isVerified: user.emailVerified,
+      pegCount: AppIcon.pegCount,
+      stashCount: 0,
+      xp: 0,
+      rank: AppIcon.defaultRank,
+      predictorScore: 0,
+      role: Role.defaultRole,
+      fcmToken: _readExistingFcmToken(raw),
+    );
+    model.userName = getUserName(id: user.uid, name: model.displayName ?? '');
+    model.createdAt = DateTime.now().toUtc().toString();
+    createUser(model, newUser: false);
   }
 
   /// Create user profile from Apple sign-in.
@@ -634,6 +679,7 @@ class AuthState extends AppState {
         if (user != null) {
           authStatus = AuthStatus.LOGGED_IN;
           userId = user!.uid;
+          await ensureFirebaseAuthProfileInRtdb(user!);
           getProfileUser();
         } else {
           authStatus = AuthStatus.NOT_LOGGED_IN;
@@ -728,6 +774,13 @@ class AuthState extends AppState {
     );
   }
 
+  ActionCodeSettings get _passwordResetActionCodeSettings {
+    return ActionCodeSettings(
+      url: kPasswordResetContinueUrl,
+      handleCodeInApp: false,
+    );
+  }
+
   Future<void> _sendEmailVerificationWithToldyaContinueUrl(
       User currentUser) async {
     try {
@@ -787,24 +840,24 @@ class AuthState extends AppState {
   }
 
   /// Send password reset link to email
-  Future<void> forgetPassword(String email,
+  Future<bool> forgetPassword(String email,
       {GlobalKey<ScaffoldState>? scaffoldKey}) async {
     try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email).then((value) {
-        final ctx = scaffoldKey?.currentContext;
-        if (scaffoldKey != null && ctx != null) {
-          customSnackBar(
-              scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
-        }
-        logEvent('forgot+password');
-      }).catchError((error) {
-        cprint((error as dynamic).message);
-        showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
-        return false;
-      });
+      await _firebaseAuth.sendPasswordResetEmail(
+        email: email.trim().toLowerCase(),
+        actionCodeSettings: _passwordResetActionCodeSettings,
+      );
+      final ctx = scaffoldKey?.currentContext;
+      if (scaffoldKey != null && ctx != null) {
+        customSnackBar(
+            scaffoldKey, AppLocalizations.of(ctx)!.resetPasswordSent);
+      }
+      logEvent('forgot+password');
+      return true;
     } catch (error) {
+      cprint(error, errorIn: 'forgetPassword');
       showLocalizedFirebaseAuthSnackBar(scaffoldKey, error);
-      return Future.value(false);
+      return false;
     }
   }
 
@@ -1027,6 +1080,17 @@ class AuthState extends AppState {
           }
           logEvent('get_profile');
         }
+      } else if (user != null && userProfileId == user!.uid) {
+        ensureFirebaseAuthProfileInRtdb(user!).then((_) {
+          if (requestedId != _pendingProfileRequestId) return;
+          if (_userModel != null) {
+            _profileUserModelList = [_userModel!];
+            updateFCMToken();
+          }
+          loading = false;
+          notifyListeners();
+        });
+        return;
       }
       loading = false;
       notifyListeners();

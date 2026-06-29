@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.casycorporate.toldya",
+      "sha256_cert_fingerprints": [
+        "2e:2d:35:db:0b:a0:21:fc:92:9d:02:70:aa:89:65:b8:37:7c:f8:36:35:62:1f:5f:b7:29:27:7f:9f:c5:c2:ff",
+        "88:9b:b5:ad:b2:98:b6:67:a3:7a:b3:0e:5f:07:43:13:87:92:6c:5f:26:9f:5e:8e:ee:4e:90:56:20:a9:95:d6",
+        "f5:e2:aa:5d:d8:fe:59:dd:e4:a8:45:bf:70:b7:d1:55:c6:bf:80:53:91:07:78:8b:b5:85:b5:ff:5f:15:b8:e3"
+      ]
+    }
+  }
+]

@@ -9,6 +9,7 @@ import 'package:toldya/page/Auth/selectAuthMethod.dart';
 import 'package:toldya/page/Auth/verifyEmail.dart';
 import 'package:toldya/page/common/updateApp.dart';
 import 'package:toldya/page/homePage.dart';
+import 'package:toldya/services/app_link_service.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/feedState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
@@ -55,14 +56,18 @@ class _SplashPageState extends State<SplashPage> {
 
   void redirectFromDeepLink(Uri deepLink) {
     print("Found Url from share: ${deepLink.path}");
+    if (AppLinkService.isEmailVerificationLink(deepLink)) {
+      AppLinkService.completeEmailVerificationFromLink();
+      return;
+    }
+    if (AppLinkService.isPasswordResetDoneLink(deepLink)) {
+      AppLinkService.completePasswordResetFromLink();
+      return;
+    }
     final segments = deepLink.pathSegments;
     if (segments.isEmpty) return;
     final type = segments.first;
     final id = segments.length > 1 ? segments[1] : '';
-    if ((type == "auth" && id == "verified") || type == "email-verified") {
-      _completeEmailVerificationFromLink();
-      return;
-    }
     if (type == "profile") {
       Navigator.of(context).pushNamed('/ProfilePage/$id');
     } else if (type == "toldya") {
@@ -72,26 +77,6 @@ class _SplashPageState extends State<SplashPage> {
       var feedstate = Provider.of<FeedState>(context, listen: false);
       feedstate.getpostDetailFromDatabase(id);
       Navigator.of(context).pushNamed('/FeedPostDetail/$id');
-    }
-  }
-
-  Future<void> _completeEmailVerificationFromLink() async {
-    final authState = Provider.of<AuthState>(context, listen: false);
-    await authState.getCurrentUser();
-    final verified = await authState.reloadAndCheckEmailVerified();
-    if (!mounted) return;
-    if (verified) {
-      await authState.promoteToVerifiedAndContinue();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => HomePage()),
-        (route) => false,
-      );
-    } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => VerifyEmailPage()),
-        (route) => false,
-      );
     }
   }
 
