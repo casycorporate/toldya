@@ -817,6 +817,49 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ein Link zum Zurücksetzen des Passworts wurde an deine E-Mail gesendet.';
 
   @override
+  String get forgotPasswordTitle => 'Passwort zurücksetzen';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Gib deine E-Mail-Adresse ein und wir senden dir einen sicheren Link zum Zurücksetzen.';
+
+  @override
+  String get forgotPasswordEmailHint => 'E-Mail-Adresse';
+
+  @override
+  String get forgotPasswordSendButton => 'Reset-Link senden';
+
+  @override
+  String get forgotPasswordSending => 'Link wird gesendet...';
+
+  @override
+  String get forgotPasswordSentTitle => 'Postfach prüfen';
+
+  @override
+  String forgotPasswordSentMessage(String email) {
+    return 'Wir haben einen sicheren Link zum Zurücksetzen an $email gesendet.';
+  }
+
+  @override
+  String get forgotPasswordSentHint =>
+      'Der Link ist nur kurze Zeit gültig. Prüfe auch deinen Spam-Ordner.';
+
+  @override
+  String get forgotPasswordTryAgain => 'Neuen Link senden';
+
+  @override
+  String get forgotPasswordBackToSignIn => 'Zur Anmeldung';
+
+  @override
+  String forgotPasswordResetMinHint(int min) {
+    return 'Dein neues Passwort muss mindestens $min Zeichen haben.';
+  }
+
+  @override
+  String get passwordResetWebCompleteMessage =>
+      'Dein Passwort wurde aktualisiert. Du kannst dich mit dem neuen Passwort anmelden.';
+
+  @override
   String get selectProfilePhoto => 'Profilfoto auswählen';
 
   @override

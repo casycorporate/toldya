@@ -1570,6 +1570,78 @@ abstract class AppLocalizations {
   /// **'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.'**
   String get resetPasswordSent;
 
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifreni sıfırla'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresini yaz. Sana güvenli bir sıfırlama bağlantısı gönderelim.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @forgotPasswordEmailHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresin'**
+  String get forgotPasswordEmailHint;
+
+  /// No description provided for @forgotPasswordSendButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıfırlama bağlantısı gönder'**
+  String get forgotPasswordSendButton;
+
+  /// No description provided for @forgotPasswordSending.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı gönderiliyor...'**
+  String get forgotPasswordSending;
+
+  /// No description provided for @forgotPasswordSentTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gelen kutunu kontrol et'**
+  String get forgotPasswordSentTitle;
+
+  /// No description provided for @forgotPasswordSentMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'{email} adresine güvenli şifre sıfırlama bağlantısı gönderdik.'**
+  String forgotPasswordSentMessage(String email);
+
+  /// No description provided for @forgotPasswordSentHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Link kısa süre geçerli olur. Spam klasörünü de kontrol etmeyi unutma.'**
+  String get forgotPasswordSentHint;
+
+  /// No description provided for @forgotPasswordTryAgain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka bağlantı gönder'**
+  String get forgotPasswordTryAgain;
+
+  /// No description provided for @forgotPasswordBackToSignIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Girişe dön'**
+  String get forgotPasswordBackToSignIn;
+
+  /// No description provided for @forgotPasswordResetMinHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni şifre en az {min} karakter olmalı.'**
+  String forgotPasswordResetMinHint(int min);
+
+  /// No description provided for @passwordResetWebCompleteMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.'**
+  String get passwordResetWebCompleteMessage;
+
   /// No description provided for @selectProfilePhoto.
   ///
   /// In tr, this message translates to:

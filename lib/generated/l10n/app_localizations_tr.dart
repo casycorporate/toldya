@@ -811,6 +811,49 @@ class AppLocalizationsTr extends AppLocalizations {
       'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.';
 
   @override
+  String get forgotPasswordTitle => 'Şifreni sıfırla';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'E-posta adresini yaz. Sana güvenli bir sıfırlama bağlantısı gönderelim.';
+
+  @override
+  String get forgotPasswordEmailHint => 'E-posta adresin';
+
+  @override
+  String get forgotPasswordSendButton => 'Sıfırlama bağlantısı gönder';
+
+  @override
+  String get forgotPasswordSending => 'Bağlantı gönderiliyor...';
+
+  @override
+  String get forgotPasswordSentTitle => 'Gelen kutunu kontrol et';
+
+  @override
+  String forgotPasswordSentMessage(String email) {
+    return '$email adresine güvenli şifre sıfırlama bağlantısı gönderdik.';
+  }
+
+  @override
+  String get forgotPasswordSentHint =>
+      'Link kısa süre geçerli olur. Spam klasörünü de kontrol etmeyi unutma.';
+
+  @override
+  String get forgotPasswordTryAgain => 'Başka bağlantı gönder';
+
+  @override
+  String get forgotPasswordBackToSignIn => 'Girişe dön';
+
+  @override
+  String forgotPasswordResetMinHint(int min) {
+    return 'Yeni şifre en az $min karakter olmalı.';
+  }
+
+  @override
+  String get passwordResetWebCompleteMessage =>
+      'Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.';
+
+  @override
   String get selectProfilePhoto => 'Profil fotoğrafı seç';
 
   @override

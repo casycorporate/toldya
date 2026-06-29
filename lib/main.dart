@@ -1,4 +1,5 @@
 import 'package:toldya/page/feed/composeToldya/state/compose_toldya_state.dart';
+import 'package:toldya/services/app_link_service.dart';
 import 'package:toldya/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -106,6 +107,13 @@ class _MyAppState extends State<MyApp> {
       await NotificationService.init(navigatorKey);
     } catch (e) {
       debugPrint('[FCM] NotificationService init failed: $e');
+    }
+
+    // App Links (email-verified https deep links).
+    try {
+      await AppLinkService.init();
+    } catch (e) {
+      debugPrint('[AppLink] init failed: $e');
     }
   }
 

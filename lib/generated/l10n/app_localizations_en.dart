@@ -811,6 +811,49 @@ class AppLocalizationsEn extends AppLocalizations {
       'A password reset link has been sent to your email.';
 
   @override
+  String get forgotPasswordTitle => 'Reset your password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email address and we will send you a secure reset link.';
+
+  @override
+  String get forgotPasswordEmailHint => 'Email address';
+
+  @override
+  String get forgotPasswordSendButton => 'Send reset link';
+
+  @override
+  String get forgotPasswordSending => 'Sending link...';
+
+  @override
+  String get forgotPasswordSentTitle => 'Check your inbox';
+
+  @override
+  String forgotPasswordSentMessage(String email) {
+    return 'We sent a secure password reset link to $email.';
+  }
+
+  @override
+  String get forgotPasswordSentHint =>
+      'The link is valid for a short time. Don’t forget to check your spam folder.';
+
+  @override
+  String get forgotPasswordTryAgain => 'Send another link';
+
+  @override
+  String get forgotPasswordBackToSignIn => 'Back to sign in';
+
+  @override
+  String forgotPasswordResetMinHint(int min) {
+    return 'Your new password must be at least $min characters.';
+  }
+
+  @override
+  String get passwordResetWebCompleteMessage =>
+      'Your password was updated. You can sign in with your new password.';
+
+  @override
   String get selectProfilePhoto => 'Select profile photo';
 
   @override

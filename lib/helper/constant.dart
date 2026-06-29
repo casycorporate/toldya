@@ -16,6 +16,10 @@ const int kMinPasswordLength = 6;
 const String kEmailVerificationContinueUrl =
     'https://casy-570c4.web.app/email-verified';
 
+/// Şifre sıfırlama web akışı tamamlandığında kullanıcıyı girişe yönlendiren sayfa.
+const String kPasswordResetContinueUrl =
+    'https://casy-570c4.web.app/password-reset-done';
+
 /// Tek logo: mavi yuvarlak arka plan, beyaz baykuş sembolü (SVG – her yerde kullan).
 const String kToldyaLogo = 'assets/images/toldya.svg';
 
