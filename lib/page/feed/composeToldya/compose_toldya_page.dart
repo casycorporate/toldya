@@ -15,6 +15,7 @@ import 'package:toldya/state/feedState.dart';
 import 'package:toldya/state/searchState.dart';
 import 'package:toldya/widgets/customAppBar.dart';
 import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/keyboard_aware_bar.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:toldya/widgets/newWidget/title_text.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -447,7 +448,9 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
         isbootomLine: Provider.of<ComposeToldyaState>(context).isScrollingDown,
       ),
       backgroundColor: _screenBg,
-      bottomNavigationBar: widget.isToldya ? _buildStickyShareButton(context) : null,
+      bottomNavigationBar: widget.isToldya
+          ? KeyboardAwareBar(child: _buildStickyShareButton(context))
+          : null,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
@@ -458,8 +461,7 @@ class _ComposeToldyaReplyPageState extends State<ComposeToldyaPage> {
                 controller: scrollcontroller,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom +
-                        (widget.isToldya ? 96 : 0),
+                    bottom: widget.isToldya ? 96 : 0,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

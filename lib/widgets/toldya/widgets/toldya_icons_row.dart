@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:toldya/model/userPegModel.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
@@ -75,17 +73,26 @@ class ToldyaIconsRow extends StatelessWidget {
           ),
           SizedBox(height: 10),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(totalPool))}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.5),
+              Expanded(
+                child: Text(
+                  '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(totalPool))}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              _buildFooterTime(context),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildFooterTime(context),
+                ),
+              ),
             ],
           ),
         ]);
@@ -102,10 +109,15 @@ class ToldyaIconsRow extends StatelessWidget {
               .animate(onPlay: (c) => c.repeat(reverse: true))
               .fadeIn(duration: 600.ms)
               .fadeOut(duration: 600.ms),
-          SizedBox(width: 6),
-          Text(
-            '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
-            style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.7)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
+              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.7)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+            ),
           ),
         ],
       );
@@ -113,6 +125,9 @@ class ToldyaIconsRow extends StatelessWidget {
     return Text(
       AppLocalizations.of(context)!.predictionEnded,
       style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.right,
     );
   }
 
@@ -175,17 +190,9 @@ class ToldyaIconsRow extends StatelessWidget {
     return Column(
       children: <Widget>[
         SizedBox(height: 8),
-        Row(
-          children: <Widget>[
-            SizedBox(width: 5),
-            customText(getPostTime2(model.createdAt ?? ''), style: textStyle14),
-            SizedBox(width: 5),
-            Platform.isIOS
-                ? customText(AppLocalizations.of(context)!.forIos,
-                    style: TextStyle(color: Theme.of(context).primaryColor))
-                : customText(AppLocalizations.of(context)!.forAndroid,
-                    style: TextStyle(color: Theme.of(context).primaryColor))
-          ],
+        Padding(
+          padding: const EdgeInsets.only(left: 5),
+          child: customText(getPostTime2(model.createdAt ?? ''), style: textStyle14),
         ),
         SizedBox(height: 5),
       ],

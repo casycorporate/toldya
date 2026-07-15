@@ -8,6 +8,7 @@ import 'package:toldya/model/user.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/state/chats/chatState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/keyboard_aware_bar.dart';
 import 'package:toldya/widgets/newWidget/customUrlText.dart';
 import 'package:provider/provider.dart';
 
@@ -196,11 +197,12 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
   }
 
   Widget _bottomEntryField() {
-    return Align(
-      alignment: Alignment.bottomLeft,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
+    return KeyboardAwareBar(
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
           Divider(
             thickness: 0,
             height: 1,
@@ -239,6 +241,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -316,6 +319,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         key: _scaffoldKey,
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           leading: IconButton(
             icon: Icon(Icons.arrow_back),

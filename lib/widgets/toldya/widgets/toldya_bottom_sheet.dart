@@ -242,8 +242,12 @@ class ToldyaBottomSheet {
     await showModalBottomSheet(
       backgroundColor: Colors.transparent,
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
+        final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Container(
           padding: EdgeInsets.only(top: 20, left: 20, right: 20, bottom: MediaQuery.of(context).padding.bottom + 20),
           constraints: BoxConstraints(maxHeight: fullHeight(context) * 0.6),
           width: fullWidth(context),
@@ -267,6 +271,7 @@ class ToldyaBottomSheet {
               Expanded(child: _retoldyaQuoteRow(context, model, type, commentFlag)),
             ],
           ),
+        ),
         );
       },
     );
@@ -281,29 +286,28 @@ class ToldyaBottomSheet {
     final hayirPercent = total > 0 ? (totalUnlike * 100 / total).round() : 50;
     final textPrimary = AppColor.textPrimaryDark;
 
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            model.description ?? AppLocalizations.of(context)!.prediction,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: textPrimary,
-              height: 1.3,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          model.description ?? AppLocalizations.of(context)!.prediction,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: textPrimary,
+            height: 1.3,
           ),
-          SizedBox(height: 24),
-          SliderInNavigationBar(
+        ),
+        const SizedBox(height: 24),
+        Expanded(
+          child: SliderInNavigationBar(
             model: model,
             commentFlag: commentFlag,
             yesPercent: evetPercent,
             noPercent: hayirPercent,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -931,250 +935,261 @@ class _SliderInNavigationBarScreenState extends State<SliderInNavigationBar> {
         }
 
         return Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_inlineError != null) ...[
-              Text(
-                _inlineError!,
-                style: const TextStyle(
-                  color: Color(0xFFFF6B6B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: _sideChip(
-                    label: l10n.stakeSheetSideYes,
-                    percent: widget.yesPercent,
-                    active: _side == _StakeSide.yes,
-                    enabled: canYes,
-                    neon: _neonYes,
-                    onTap: busy
-                        ? null
-                        : () {
-                            if (!canYes) return;
-                            setState(() {
-                              _side = _StakeSide.yes;
-                              _inlineError = null;
-                              _setAmountClamped(_parseAmount(), maxVal);
-                            });
-                          },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _sideChip(
-                    label: l10n.stakeSheetSideNo,
-                    percent: widget.noPercent,
-                    active: _side == _StakeSide.no,
-                    enabled: canNo,
-                    neon: _neonNo,
-                    onTap: busy
-                        ? null
-                        : () {
-                            if (!canNo) return;
-                            setState(() {
-                              _side = _StakeSide.no;
-                              _inlineError = null;
-                              _setAmountClamped(_parseAmount(), maxVal);
-                            });
-                          },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.availableBalanceTokens('${bal.peg}'),
-              style: TextStyle(
-                fontSize: 12,
-                color: textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.maxStakeTokens('$maxVal'),
-              style: TextStyle(
-                fontSize: 12,
-                color: textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 2),
-            const SizedBox(height: 8),
-            Text(
-              l10n.stakeAmountLabel,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: textSecondary.withOpacity(0.85),
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            TextField(
-              controller: _amountController,
-              enabled: !busy && maxVal > 0,
-              keyboardType: const TextInputType.numberWithOptions(
-                signed: false,
-                decimal: false,
-              ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                height: 1.1,
-              ),
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: '0',
-                hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.2),
-                  fontSize: 48,
-                  fontWeight: FontWeight.w800,
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              onChanged: (s) {
-                if (s.isEmpty) {
-                  setState(() {});
-                  return;
-                }
-                var v = int.tryParse(s) ?? 0;
-                if (v > maxVal) {
-                  _amountController.value = TextEditingValue(
-                    text: '$maxVal',
-                    selection:
-                        TextSelection.collapsed(offset: '$maxVal'.length),
-                  );
-                  v = maxVal;
-                }
-                setState(() => _inlineError = null);
-              },
-            ),
-            if (maxVal <= 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  l10n.tokenInsufficient,
-                  style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ...validPresets.map((add) {
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: busy || maxVal <= 0
-                          ? null
-                          : () {
-                              setState(() {
-                                final next =
-                                    (_parseAmount() + add).clamp(0, maxVal);
-                                _setAmountClamped(next, maxVal);
-                                _inlineError = null;
-                              });
-                            },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: surfaceColor,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: MockupDesign.cardBorder),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_inlineError != null) ...[
+                      Text(
+                        _inlineError!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF6B6B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
-                        child: Text(
-                          '+$add',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColor.textPrimaryDark,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _sideChip(
+                            label: l10n.stakeSheetSideYes,
+                            percent: widget.yesPercent,
+                            active: _side == _StakeSide.yes,
+                            enabled: canYes,
+                            neon: _neonYes,
+                            onTap: busy
+                                ? null
+                                : () {
+                                    if (!canYes) return;
+                                    setState(() {
+                                      _side = _StakeSide.yes;
+                                      _inlineError = null;
+                                      _setAmountClamped(_parseAmount(), maxVal);
+                                    });
+                                  },
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _sideChip(
+                            label: l10n.stakeSheetSideNo,
+                            percent: widget.noPercent,
+                            active: _side == _StakeSide.no,
+                            enabled: canNo,
+                            neon: _neonNo,
+                            onTap: busy
+                                ? null
+                                : () {
+                                    if (!canNo) return;
+                                    setState(() {
+                                      _side = _StakeSide.no;
+                                      _inlineError = null;
+                                      _setAmountClamped(_parseAmount(), maxVal);
+                                    });
+                                  },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.availableBalanceTokens('${bal.peg}'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  );
-                }),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: busy || maxVal <= 0
-                        ? null
-                        : () {
-                            setState(() {
-                              _setAmountClamped(maxVal, maxVal);
-                              _inlineError = null;
-                            });
-                          },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: MockupDesign.accentCyan.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: MockupDesign.accentCyan.withOpacity(0.5),
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.maxStakeTokens('$maxVal'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: textSecondary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: Text(
-                        l10n.stakeSheetMaxButton,
-                        style: TextStyle(
-                          fontSize: 14,
+                      textAlign: TextAlign.start,
+                    ),
+                    const SizedBox(height: 2),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.stakeAmountLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: textSecondary.withOpacity(0.85),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: _amountController,
+                      enabled: !busy && maxVal > 0,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        signed: false,
+                        decimal: false,
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '0',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.2),
+                          fontSize: 48,
                           fontWeight: FontWeight.w800,
-                          color: MockupDesign.accentCyan,
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onChanged: (s) {
+                        if (s.isEmpty) {
+                          setState(() {});
+                          return;
+                        }
+                        var v = int.tryParse(s) ?? 0;
+                        if (v > maxVal) {
+                          _amountController.value = TextEditingValue(
+                            text: '$maxVal',
+                            selection: TextSelection.collapsed(
+                                offset: '$maxVal'.length),
+                          );
+                          v = maxVal;
+                        }
+                        setState(() => _inlineError = null);
+                      },
+                    ),
+                    if (maxVal <= 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.tokenInsufficient,
+                          style: const TextStyle(
+                              color: Color(0xFFFF6B6B), fontSize: 12),
+                          textAlign: TextAlign.center,
                         ),
                       ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ...validPresets.map((add) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: busy || maxVal <= 0
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        final next = (_parseAmount() + add)
+                                            .clamp(0, maxVal);
+                                        _setAmountClamped(next, maxVal);
+                                        _inlineError = null;
+                                      });
+                                    },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: surfaceColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border:
+                                      Border.all(color: MockupDesign.cardBorder),
+                                ),
+                                child: Text(
+                                  '+$add',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColor.textPrimaryDark,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: busy || maxVal <= 0
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _setAmountClamped(maxVal, maxVal);
+                                      _inlineError = null;
+                                    });
+                                  },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: MockupDesign.accentCyan.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color:
+                                      MockupDesign.accentCyan.withOpacity(0.5),
+                                ),
+                              ),
+                              child: Text(
+                                l10n.stakeSheetMaxButton,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: MockupDesign.accentCyan,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    if (stake > 0) ...[
+                      Text(
+                        estRounded != null
+                            ? l10n.potentialReturnEstimate(estRounded)
+                            : l10n.potentialReturnUnavailable,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: estRounded != null
+                              ? const Color(0xFF69F0AE)
+                              : textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.potentialReturnDisclaimer,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: textSecondary.withOpacity(0.8),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 20),
-            if (stake > 0) ...[
-              Text(
-                estRounded != null
-                    ? l10n.potentialReturnEstimate(estRounded)
-                    : l10n.potentialReturnUnavailable,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: estRounded != null
-                      ? const Color(0xFF69F0AE)
-                      : textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.potentialReturnDisclaimer,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: textSecondary.withOpacity(0.8),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-            ] else
-              const SizedBox(height: 8),
+            const SizedBox(height: 12),
             submitBtn,
           ],
         );

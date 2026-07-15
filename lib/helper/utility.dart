@@ -456,7 +456,8 @@ bool validateEmal(String email) {
 }
 class Utility {
   /// Paylaşım linkleri Firebase Dynamic Links ile üretilir.
-  /// Üretimde domain ve [AndroidParameters.packageName] değerleri Firebase / Play ile eşleşmelidir.
+  /// Üretimde domain, [AndroidParameters.packageName] ve [IOSParameters.bundleId]
+  /// değerleri Firebase / Play / App Store ile eşleşmelidir.
   static Future<void> createLinkToShare(BuildContext context, String id,
       {SocialMetaTagParameters? socialMetaTagParameters}) async {
     final DynamicLinkParameters parameters = DynamicLinkParameters(
@@ -465,6 +466,10 @@ class Utility {
       androidParameters: AndroidParameters(
         packageName: 'com.casycorporate.toldya',
         minimumVersion: 0,
+      ),
+      iosParameters: const IOSParameters(
+        bundleId: 'com.casycorporate.toldya',
+        minimumVersion: '0',
       ),
       // dynamicLinkParametersOptions: DynamicLinkParametersOptions(
       //   shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short,
@@ -489,6 +494,10 @@ class Utility {
       androidParameters: AndroidParameters(
         packageName: 'com.casycorporate.toldya',
         minimumVersion: 0,
+      ),
+      iosParameters: const IOSParameters(
+        bundleId: 'com.casycorporate.toldya',
+        minimumVersion: '0',
       ),
       // dynamicLinkParametersOptions: DynamicLinkParametersOptions(
       //   shortDynamicLinkPathLength: ShortDynamicLinkPathLength.short,

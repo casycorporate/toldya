@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "492M88NAB3.com.casycorporate.toldya",
+        "paths": [
+          "/email-verified*",
+          "/password-reset-done*",
+          "/auth/verified*"
+        ]
+      }
+    ]
+  }
+}

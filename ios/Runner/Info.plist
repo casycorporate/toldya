@@ -48,14 +48,19 @@
     		<string>Editor</string>
     		<key>CFBundleURLSchemes</key>
     		<array>
-    			<!-- TODO Replace this value: -->
     			<!-- Copied from GoogleService-Info.plist key REVERSED_CLIENT_ID -->
-    			<string>com.googleusercontent.apps.473051771699-52pt7hu6fqqk7q5iumj6ovfmfqemkeb1</string>
+    			<string>com.googleusercontent.apps.395990044114-meuuvsebcsapr8iupii33ao4f05i8bih</string>
     		</array>
     	</dict>
     </array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
