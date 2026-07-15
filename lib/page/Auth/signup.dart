@@ -13,6 +13,7 @@ import 'package:toldya/page/Auth/widget/appleLoginButton.dart';
 import 'package:toldya/page/Auth/widget/googleLoginButton.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/keyboard_aware_bar.dart';
 import 'package:toldya/widgets/newWidget/customLoader.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -66,6 +67,7 @@ class _SignupState extends State<Signup> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: SingleChildScrollView(
+              padding: keyboardScrollPadding(context, extra: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -433,6 +435,7 @@ class _SignupState extends State<Signup> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: true,
       body: _body(context),
     );
   }

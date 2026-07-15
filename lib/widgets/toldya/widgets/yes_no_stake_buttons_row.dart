@@ -93,6 +93,9 @@ class _SolidStakeButton extends StatelessWidget {
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: Colors.white.withValues(alpha: enabled ? 1.0 : 0.65),

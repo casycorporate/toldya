@@ -6,6 +6,7 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/helper/theme.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/keyboard_aware_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -534,6 +535,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -571,6 +573,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
       body: SingleChildScrollView(
+        padding: keyboardScrollPadding(context, extra: 24),
         child: _body(),
       ),
     );

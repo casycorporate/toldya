@@ -166,44 +166,60 @@ class PredictionCardMockup extends StatelessWidget {
           // Zone 4 — Footer: pool left, live + countdown right (pulse when live)
           SizedBox(height: 10),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(total) + ' token')}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.5),
-                ),
-              ),
-              if (isLive && countdownLong.isNotEmpty)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: Colors.red)
-                        .animate(onPlay: (c) => c.repeat(reverse: true))
-                        .fadeIn(duration: 600.ms)
-                        .fadeOut(duration: 600.ms),
-                    SizedBox(width: 6),
-                    Text(
-                      '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Text(
-                  model.statu == Statu.statusPendingAdminReview
-                      ? AppLocalizations.of(context)!.statuUnderReview
-                      : AppLocalizations.of(context)!.predictionEnded,
+              Expanded(
+                child: Text(
+                  '💰 ${AppLocalizations.of(context)!.amountPlayed(k_m_b_generator(total) + ' token')}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withOpacity(0.5),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: isLive && countdownLong.isNotEmpty
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, size: 8, color: Colors.red)
+                                .animate(onPlay: (c) => c.repeat(reverse: true))
+                                .fadeIn(duration: 600.ms)
+                                .fadeOut(duration: 600.ms),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '${AppLocalizations.of(context)!.liveLabel} • ${AppLocalizations.of(context)!.timeLeftLabel}: $countdownLong',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          model.statu == Statu.statusPendingAdminReview
+                              ? AppLocalizations.of(context)!.statuUnderReview
+                              : AppLocalizations.of(context)!.predictionEnded,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                        ),
+                ),
+              ),
             ],
           ),
         ],

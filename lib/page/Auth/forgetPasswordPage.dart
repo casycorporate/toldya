@@ -8,6 +8,7 @@ import 'package:toldya/helper/utility.dart';
 import 'package:toldya/page/Auth/widget/bezierContainer.dart';
 import 'package:toldya/state/authState.dart';
 import 'package:toldya/widgets/customWidgets.dart';
+import 'package:toldya/widgets/keyboard_aware_bar.dart';
 import 'package:toldya/widgets/toldya_logo.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
@@ -54,7 +55,10 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
         ),
         SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: keyboardScrollPadding(context, extra: 24).copyWith(
+              left: 24,
+              right: 24,
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: fullHeight(context) -
@@ -468,6 +472,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: true,
       body: _body(context),
     );
   }
